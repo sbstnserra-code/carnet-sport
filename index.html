@@ -578,7 +578,7 @@ const HFIELDS = [
   { k: 'exmin', l: 'Exercice', u: 'min', d: 0, grp: 'watch' }, { k: 'km', l: 'Distance', u: 'km', d: 1, grp: 'watch' },
   { k: 'bkcal', l: 'Kcal au repos', u: 'kcal', d: 0, grp: 'watch' }, { k: 'rhr', l: 'FC au repos', u: 'bpm', d: 0, grp: 'watch' },
   { k: 'weight', l: 'Poids', u: 'kg', d: 1, grp: 'scale' }, { k: 'fat', l: 'Masse grasse', u: '%', d: 1, grp: 'scale' },
-  { k: 'muscle', l: 'Masse musculaire', u: 'kg', d: 1, grp: 'scale' }, { k: 'lean', l: 'Masse maigre', u: 'kg', d: 1, grp: 'scale' },
+  { k: 'muscle', l: 'Masse musculaire', u: '%', d: 1, grp: 'scale' }, { k: 'lean', l: 'Masse maigre', u: 'kg', d: 1, grp: 'scale' },
   { k: 'sleep', l: 'Sommeil', u: 'h', d: 1, grp: 'recup' }, { k: 'sscore', l: 'Score sommeil', u: '/100', d: 0, grp: 'recup' },
   { k: 'deep', l: 'Profond', u: 'h', d: 1, grp: 'recup' }, { k: 'rem', l: 'Paradoxal', u: 'h', d: 1, grp: 'recup' }];
 const HKEYS = {
@@ -1511,12 +1511,13 @@ function weighHtml(c) {
     <div class="stepper"><span class="lbl">Poids</span><div class="st-row"><button class="st-btn" data-a="wg-step" data-d="-1" aria-label="Moins 100 g">−</button>
       <label class="st-val"><input id="wg-kg" class="fx-num" inputmode="decimal" value="${v(c.kg)}" placeholder="–" aria-label="Poids" autocomplete="off"><small>kg</small></label>
       <button class="st-btn" data-a="wg-step" data-d="1" aria-label="Plus 100 g">+</button></div></div>
-    <label class="field">Masse grasse (%, facultatif)<input class="inp" id="wg-fat" inputmode="decimal" value="${v(c.fat)}" placeholder="${c.lastFat ? v(c.lastFat.v) : 'ex. 18,5'}" autocomplete="off"></label>
+    <div class="grid2"><label class="field">Masse grasse (%, facultatif)<input class="inp" id="wg-fat" inputmode="decimal" value="${v(c.fat)}" placeholder="${c.lastFat ? v(c.lastFat.v) : 'ex. 18,5'}" autocomplete="off"></label>
+    <label class="field">Masse musculaire (%, facultatif)<input class="inp" id="wg-musc" inputmode="decimal" value="${v(c.musc)}" placeholder="${c.lastMusc ? v(c.lastMusc.v) : 'ex. 71,2'}" autocomplete="off"></label></div>
     <div class="row end"><button class="btn ghost" data-a="sheet-close">Annuler</button><button class="btn" data-a="wg-save">Enregistrer · +5 XP</button></div>`;
 }
 function openWeigh(d = today(), back = null) {
-  const h = S.health[d] || {}, last = lastHealth('weight', d), lastFat = lastHealth('fat', d);
-  const c = { mode: 'weigh', d, back, kg: h.weight ?? last?.v ?? null, fat: h.fat ?? null, last: h.weight != null ? lastHealth('weight', addDays(d, -1)) : last, lastFat };
+  const h = S.health[d] || {}, last = lastHealth('weight', d), lastFat = lastHealth('fat', d), lastMusc = lastHealth('muscle', d);
+  const c = { mode: 'weigh', d, back, kg: h.weight ?? last?.v ?? null, fat: h.fat ?? null, musc: h.muscle ?? null, last: h.weight != null ? lastHealth('weight', addDays(d, -1)) : last, lastFat, lastMusc };
   openSheet(weighHtml(c), c);
 }
 
@@ -3070,7 +3071,7 @@ function bodyTrendHtml() {
     ${tile('Sommeil / nuit', sl != null ? hmTxt(sl * 60) : '–', '', sl != null && slp != null ? deltaHtml((sl - slp) * 60, true, ' min vs 7 j préc.', 0, true) : '')}
     ${tile('Coucher moyen', bed || '–', '', bed ? '<span class="delta">sur 7 jours</span>' : '')}</div>
     <section class="card"><div class="chart-t">Poids</div><div class="chart-s">Points : pesées · ligne : moyenne sur 7 jours</div>${has('weight') ? '<div class="chart"><canvas id="c-bW" role="img" aria-label="Poids"></canvas></div>' : noChart('Aucune pesée pour l’instant.')}</section>
-    <section class="card"><div class="chart-t">Masse grasse</div><div class="chart-s">en %</div>${has('fat') ? '<div class="chart sm"><canvas id="c-bF" role="img" aria-label="Masse grasse"></canvas></div>' : noChart('Aucune mesure de masse grasse.')}</section>
+    <section class="card"><div class="chart-t">Composition</div><div class="chart-s">masse grasse et masse musculaire, en %</div>${has('fat') || has('muscle') ? '<div class="chart sm"><canvas id="c-bF" role="img" aria-label="Masse grasse et masse musculaire"></canvas></div>' : noChart('Aucune mesure de composition.')}</section>
     <section class="card"><div class="chart-t">Pas</div><div class="chart-s">${['6m', '1a'].includes(UI.body.range) ? 'Moyenne par semaine' : 'Par jour'} · objectif ${nf(CFG().steps)}</div>${has('steps') ? '<div class="chart sm"><canvas id="c-bS" role="img" aria-label="Pas"></canvas></div>' : noChart('Aucun nombre de pas importé.')}</section>
     <section class="card"><div class="row between" style="align-items:flex-start"><div class="chart-t">Sommeil</div>${sleepChip(today(), 'btn sm ghost', 'c')}</div><div class="chart-s">${['6m', '1a'].includes(UI.body.range) ? 'Moyenne par semaine' : 'Par nuit : profond, paradoxal, reste'} · repère 7 h</div>${has('sleep') ? '<div class="chart sm"><canvas id="c-bZ" role="img" aria-label="Sommeil"></canvas></div>' : noChart('Aucune nuit enregistrée. Touche « Capture sommeil » et choisis ta capture de l’écran Sommeil (Santé ou Withings).')}</section>`;
 }
@@ -3080,7 +3081,8 @@ function bodyCharts() {
   const W = bs.map(b => hval(b.k, 'weight'));
   const MA = bs.map(b => { let n = 0, s = 0; for (let i = 0; i < 7; i++) { const x = hval(addDays(b.k, -i), 'weight'); if (x != null) { n++; s += +x; } } return n ? +(s / n).toFixed(2) : null; });
   mkChart('c-bW', { data: { labels, datasets: [lineDs('Moyenne 7 j', MA, s1, { pointRadius: 0 }), lineDs('Pesée', W, cssVar('--s1-soft'), { showLine: false, pointRadius: 4, borderColor: s1, borderWidth: 1 })] }, options: chartOpts({ yZero: false, yFmt: x => nf(x, 1) + ' kg' }) });
-  mkChart('c-bF', { data: { labels, datasets: [lineDs('Masse grasse', bs.map(b => hval(b.k, 'fat')), s2)] }, options: chartOpts({ legend: false, yZero: false, yFmt: x => nf(x, 1) + ' %' }) });
+  { const oF = chartOpts({ yZero: false, yFmt: x => nf(x, 1) + ' %' }); oF.scales.y1 = { position: 'right', beginAtZero: false, grid: { display: false }, border: { display: false }, ticks: { color: cssVar('--muted'), maxTicksLimit: 5, font: { size: 11 }, callback: x => nf(x, 1) + ' %' } };
+    mkChart('c-bF', { data: { labels, datasets: [lineDs('Masse grasse', bs.map(b => hval(b.k, 'fat')), s2), lineDs('Masse musculaire', bs.map(b => hval(b.k, 'muscle')), s1, { yAxisID: 'y1', borderDash: [5, 4] })] }, options: oF }); }
   let sl = labels, SD = bs.map(b => hval(b.k, 'steps'));
   if (['6m', '1a'].includes(UI.body.range)) { const wb = buckets(start, end, 'semaine'); sl = wb.map(b => b.l); SD = wb.map(b => { const a = avgHealth('steps', b.a, b.b); return a == null ? null : Math.round(a); }); }
   mkChart('c-bS', { data: { labels: sl, datasets: [barDs('Pas', SD, s1), targetDs('Objectif', CFG().steps, sl.length)] }, options: chartOpts({}) });
@@ -3409,9 +3411,9 @@ const A = {
   weigh: el => { const c = SHEET.ctx; openWeigh(el.dataset.back === 'rit' && c?.d ? c.d : today(), el.dataset.back || null); },
   'wg-step': el => { const c = SHEET.ctx, inp = $('#wg-kg'); if (!c || !inp) return; const cur = toNum(inp.value) ?? c.kg ?? 75; const nv = Math.max(0, Math.round((cur + (+el.dataset.d) * 0.1) * 10) / 10); inp.value = v(nv); c.kg = nv; },
   'wg-save': () => {
-    const c = SHEET.ctx, kg = toNum($('#wg-kg').value), fat = toNum($('#wg-fat').value);
+    const c = SHEET.ctx, kg = toNum($('#wg-kg').value), fat = toNum($('#wg-fat').value), musc = toNum($('#wg-musc')?.value);
     if (kg == null || kg < 25 || kg > 300) { toast('Indique ton poids en kg.'); return; }
-    const h = (S.health[c.d] ||= { date: c.d }); h.weight = Math.round(kg * 10) / 10; if (fat != null && fat > 0 && fat < 70) h.fat = fat; if (h.src === 'raccourci') h.src = 'mixte';
+    const h = (S.health[c.d] ||= { date: c.d }); h.weight = Math.round(kg * 10) / 10; if (fat != null && fat > 0 && fat < 70) h.fat = fat; if (musc != null && musc > 0 && musc < 100) h.muscle = musc; if (h.src === 'raccourci') h.src = 'mixte';
     touch('health', c.d); syncMacros(); const back = c.back, d = c.d; closeSheet(); if (back === 'rit') openRitual(d); render(); toast(`Pesée notée : ${nf(h.weight, 1)} kg`);
   },
   'rit-open': el => openRitual(el.dataset.d || today()),
