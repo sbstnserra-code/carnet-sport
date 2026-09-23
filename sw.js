@@ -1,5 +1,5 @@
 /* Carnet Sport : service worker (coquille hors ligne, données via Supabase jamais mises en cache) */
-const V = 'carnet-20260923-144213';
+const V = 'carnet-20260923-150420';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './vendor/supabase.js', './vendor/chart.umd.js', './icons/icon-192.png', './icons/icon-180.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
