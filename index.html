@@ -3136,9 +3136,7 @@ VIEWS.reglages = {
     <section class="card stack"><h2 class="sec-t">Rappels et coach</h2>
       <p class="small" style="margin:0">Rappels à 12 h 45, à l'arrivée à la salle et à 21 h 30 via les automatisations de l'iPhone. Bilan du coach chaque dimanche soir, affiché en haut de l'accueil.</p>
       <button class="btn ghost" data-a="reminders">Régler les rappels iPhone</button></section>
-    <section class="card stack"><h2 class="sec-t">Apple Watch & Withings</h2>
-      <p class="small" style="margin:0">Les données passent par l'app Santé de l'iPhone, puis par un Raccourci qui les copie ici en un geste.</p>
-      <button class="btn ghost" data-a="guide">Voir le guide du Raccourci</button></section>
+    ${haeHtml()}
     ${accountHtml()}
     <section class="card stack"><h2 class="sec-t">Données</h2>
       <p class="small" style="margin:0">${Store.mode === 'cloud' ? 'Tes données sont enregistrées sur ton compte : elles te suivent sur tous tes appareils.' : 'Mode local : les données restent dans ce navigateur.'}</p>
@@ -3147,7 +3145,7 @@ VIEWS.reglages = {
         <label class="btn sm ghost" for="imp-file">Restaurer une sauvegarde</label><input type="file" id="imp-file" accept="application/json,.json" hidden data-ch="imp-file"></div>
     </section>`;
   },
-  after() { if (AUTH.profile?.role === 'admin') loadUsers(); }
+  after() { if (AUTH.profile?.role === 'admin') loadUsers(); haeLoad(); }
 };
 function guideHtml() {
   return `<h2>Raccourci « Carnet Santé »</h2>
@@ -3881,6 +3879,52 @@ Object.assign(A, {
   }
 });
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('./sw.js').catch(() => { });
+
+/* Import automatique iPhone (Health Auto Export) */
+const HAE = { row: null, loaded: false, token: null };
+const HAE_URL = SB_URL + '/functions/v1/health-import';
+async function haeLoad() {
+  if (!sb || !AUTH.user) return;
+  try { const { data } = await sb.from('import_tokens').select('created_at,last_import_at,last_status,last_summary').eq('user_id', AUTH.user.id).maybeSingle(); HAE.row = data || null; } catch { HAE.row = null; }
+  HAE.loaded = true; const el = $('#hae-box'); if (el) el.innerHTML = haeInner();
+}
+function haeInner() {
+  const r = HAE.row, li = r?.last_import_at ? new Date(r.last_import_at) : null;
+  const pad = n => String(n).padStart(2, '0');
+  const status = !r ? 'Pas encore activé.' : li ? `Dernier import : ${fmtDay(`${li.getFullYear()}-${pad(li.getMonth() + 1)}-${pad(li.getDate())}`)} à ${pad(li.getHours())}:${pad(li.getMinutes())}${r.last_summary?.days ? ` · ${r.last_summary.days} jour${r.last_summary.days > 1 ? 's' : ''} (${(r.last_summary.fields || []).length} mesures)` : ''}${r.last_status && r.last_status !== 'ok' ? ` · ${r.last_status}` : ''}` : 'Jeton créé, aucun import reçu pour l’instant.';
+  return `<p class="small" style="margin:0"><b>${esc(status)}</b></p>
+    ${HAE.token ? `<label class="field">Jeton à coller dans Health Auto Export (en-tête X-API-Key), affiché une seule fois<div class="row" style="gap:8px"><input class="inp pwd-box" id="hae-token" value="${HAE.token}" readonly><button class="btn sm ghost" type="button" data-a="pwd-copy" data-t="#hae-token">Copier</button></div></label>` : ''}
+    <label class="field">Adresse de réception (URL)<div class="row" style="gap:8px"><input class="inp" id="hae-url" value="${HAE_URL}" readonly><button class="btn sm ghost" type="button" data-a="pwd-copy" data-t="#hae-url">Copier</button></div></label>
+    <div class="row wrap"><button class="btn sm ${r ? 'ghost' : ''}" data-a="hae-token">${r ? 'Nouveau jeton' : 'Activer l’import automatique'}</button><button class="lnk" data-a="hae-guide">Marche à suivre</button><button class="lnk" data-a="guide">Méthode manuelle (Raccourci)</button></div>`;
+}
+function haeHtml() {
+  return `<section class="card stack"><h2 class="sec-t">Import automatique iPhone</h2>
+    <p class="small" style="margin:0">Avec l’app « Health Auto Export » (App Store), l’iPhone envoie ici chaque jour les données de l’app Santé : pas, calories, sommeil, poids, masse grasse. Plus rien à coller.</p>
+    <div id="hae-box" class="stack">${HAE.loaded ? haeInner() : '<span class="tiny muted">Chargement…</span>'}</div></section>`;
+}
+async function haeRotate() {
+  const { data, error } = await sb.rpc('import_token_rotate');
+  if (error) { toast('Impossible de créer le jeton : ' + error.message); return; }
+  HAE.token = data; await haeLoad(); toast('Jeton créé : colle-le dans Health Auto Export.');
+}
+function haeGuideHtml() {
+  return `<h2>Import automatique depuis l’iPhone</h2>
+  <p class="small">Une seule configuration, 5 minutes. Ensuite les données arrivent toutes seules chaque jour.</p>
+  <ol class="steps">
+    <li><b>Installe « Health Auto Export - JSON+CSV »</b> (App Store, éditeur HealthyApps). L’export automatique demande l’offre Premium : 6,99 $ par an ou 24,99 $ une fois.</li>
+    <li>Ouvre l’app et <b>autorise l’accès aux données Santé</b> demandées (tout accepter).</li>
+    <li>Dans le Carnet, Réglages > Import automatique iPhone : <b>« Activer l’import automatique »</b>, puis copie le jeton et l’adresse.</li>
+    <li>Dans Health Auto Export : <b>Automations</b> > <b>+</b> > <b>REST API</b>. Colle l’adresse dans URL. Format JSON, méthode POST. Dans <b>Headers</b>, ajoute une ligne : clé <code>X-API-Key</code>, valeur = ton jeton.</li>
+    <li><b>Données</b> : Health Metrics, agrégation <b>par jour</b> (Aggregate interval : Days), période <b>3 derniers jours</b>. Coche : Step Count, Active Energy, Basal Energy Burned, Apple Exercise Time, Walking + Running Distance, Body Mass, Body Fat Percentage, Lean Body Mass, Resting Heart Rate, Sleep Analysis.</li>
+    <li><b>Fréquence</b> : toutes les 1 day, par exemple à 8 h. Lance un export manuel pour tester : « Dernier import » s’affiche ici quelques secondes après.</li>
+  </ol>
+  <p class="small muted">iOS n’autorise l’export que si l’iPhone est déverrouillé au moment prévu ; si un jour manque, ouvre simplement Health Auto Export une fois. Withings envoie déjà poids, masse grasse et sommeil dans l’app Santé, ils suivent le même chemin. Cyril fait pareil avec son propre jeton.</p>
+  <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+Object.assign(A, {
+  'hae-token': () => { if (HAE.row) confirmSheet({ title: 'Remplacer le jeton ?', text: 'L’ancien jeton cessera de fonctionner : il faudra coller le nouveau dans Health Auto Export.', ok: 'Remplacer', onOk: haeRotate }); else haeRotate(); },
+  'hae-guide': () => openSheet(haeGuideHtml())
+});
 
 UI._t = today();
 boot();
