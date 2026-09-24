@@ -7,8 +7,8 @@ export type Day = Record<string, number | string>;
 export type Parsed = { days: Record<string, Day>; fields: Set<string>; samples: number; ignored: string[] };
 
 const r1 = (x: number) => Math.round(x * 10) / 10;
-const INT = new Set(["steps", "akcal", "bkcal", "exmin", "rhr"]);
-const MODE: Record<string, "sum" | "last"> = { steps: "sum", akcal: "sum", bkcal: "sum", exmin: "sum", km: "sum", weight: "last", fat: "last", lean: "last", rhr: "last" };
+const INT = new Set(["steps", "akcal", "bkcal", "exmin", "rhr", "sscore"]);
+const MODE: Record<string, "sum" | "last"> = { steps: "sum", akcal: "sum", bkcal: "sum", exmin: "sum", km: "sum", weight: "last", fat: "last", lean: "last", rhr: "last", sscore: "last" };
 
 export const num = (x: unknown): number | null => {
   if (typeof x === "number") return isFinite(x) ? x : null;
@@ -24,7 +24,7 @@ const pct = (v: number) => v <= 1 ? v * 100 : v;
 
 // Conversion vers l'unité du Carnet, par clé
 const CONV: Record<string, (v: number, u: string) => number> = {
-  steps: (v) => v, akcal: kcal, bkcal: kcal, exmin: (v, u) => /hr|hour|heure/i.test(u) ? v * 60 : v, km, weight: kg, fat: pct, lean: kg, rhr: (v) => v,
+  steps: (v) => v, akcal: kcal, bkcal: kcal, exmin: (v, u) => /hr|hour|heure/i.test(u) ? v * 60 : v, km, weight: kg, fat: pct, lean: kg, rhr: (v) => v, sscore: (v) => v,
 };
 
 // Noms Health Auto Export -> clé
@@ -36,6 +36,7 @@ const HAE: Record<string, string> = {
 // Noms de type Raccourci (anglais et français) -> clé
 export function keyFromType(t: string): string | null {
   const s = t.toLowerCase();
+  if (/score/.test(s) && /sleep|sommeil/.test(s)) return "sscore";
   if (/sleep|sommeil/.test(s)) return "sleep";
   if (/step|\bpas\b|marche.*nombre/.test(s)) return "steps";
   if (/basal|repos.*[ée]nergie|[ée]nergie.*repos|basale/.test(s)) return "bkcal";
@@ -85,13 +86,13 @@ export function parseDT(s: unknown): number | null {
   }
   m = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,àa]+(\d{1,2}):(\d{2}))?/);
   if (m) return Date.UTC(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) / 60000;
-  m = t.match(/^(\d{1,2}) ([a-zéû]+)\.? (\d{4})(?:[ ,àa]+(\d{1,2}):(\d{2}))?/i);
+  m = t.match(/^(?:[a-zéû]+\.?,?\s+)?(\d{1,2})\s+([a-zéû]+)\.?\s+(\d{4})(?:[ ,àa]+(\d{1,2}):(\d{2})(?::(\d{2}))?)?\s*(Z|[+\-]\d{2}:?\d{2})?$/i);
   if (m) {
     const mo = m[2].toLowerCase().slice(0, 4).replace(/\.$/, "");
     let i = MONTHS_FR.findIndex((x) => mo.startsWith(x.slice(0, 3)) || x.startsWith(mo));
     if (i < 0) i = MONTHS_EN.findIndex((x) => mo.startsWith(x));
     if (i < 0) return null;
-    return Date.UTC(+m[3], i, +m[1], +(m[4] || 0), +(m[5] || 0)) / 60000;
+    return withTz(+m[3], i, +m[1], +(m[4] || 0), +(m[5] || 0), m[7]);
   }
   m = t.match(/^([a-z]+) (\d{1,2}), (\d{4})(?:[ ,at]+(\d{1,2}):(\d{2})\s*([AP]M)?)?/i);
   if (m) {
@@ -100,6 +101,12 @@ export function parseDT(s: unknown): number | null {
     return Date.UTC(+m[3], i, +m[2], h, +(m[5] || 0)) / 60000;
   }
   return null;
+}
+function withTz(y: number, mo: number, d: number, h: number, mi: number, tz?: string): number {
+  if (!tz) return Date.UTC(y, mo, d, h, mi) / 60000;
+  const z = tz === "Z" ? "Z" : tz.replace(/^([+\-]\d{2}):?(\d{2})$/, "$1:$2");
+  const dt = new Date(`${y}-${pad(mo + 1)}-${pad(d)}T${pad(h)}:${pad(mi)}:00${z}`);
+  return isNaN(+dt) ? Date.UTC(y, mo, d, h, mi) / 60000 : wallParis(dt);
 }
 function wallParis(d: Date): number {
   const p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
@@ -161,20 +168,24 @@ export function aggregate(samples: Sample[]): Parsed {
 }
 // Entre deux sources pour une même nuit : celle qui a des phases, sinon celle qui a le plus de sommeil
 const better = (a: { hasPhase: boolean; asleep: number }, b: { hasPhase: boolean; asleep: number }) => a.hasPhase !== b.hasPhase ? a.hasPhase : a.asleep > b.asleep;
+// Durée totale d'un ensemble d'intervalles, chevauchements comptés une seule fois (montre + matelas sur la même nuit)
+function unionMin(iv: [number, number][]): number {
+  if (!iv.length) return 0;
+  const a = iv.slice().sort((x, y) => x[0] - y[0]); let tot = 0, s = a[0][0], e = a[0][1];
+  for (let i = 1; i < a.length; i++) { if (a[i][0] > e) { tot += e - s; s = a[i][0]; e = a[i][1]; } else e = Math.max(e, a[i][1]); }
+  return tot + (e - s);
+}
 function nightStats(segs: Sample[]) {
+  const by: Record<string, [number, number][]> = { inbed: [], awake: [], deep: [], rem: [], core: [], asleep: [] };
   const st = { asleep: 0, deep: 0, rem: 0, awake: 0, inbed: 0, bed: Infinity, wake: -Infinity, hasPhase: false };
-  let asleepOnly = 0;
   for (const s of segs) {
-    const dur = Math.max(0, s.end - s.start); const l = s.label;
-    if (l === "inbed") st.inbed += dur;
-    else if (l === "awake") st.awake += dur;
-    else if (l === "deep") { st.deep += dur; st.asleep += dur; st.hasPhase = true; }
-    else if (l === "rem") { st.rem += dur; st.asleep += dur; st.hasPhase = true; }
-    else if (l === "core") { st.asleep += dur; st.hasPhase = true; }
-    else if (l === "asleep") asleepOnly += dur;
+    if (s.end <= s.start) continue;
+    if (s.label && by[s.label]) by[s.label].push([s.start, s.end]);
     st.bed = Math.min(st.bed, s.start); st.wake = Math.max(st.wake, s.end);
   }
-  if (!st.hasPhase) st.asleep = asleepOnly; // source sans phases (ex. Withings ancien format) : « endormi » cumulé
+  st.hasPhase = by.deep.length + by.rem.length + by.core.length > 0;
+  st.deep = unionMin(by.deep); st.rem = unionMin(by.rem); st.awake = unionMin(by.awake); st.inbed = unionMin(by.inbed);
+  st.asleep = st.hasPhase ? unionMin([...by.deep, ...by.rem, ...by.core, ...by.asleep]) : unionMin(by.asleep); // sans phases (ex. Withings ancien format) : « endormi » cumulé
   return st;
 }
 

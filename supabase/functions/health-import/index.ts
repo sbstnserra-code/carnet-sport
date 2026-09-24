@@ -5,6 +5,7 @@
 // Auth : en-tête X-API-Key = jeton du compte (table import_tokens). Écrit dans public.docs (col health).
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { parseHae, parseLines } from "./parse.ts";
+import { SLEEP_KEYS, syncUserIfConnected } from "./withings.ts";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
 const SERVICE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -57,12 +58,18 @@ Deno.serve(async (req) => {
   const now = Date.now();
   const rows = dates.map((d) => {
     const base = cur[d] || { date: d };
-    const merged = { ...base, ...days[d], date: d, src: base.src && base.src !== "hae" ? "mixte" : "hae", updatedAt: now };
+    const vals = { ...days[d] };
+    // Le sommeil mesuré par Withings (score compris) a priorité sur la version passée par l'app Santé
+    if (base.sleepsrc === "withings") for (const k of SLEEP_KEYS) delete (vals as any)[k];
+    const merged = { ...base, ...vals, date: d, src: base.src && base.src !== "hae" ? "mixte" : "hae", updatedAt: now };
     return { user_id: uid, col: "health", doc_id: d, data: merged };
   });
   const { error } = await admin.from("docs").upsert(rows, { onConflict: "user_id,col,doc_id" });
   if (error) return json({ error: error.message }, 500);
-  const summary = { format, days: dates.length, from: dates[0], to: dates[dates.length - 1], fields: [...parsed.fields], samples: parsed.samples, ignored: parsed.ignored.length };
+  // Dans la foulée, rafraîchit Withings si le compte est relié (au plus une fois par heure)
+  let withings: unknown = null;
+  try { withings = await Promise.race([syncUserIfConnected(admin, uid, { days: 3, minGapMin: 60 }), new Promise((r) => setTimeout(() => r({ timeout: true }), 12_000))]); } catch (e) { withings = { error: String(e) }; }
+  const summary = { format, days: dates.length, from: dates[0], to: dates[dates.length - 1], fields: [...parsed.fields], samples: parsed.samples, ignored: parsed.ignored.length, withings };
   await admin.from("import_tokens").update({ last_import_at: new Date().toISOString(), last_status: "ok", last_summary: summary, last_payload: sample }).eq("user_id", uid);
   return json({ ok: true, ...summary });
 });
