@@ -3764,7 +3764,7 @@ async function startApp(session) {
   document.body.classList.remove('auth');
   try { const { data } = await sb.from('profiles').select('user_id,email,name,role').eq('user_id', session.user.id).maybeSingle(); AUTH.profile = data || { role: 'user', email: session.user.email }; }
   catch { AUTH.profile = { role: 'user', email: session.user.email }; }
-  initCaps(); initStore();
+  initCaps(); initStore(); wtAutoSync();
   if (AUTH.recovery) setTimeout(() => openPwdSheet(true), 300);
 }
 async function boot() {
@@ -3885,6 +3885,7 @@ const HAE = { row: null, loaded: false, token: null };
 const HAE_URL = SB_URL + '/functions/v1/health-import';
 async function haeLoad() {
   if (!sb || !AUTH.user) return;
+  wtLoad();
   try { const { data } = await sb.from('import_tokens').select('created_at,last_import_at,last_status,last_summary').eq('user_id', AUTH.user.id).maybeSingle(); HAE.row = data || null; } catch { HAE.row = null; }
   HAE.loaded = true; const el = $('#hae-box'); if (el) el.innerHTML = haeInner();
 }
@@ -3898,7 +3899,7 @@ function haeInner() {
     <div class="row wrap"><button class="btn sm ${r ? 'ghost' : ''}" data-a="hae-token">${r ? 'Nouveau jeton' : 'Activer l’import automatique'}</button><button class="lnk" data-a="sc-guide">Raccourci (gratuit)</button><button class="lnk" data-a="hae-guide">Health Auto Export</button><button class="lnk" data-a="guide">Méthode manuelle</button></div>`;
 }
 function haeHtml() {
-  return `<section class="card stack"><h2 class="sec-t">Import automatique iPhone</h2>
+  return wtHtml() + `<section class="card stack"><h2 class="sec-t">Import automatique iPhone</h2>
     <p class="small" style="margin:0">L’iPhone envoie ici chaque jour les données de l’app Santé : pas, calories, sommeil, poids, masse grasse. Deux façons, même jeton : un <b>Raccourci automatique</b> (gratuit, à créer une fois) ou l’app <b>Health Auto Export</b> (achat unique, zéro réglage).</p>
     <div id="hae-box" class="stack">${HAE.loaded ? haeInner() : '<span class="tiny muted">Chargement…</span>'}</div></section>`;
 }
@@ -3951,6 +3952,78 @@ Object.assign(A, {
   'hae-token': () => { if (HAE.row) confirmSheet({ title: 'Remplacer le jeton ?', text: 'L’ancien jeton cessera de fonctionner : il faudra coller le nouveau dans le Raccourci ou dans Health Auto Export.', ok: 'Remplacer', onOk: haeRotate }); else haeRotate(); },
   'hae-guide': () => openSheet(haeGuideHtml()),
   'sc-guide': () => openSheet(scGuideHtml())
+});
+
+/* Withings (API officielle) : score de sommeil, phases, pesées de la balance */
+const WT = { row: null, loaded: false, busy: false, autoDone: false };
+const WT_URL = SB_URL + '/functions/v1';
+async function wtLoad() {
+  if (!sb || !AUTH.user) return;
+  try { const { data } = await sb.rpc('withings_status'); WT.row = data || null; } catch { WT.row = null; }
+  WT.loaded = true; const el = $('#wt-box'); if (el) el.innerHTML = wtInner();
+}
+function wtInner() {
+  const r = WT.row, pad = n => String(n).padStart(2, '0');
+  const when = iso => { const d = new Date(iso); return `${fmtDay(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)} à ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+  let status = 'Non connecté.';
+  if (r) {
+    const sm = r.last_summary || {};
+    if (r.last_status === 'ok' && r.last_sync_at) status = `Connecté · dernière synchro ${when(r.last_sync_at)}${sm.nights != null ? ` · ${sm.nights} nuit${sm.nights > 1 ? 's' : ''}, ${sm.weighings || 0} pesée${sm.weighings > 1 ? 's' : ''} sur 7 jours` : ''}`;
+    else if (r.last_status === 'reconnexion nécessaire') status = 'Connexion expirée : reconnecte Withings.';
+    else if (r.last_status === 'erreur') status = `Connecté · dernière tentative en erreur${sm.error ? ` (${sm.error})` : ''}`;
+    else status = 'Connecté, première synchronisation en attente.';
+  }
+  return `<p class="small" style="margin:0"><b>${esc(status)}</b></p>
+    <div class="row wrap">${r
+      ? `<button class="btn sm" data-a="wt-sync" ${WT.busy ? 'disabled' : ''}>${WT.busy ? 'Synchronisation…' : 'Synchroniser maintenant'}</button><button class="lnk" data-a="wt-connect">Reconnecter</button><button class="lnk" style="color:var(--crit-text)" data-a="wt-disconnect">Déconnecter</button>`
+      : `<button class="btn sm" data-a="wt-connect" ${WT.busy ? 'disabled' : ''}>Connecter Withings</button>`}</div>`;
+}
+function wtHtml() {
+  return `<section class="card stack"><h2 class="sec-t">Withings</h2>
+    <p class="small" style="margin:0">Relie ton compte Withings : chaque matin, le Carnet récupère directement chez Withings le <b>score de sommeil</b>, les phases, la fréquence cardiaque de la nuit et les pesées de la balance (poids, masse grasse, masse musculaire en %). Ce qui vient de Withings a priorité sur la copie passée par l’app Santé.</p>
+    <div id="wt-box" class="stack">${WT.loaded ? wtInner() : '<span class="tiny muted">Chargement…</span>'}</div></section>`;
+}
+async function wtCall(path, body) {
+  const r = await fetch(`${WT_URL}/${path}`, { method: 'POST', headers: fnHeaders(), body: JSON.stringify(body || {}) });
+  let j = {}; try { j = await r.json(); } catch { }
+  if (!r.ok) throw new Error(j.error || `Erreur ${r.status}`);
+  return j;
+}
+async function wtConnect() {
+  if (WT.busy) return; WT.busy = true; const el = $('#wt-box'); if (el) el.innerHTML = wtInner();
+  try { const { url } = await wtCall('withings-auth/start'); if (!url) throw new Error('Adresse manquante'); location.href = url; }
+  catch (e) { WT.busy = false; toast(e.message || 'Connexion impossible'); await wtLoad(); }
+}
+async function wtSync(force = true, silent = false) {
+  if (WT.busy) return; WT.busy = true; let el = $('#wt-box'); if (el) el.innerHTML = wtInner();
+  try {
+    const j = await wtCall('withings-sync', { force, days: 7 });
+    if (!silent) {
+      if (!j.connected) toast('Withings n’est pas connecté.');
+      else if (j.skipped) toast('Déjà synchronisé il y a moins de 30 minutes.');
+      else if (j.error) toast('Withings : ' + j.error);
+      else toast(`Withings synchronisé : ${j.nights || 0} nuit${j.nights > 1 ? 's' : ''}, ${j.weighings || 0} pesée${j.weighings > 1 ? 's' : ''}.`);
+    }
+  } catch (e) { if (!silent) toast(e.message || 'Synchronisation impossible'); }
+  WT.busy = false; await wtLoad();
+}
+function wtAutoSync() {
+  if (WT.autoDone || !sb || !AUTH.user) return; WT.autoDone = true;
+  // Retour de la page d'autorisation Withings : le résultat est dans l'adresse
+  try {
+    const q = new URLSearchParams(location.search); const r = q.get('withings');
+    if (r) {
+      history.replaceState(null, '', location.pathname);
+      setTimeout(() => { toast((q.get('title') ? q.get('title') + ' · ' : '') + (q.get('msg') || (r === 'ok' ? 'Withings connecté.' : 'Connexion Withings refusée.'))); go('reglages'); }, 400);
+      return;
+    }
+  } catch { }
+  setTimeout(() => wtSync(false, true), 2500);
+}
+Object.assign(A, {
+  'wt-connect': () => wtConnect(),
+  'wt-sync': () => wtSync(true),
+  'wt-disconnect': () => confirmSheet({ title: 'Déconnecter Withings ?', text: 'Le Carnet n’ira plus chercher tes données chez Withings. Les données déjà importées restent.', ok: 'Déconnecter', danger: true, onOk: async () => { const { error } = await sb.rpc('withings_disconnect'); toast(error ? error.message : 'Withings déconnecté.'); await wtLoad(); } })
 });
 
 UI._t = today();
