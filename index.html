@@ -23,7 +23,7 @@
   --btn:#14171A; --on-btn:#F3F4F1; --s1:#2a78d6; --s2:#eb6834; --s1-soft:rgba(42,120,214,.30);
   --good:#0ca30c; --good-text:#0B6B14; --warn:#fab219; --crit:#d03b3b; --crit-text:#B42F2F;
   --shadow:0 1px 2px rgba(20,23,26,.06), 0 8px 24px rgba(20,23,26,.06);
-  --r:14px; --nav-h:62px; --m1:#86b6ef; --m2:#3987e5; --m3:#1c5cab; --m4:#0d366b;
+  --r:14px; --nav-h:62px; --mp:#2f7fe0; --mc:#ef8a24; --mf:#a259d9; --m1:#86b6ef; --m2:#3987e5; --m3:#1c5cab; --m4:#0d366b;
   --f-d:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --f-b:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:light;
@@ -33,14 +33,14 @@
     --ground:#0E1012; --surface:#171A1D; --surface-2:#1F2327; --ink:#EDEFEB; --ink-2:#B3B8B9; --muted:#80868A;
     --line:#2A2F33; --line-2:#3A4045; --accent:#F2B705; --accent-soft:#3A3114; --on-accent:#14171A;
     --btn:#EDEFEB; --on-btn:#14171A; --s1:#3987e5; --s2:#d95926; --s1-soft:rgba(57,135,229,.32);
-    --good-text:#3CC23C; --crit-text:#E66767; --shadow:none; color-scheme:dark; --m1:#184f95; --m2:#2a78d6; --m3:#6da7ec; --m4:#b7d3f6;
+    --good-text:#3CC23C; --crit-text:#E66767; --shadow:none; color-scheme:dark; --mp:#5aa0f0; --mc:#f5a04a; --mf:#b884e6; --m1:#184f95; --m2:#2a78d6; --m3:#6da7ec; --m4:#b7d3f6;
   }
 }
 :root[data-theme="dark"]{
   --ground:#0E1012; --surface:#171A1D; --surface-2:#1F2327; --ink:#EDEFEB; --ink-2:#B3B8B9; --muted:#80868A;
   --line:#2A2F33; --line-2:#3A4045; --accent:#F2B705; --accent-soft:#3A3114; --on-accent:#14171A;
   --btn:#EDEFEB; --on-btn:#14171A; --s1:#3987e5; --s2:#d95926; --s1-soft:rgba(57,135,229,.32);
-  --good-text:#3CC23C; --crit-text:#E66767; --shadow:none; color-scheme:dark; --m1:#184f95; --m2:#2a78d6; --m3:#6da7ec; --m4:#b7d3f6;
+  --good-text:#3CC23C; --crit-text:#E66767; --shadow:none; color-scheme:dark; --mp:#5aa0f0; --mc:#f5a04a; --mf:#b884e6; --m1:#184f95; --m2:#2a78d6; --m3:#6da7ec; --m4:#b7d3f6;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -194,6 +194,26 @@ textarea.inp{min-height:80px;resize:vertical;line-height:1.4}
 .macro{display:grid;grid-template-columns:78px 1fr auto;align-items:center;gap:10px;font-size:13.5px}
 .macro .bar{grid-column:auto}
 .macro b{font:700 16px var(--f-d);white-space:nowrap}
+/* v6.5 : macros par couleur */
+.mk{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:1px;background:var(--muted);flex:none}
+.mk.p{background:var(--mp)}.mk.c{background:var(--mc)}.mk.f{background:var(--mf)}
+.bar>span.m-p{background:var(--mp)}.bar>span.m-c{background:var(--mc)}.bar>span.m-f{background:var(--mf)}
+.macro>span:first-child{display:flex;align-items:center;gap:2px;white-space:nowrap}
+.mchips{display:inline-flex;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--ink-2);line-height:1.3}
+.mchips>span{display:inline-flex;align-items:center;white-space:nowrap}
+.mchips b{font:700 14.5px/1 var(--f-d);color:var(--ink);margin-right:2px}
+.item .s .mchips{font-size:12px}.item .s .mchips b{font-size:13.5px}.item .s .mk{width:7px;height:7px;margin-right:3px}
+.mstack{display:flex;height:6px;border-radius:99px;overflow:hidden;background:var(--surface-2);gap:1px}
+.mstack.lg{height:10px}
+.mstack span{display:block;height:100%;min-width:0}
+.mstack .p{background:var(--mp)}.mstack .c{background:var(--mc)}.mstack .f{background:var(--mf)}
+.meal-sum{display:flex;flex-direction:column;gap:6px;padding:0 0 2px}
+.msplit{display:flex;justify-content:space-between;gap:4px;font-size:11.5px;color:var(--ink-2)}
+.msplit>span{display:inline-flex;align-items:center;white-space:nowrap}
+.msplit b{font:700 14px/1 var(--f-d);color:var(--ink);margin-left:3px}
+.msplit-w{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);margin-top:2px;padding-top:10px}
+.mlegend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--muted)}
+.mlegend span{display:inline-flex;align-items:center}
 .big{font:700 40px/1 var(--f-d);letter-spacing:.01em}
 .big small{font:600 17px var(--f-d);color:var(--muted)}
 .bd{display:flex;flex-direction:column;gap:4px;font-size:13px}
@@ -357,6 +377,42 @@ body.focus-on #rest{display:none!important}
 .gbar .plate{width:38px;height:38px}
 .gb-mid{display:flex;flex-direction:column;gap:6px;min-width:0}
 .gb-mid{gap:5px}
+/* v6.5 : ligue */
+.lg-card{cursor:pointer;text-align:left;width:100%;color:inherit;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto auto;gap:3px 12px;align-items:center;padding:10px 12px}
+.lg-card:active{transform:scale(.995)}
+.lg-card>.lg-emb{grid-column:1;grid-row:1/span 2}
+.lg-card .lg-sts{grid-column:3;grid-row:1/span 2;display:flex;gap:10px}
+.lg-top{grid-column:2;grid-row:1;display:flex;align-items:center;gap:8px;min-width:0}
+.lg-top b{font:700 24px/1 var(--f-d);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-bot{display:flex;flex-direction:column;gap:4px;min-width:0;grid-column:2;grid-row:2}
+.lg-bot .xpbar{height:8px}
+.lg-sub{font-size:12px;color:var(--muted);line-height:1.3}
+.lg-sub b{color:var(--ink);font-weight:600}
+.lg-emb{flex:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.28))}
+.lg-bar span{background:linear-gradient(90deg,var(--lgc2,var(--accent)),var(--lgc,var(--accent)))}
+.lg-rk{display:inline-flex;align-items:center;gap:6px}
+.lg-pl,.lvl .lg-pl{font:700 13px var(--f-d);color:#fff;background:var(--lgc,var(--ink));padding:2px 7px;border-radius:6px;letter-spacing:.02em}
+.lg-head{display:flex;gap:14px;align-items:center}
+.lg-head h2{font:700 32px/1 var(--f-d);margin:2px 0 0}
+.lg-hist{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.lg-g{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font:700 13px var(--f-d);background:var(--surface-2);color:var(--muted)}
+.lg-g.V{background:var(--good);color:#fff}.lg-g.D{background:var(--crit);color:#fff}.lg-g.N{background:var(--line-2);color:var(--ink)}
+.lg-ladder{display:flex;flex-direction:column}
+.lg-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.lg-row:first-child{border-top:0}
+.lg-row b{font:700 16px var(--f-d);min-width:104px}
+.lg-row.on{background:var(--accent-soft);margin:0 -8px;padding:6px 8px;border-radius:8px;border-top:0}
+.lg-pos{font:700 18px var(--f-d);color:var(--muted);min-width:22px;text-align:center}
+.lg-board .li.me .t{color:var(--ink)} .lg-board .li.me{background:var(--accent-soft);margin:0 -8px;padding-inline:8px;border-radius:8px;border-top:0}
+.lg-promo{position:fixed;inset:0;z-index:80;background:rgba(10,12,14,.84);display:grid;place-items:center;opacity:0;transition:opacity .3s}
+.lg-promo.go{opacity:1}
+.lg-promo-in{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:#fff;padding:24px;transform:scale(.6);transition:transform .5s cubic-bezier(.2,1.5,.4,1)}
+.lg-promo.go .lg-promo-in{transform:scale(1)}
+.lg-promo h2{font:700 46px/1 var(--f-d);margin:0;color:#fff}
+.lg-promo p{margin:0;opacity:.85;max-width:300px}
+.lg-promo .eyebrow{color:#fff;opacity:.75;letter-spacing:.2em}
+.lg-rules .li{padding:6px 0}
+.lg-rules .t{font-size:14px}
 .gb-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
 .gb-l b{font-size:20px}
 .gb-x{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1154,6 +1210,84 @@ function recapHtml(d) {
     <div class="row between wrap"><button class="btn ghost" data-a="sheet-close">Fermer</button><button class="btn accent" data-a="rc-open" data-d="${d}">Partager en image</button></div>`;
 }
 
+/* ================= Ligue (v6.5, façon classement compétitif) ================= */
+const LG_TIERS = [
+  { k: 'fer', n: 'Fer', c: '#8d939c', c2: '#5c6169' }, { k: 'bronze', n: 'Bronze', c: '#c98a4b', c2: '#8a5a2b' },
+  { k: 'argent', n: 'Argent', c: '#b6c1cc', c2: '#7f8b97' }, { k: 'or', n: 'Or', c: '#e9b93a', c2: '#b4861a' },
+  { k: 'platine', n: 'Platine', c: '#3cb8ad', c2: '#1e857c' }, { k: 'emeraude', n: 'Émeraude', c: '#33b26a', c2: '#1c7f47' },
+  { k: 'diamant', n: 'Diamant', c: '#6a95f7', c2: '#3d63c9' }, { k: 'maitre', n: 'Maître', c: '#a95ff0', c2: '#7237bb', apex: true },
+  { k: 'gm', n: 'Grand Maître', c: '#e64f4f', c2: '#b02c2c', apex: true, at: 250 }, { k: 'chall', n: 'Challenger', c: '#f6c744', c2: '#2fb9d6', apex: true, at: 500 }];
+const LG_ROMAN = ['', 'I', 'II', 'III', 'IV'];
+const LG = { win: 60, draw: 25, loss: 12, maxEmpty: 3, div: 100 };
+const lgGain = xp => Math.max(12, Math.min(30, 12 + Math.round((xp - LG.win) / 8)));
+const lgResult = xp => xp >= LG.win ? 'V' : xp >= LG.draw ? 'N' : 'D';
+const LG_RES = { V: ['good', 'Victoire'], N: ['', 'Nul'], D: ['crit', 'Défaite'], O: ['', 'Semaine off'], A: ['', 'Absent'] };
+function lgRankOf(st) {
+  let ti = st.tier; if (ti >= 7) ti = st.lp >= 500 ? 9 : st.lp >= 250 ? 8 : 7;
+  const T = LG_TIERS[ti], apex = !!T.apex;
+  return { ti, T, apex, label: apex ? T.n : `${T.n} ${LG_ROMAN[st.div]}`, score: st.tier >= 7 ? 2800 + st.lp : st.tier * 400 + (4 - st.div) * 100 + st.lp,
+    pct: ti === 9 ? 100 : ti === 8 ? (st.lp - 250) / 250 * 100 : ti === 7 ? st.lp / 250 * 100 : st.lp };
+}
+function computeLeague(byDay, start, t) {
+  const st = { tier: 0, div: 4, lp: 0, shield: 0 }, hist = []; let wins = 0, losses = 0, draws = 0, streak = 0, bestStreak = 0, empty = 0, peak = null;
+  const hasData = d => (byDay[d] || 0) > 0 || !!S.sessions[d] || !!S.nutrition[d] || !!S.health[d];
+  const settle = (d, r, xp) => {
+    let pl = 0;
+    if (r === 'V') {
+      pl = lgGain(xp) + (streak >= 2 ? 3 : 0); streak++; wins++; bestStreak = Math.max(bestStreak, streak); st.lp += pl;
+      while (st.lp >= LG.div && st.tier < 7) { st.lp -= LG.div; if (st.div > 1) st.div--; else { st.tier++; st.shield = 3; st.div = st.tier >= 7 ? 0 : 4; } }
+    } else if (r === 'D') {
+      pl = -LG.loss; streak = 0; losses++; st.lp -= LG.loss;
+      if (st.lp < 0) { if (st.tier >= 7) { st.tier = 6; st.div = 1; st.lp = 75; } else if (st.div < 4) { st.div++; st.lp = 75; } else if (st.shield > 0) st.lp = 0; else if (st.tier > 0) { st.tier--; st.div = 1; st.lp = 75; } else st.lp = 0; }
+    } else { streak = 0; draws++; }
+    if (st.shield > 0) st.shield--;
+    const rk = lgRankOf(st); if (!peak || rk.score > peak.score) peak = rk;
+    hist.push({ d, r, pl, xp, rank: rk.label });
+  };
+  if (start) {
+    const last = S.nutrition[t]?.closed ? t : addDays(t, -1);
+    for (let d = start; d <= last; d = addDays(d, 1)) {
+      if (isOffWeek(weekStart(d))) { hist.push({ d, r: 'O', pl: 0, xp: byDay[d] || 0 }); continue; }
+      if (!hasData(d)) { empty++; if (empty > LG.maxEmpty) { hist.push({ d, r: 'A', pl: 0, xp: 0 }); continue; } settle(d, 'D', 0); continue; }
+      empty = 0; settle(d, lgResult(byDay[d] || 0), byDay[d] || 0);
+    }
+  }
+  const rk = lgRankOf(st), games = wins + losses + draws, txp = byDay[t] || 0, tr = lgResult(txp), tdone = !!S.nutrition[t]?.closed;
+  const next = rk.ti === 9 ? null : rk.apex ? { need: (rk.ti === 8 ? 500 : 250) - st.lp, label: LG_TIERS[rk.ti + 1].n }
+    : { need: LG.div - st.lp, label: st.div > 1 ? `${rk.T.n} ${LG_ROMAN[st.div - 1]}` : rk.ti + 1 >= 7 ? LG_TIERS[7].n : `${LG_TIERS[rk.ti + 1].n} IV` };
+  return { ...st, ...rk, wins, losses, draws, games, streak, bestStreak, peak, hist, next, start, today: { xp: txp, r: tr, done: tdone, gain: tr === 'V' ? lgGain(txp) + (streak >= 2 ? 3 : 0) : tr === 'N' ? 0 : -LG.loss } };
+}
+function lgEmblem(lg, size = 44, id = 'e') {
+  const T = lg.T, gid = `lg-${T.k}-${id}`, ti = lg.ti;
+  const inner = T.apex ? (ti === 9 ? '<path d="M13 36l3.5-13 7.5 7 7.5-7 3.5 13z" fill="#fff" opacity=".95"/>' : ti === 8 ? '<path d="M24 16l2.7 6.2 6.7.6-5 4.4 1.5 6.6-5.9-3.5-5.9 3.5 1.5-6.6-5-4.4 6.7-.6z" fill="#fff"/>' : '<circle cx="24" cy="29" r="7.5" fill="none" stroke="#fff" stroke-width="3.2"/>')
+    : lg.div ? `<text x="24" y="36" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="21" fill="#fff">${LG_ROMAN[lg.div]}</text>` : '';
+  return `<svg class="lg-emb" width="${size}" height="${Math.round(size * 56 / 48)}" viewBox="0 0 48 56" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${T.c}"/><stop offset="1" stop-color="${T.c2}"/></linearGradient></defs><path d="M24 2 44 10v20c0 12-10 20-20 24C14 50 4 42 4 30V10z" fill="url(#${gid})" stroke="${T.c2}" stroke-width="2" stroke-linejoin="round"/><path d="M24 8 39 14v15c0 9-7.5 15.5-15 18.5C16.5 44.5 9 38 9 29V14z" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="1.5"/>${inner}</svg>`;
+}
+function lgPromo(lg) {
+  $('.lg-promo')?.remove();
+  const el = document.createElement('div'); el.className = 'lg-promo'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Promotion');
+  el.innerHTML = `<div class="lg-promo-in"><div class="eyebrow">Promotion</div>${lgEmblem(lg, 128, 'promo')}<h2>${esc(lg.label)}</h2><p>${lg.next ? `${nf(lg.lp)} PL. Prochaine étape : ${esc(lg.next.label)} dans ${nf(lg.next.need)} PL.` : 'Tu es au sommet.'}</p><button class="btn accent" data-a="lg-promo-close">Continuer</button></div>`;
+  document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('go')); confetti();
+}
+function lgSheetHtml() {
+  const g = game(), lg = g.lg, played = lg.hist.filter(h => h.r === 'V' || h.r === 'N' || h.r === 'D'), last = played.slice(-14);
+  const rate = lg.games ? Math.round(lg.wins / lg.games * 100) : 0, w = Math.min(100, Math.max(0, lg.pct));
+  const rules = [['Séance de muscu terminée', '50 XP + 2 / série'], ['Journée clôturée', '30 XP'], ['Cardio ou marche de 30 min', '25 XP'], ['Record battu', '20 XP'], ['Repas notés (2 au moins)', '15 XP'], ['Journée dans la cible (kcal et protéines)', '15 XP'], ['Protéines atteintes', '10 XP'], ['Nuit de 7 h ou plus', '10 XP'], ['Objectif de pas', '10 XP'], ['Pesée', '5 XP']];
+  const td = lg.today, tdTxt = td.done ? `partie jouée : ${LG_RES[td.r][1].toLowerCase()}` : td.r === 'V' ? `victoire acquise · +${nf(td.gain)} PL` : `encore ${nf(LG.win - td.xp)} XP pour gagner`;
+  return `<div class="lg-head">${lgEmblem(lg, 84, 'sheet')}<div><div class="eyebrow">Saison 1${lg.start ? ` · depuis le ${fmtDM(lg.start)}` : ''}</div><h2>${esc(lg.label)}</h2><div class="small muted">${nf(lg.lp)} PL${lg.peak && lg.peak.score > lg.score ? ` · meilleur rang : ${esc(lg.peak.label)}` : ''}${lg.streak >= 3 ? ` · en feu, ${lg.streak} victoires d’affilée` : ''}</div></div></div>
+    <div class="xpbar lg-bar" role="progressbar" aria-valuenow="${Math.round(w)}" aria-valuemin="0" aria-valuemax="100" style="--lgc:${lg.T.c};--lgc2:${lg.T.c2}"><span style="width:${w}%"></span></div>
+    <p class="small muted" style="margin:0">${lg.next ? `Encore ${nf(lg.next.need)} PL pour passer ${esc(lg.next.label)}.` : 'Tu es au sommet de la ligue.'}${lg.shield ? ` Bouclier de rétrogradation actif pour ${lg.shield} partie${lg.shield > 1 ? 's' : ''}.` : ''}</p>
+    <div class="recap">${tile('Victoires', nf(lg.wins), '', `<span class="delta">${rate} % de ${nf(lg.games)} partie${lg.games > 1 ? 's' : ''}</span>`)}${tile('Défaites', nf(lg.losses), '', `<span class="delta">${nf(lg.draws)} nul${lg.draws > 1 ? 's' : ''}</span>`)}${tile('Série', nf(lg.streak), 'V', `<span class="delta">record ${nf(lg.bestStreak)}</span>`)}${tile('Aujourd’hui', nf(td.xp), 'XP', `<span class="delta ${td.r === 'V' ? 'up' : ''}">${tdTxt}</span>`)}</div>
+    <section class="card"><div class="sec-t">Dernières parties</div><div class="lg-hist">${last.map(h => `<span class="lg-g ${h.r}" title="${fmtDay(h.d)} · ${LG_RES[h.r][1]} · ${nf(h.xp)} XP">${h.r}</span>`).join('') || '<span class="tiny muted">Ta première partie se joue aujourd’hui.</span>'}</div>
+      ${played.length ? `<div class="list">${played.slice(-5).reverse().map(h => `<div class="li"><div class="main"><div class="t">${fmtDayLong(h.d)}</div><div class="s">${nf(h.xp)} XP · ${esc(h.rank)}</div></div><span class="pill ${LG_RES[h.r][0]}">${LG_RES[h.r][1]}${h.pl ? ` ${h.pl > 0 ? '+' : '−'}${nf(Math.abs(h.pl))} PL` : ''}</span></div>`).join('')}</div>` : ''}</section>
+    <div id="lg-board"></div>
+    <section class="card"><div class="sec-t">Les ligues</div><div class="lg-ladder">${LG_TIERS.map((T, i) => `<div class="lg-row ${i === lg.ti ? 'on' : ''}">${lgEmblem({ T, ti: i, div: i === lg.ti ? lg.div : 0 }, 24, 'l' + i)}<b>${T.n}</b><span class="tiny muted">${T.apex ? (T.at ? `à partir de ${T.at} PL` : 'après Diamant I') : 'divisions IV à I · 100 PL chacune'}</span></div>`).join('')}</div></section>
+    <section class="card lg-rules"><div class="sec-t">Comment ça marche</div><p class="small" style="margin:0 0 8px">Chaque journée est une partie. ${LG.win} XP ou plus : victoire, +12 à +30 PL selon le score (+3 à partir de 3 victoires d’affilée). De ${LG.draw} à ${LG.win - 1} XP : nul, 0 PL. En dessous : défaite, −${LG.loss} PL. Journée vide : défaite, 3 au maximum d’affilée. Semaine off : pas de partie. À 100 PL tu montes d’une division ; sous 0 tu descends, avec un bouclier de 3 parties après chaque promotion.</p>
+      <div class="list">${rules.map(([l, x]) => `<div class="li"><div class="main"><div class="t">${l}</div></div><span class="xp-h">${x}</span></div>`).join('')}</div></section>
+    <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+function lgBoardLoad() { }
+
 /* ================= Gamification ================= */
 const TIERS = [
   { min: 1, name: 'Barre à vide', c: '#8A9095' }, { min: 3, name: 'Disque vert', c: '#1f9d4a' }, { min: 6, name: 'Disque jaune', c: '#F2B705' },
@@ -1177,22 +1311,26 @@ const BADGES = [
   { id: 'p5', l: 'Protéiné', d: 'protéines à ta cible 4 jours dans la semaine', t: 4, v: g => g.bestProt },
   { id: 'st', l: '10 000 pas', d: 'en une journée', t: 10000, v: g => g.maxSteps },
   { id: 'c10', l: 'Cardio', d: '10 activités cardio', t: 10, v: g => g.cardio },
-  { id: 'cl7', l: 'Rituel', d: '7 journées clôturées d’affilée', t: 7, v: g => g.bestC }];
+  { id: 'cl7', l: 'Rituel', d: '7 journées clôturées d’affilée', t: 7, v: g => g.bestC },
+  { id: 'lg1', l: 'Bronze', d: 'ligue Bronze atteinte', t: 1, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
+  { id: 'lg3', l: 'Or', d: 'ligue Or atteinte', t: 3, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
+  { id: 'lg6', l: 'Diamant', d: 'ligue Diamant atteinte', t: 6, v: g => g.lg.peak ? g.lg.peak.ti : 0 }];
 function mealsNoted(d) { const nd = S.nutrition[d]; if (!nd) return 0; return SLOTS.filter(s => s.main && ((nd.meals?.[s.k] || []).length || nd.skip?.[s.k])).length; }
 let GM = null, GM_V = -1, GM_T = '', LAST_LVL = null;
 function game() {
   const t = today(); if (GM && GM_V === VER && GM_T === t) return GM;
   const cfg = CFG(), I = idx(), byDay = {};
-  const add = (d, pts) => { byDay[d] = (byDay[d] || 0) + pts; };
+  const dayXp = {}; const add = (d, pts) => { byDay[d] = (byDay[d] || 0) + pts; }; const addD = (d, pts) => { add(d, pts); dayXp[d] = (dayXp[d] || 0) + pts; };
   let sessions = 0, prs = 0, ton = 0, cardio = 0, maxSteps = 0;
   for (const d of I.days) {
     if (d > t) continue; ton += dayTonnage(d);
-    if (isMuscuDay(d)) { sessions++; add(d, 50 + 2 * muscuSets(d)); }
-    if (isCardioDay(d)) { cardio++; add(d, 25); } else if (hasShortWalk(d)) add(d, 10);
-    for (const e of S.sessions[d].entries || []) if (isPR(e.ex, d, doneSets(e))) { prs++; add(d, 20); }
+    if (isMuscuDay(d)) { sessions++; addD(d, 50 + 2 * muscuSets(d)); }
+    if (isCardioDay(d)) { cardio++; addD(d, 25); } else if (hasShortWalk(d)) addD(d, 10);
+    for (const e of S.sessions[d].entries || []) if (isPR(e.ex, d, doneSets(e))) { prs++; addD(d, 20); }
   }
-  for (const d of Object.keys(S.nutrition)) { if (d > t) continue; if (mealsNoted(d) >= 2) add(d, 15); if (dayNutri(d).real.p >= protThr(weekStart(d))) add(d, 10); if (S.nutrition[d].closed) add(d, 30); }
-  for (const [d, h] of Object.entries(S.health)) { if (d > t) continue; if ((h.steps || 0) >= cfg.steps) add(d, 10); if (h.weight != null) add(d, 5); maxSteps = Math.max(maxSteps, h.steps || 0); }
+  for (const d of Object.keys(S.nutrition)) { if (d > t) continue; const dn = dayNutri(d); if (mealsNoted(d) >= 2) addD(d, 15); if (dn.real.p >= protThr(weekStart(d))) addD(d, 10); if (S.nutrition[d].closed) addD(d, 30);
+    if (dayDone(d) && dn.logged && nutStatus(dn.tot.kcal, cfg.kcal, 'kcal').cls === 'good' && nutStatus(dn.tot.p, cfg.p, 'p').cls === 'good') addD(d, 15); }
+  for (const [d, h] of Object.entries(S.health)) { if (d > t) continue; if ((h.steps || 0) >= cfg.steps) addD(d, 10); if (h.weight != null) addD(d, 5); if ((h.sleep || 0) >= 7) addD(d, 10); maxSteps = Math.max(maxSteps, h.steps || 0); }
   const firsts = [I.days[0], Object.keys(S.nutrition).sort()[0], Object.keys(S.health).sort()[0]].filter(Boolean).sort();
   const cw = weekStart(t), weeks = {}, jokers = {}, w0 = firsts.length ? weekStart(firsts[0]) : null; let run = 0, bestW = 0, bestProt = 0;
   if (w0) for (let w = w0; w <= cw; w = addDays(w, 7)) {
@@ -1219,14 +1357,22 @@ function game() {
   const xp = Object.values(byDay).reduce((a, b) => a + b, 0);
   let level = 1; while (XP_AT(level + 1) <= xp) level++;
   const g = { xp, level, tier: tierOf(level), cur: xp - XP_AT(level), need: XP_AT(level + 1) - XP_AT(level), byDay, todayXp: byDay[t] || 0, sessions, prs, ton, cardio, maxSteps, streakW, bestW, streakN, bestN, bestProt, streakC, bestC, weeks, jokerLeft: !jokers[cw.slice(0, 7)] };
+  g.dayXp = dayXp; g.lg = computeLeague(dayXp, [I.days[0], trackStart()].filter(Boolean).sort()[0] || null, t); g.tier = { name: g.lg.label, c: g.lg.T.c };
   g.badges = BADGES.map((b, i) => { const val = b.v(g); return { ...b, val, earned: val >= b.t, c: PLATE_C[i % 4] }; });
   GM = g; GM_V = VER; GM_T = t; return g;
 }
+let LAST_LG = null;
 function checkLevel() {
-  const g = game();
-  if (LAST_LVL != null && g.level > LAST_LVL) setTimeout(() => { toast(`Niveau ${g.level} atteint : ${g.tier.name}`); confetti(); }, 600);
+  const g = game(); let promo = false;
+  if (LAST_LG && g.lg) {
+    const cur = g.lg;
+    if (cur.score > LAST_LG.score) { if (cur.label !== LAST_LG.label) { promo = true; setTimeout(() => lgPromo(cur), 500); } else toast(`Victoire : +${nf(cur.score - LAST_LG.score)} PL`); }
+    else if (cur.score < LAST_LG.score) toast(cur.label !== LAST_LG.label ? `Rétrogradé en ${cur.label} · ${nf(cur.lp)} PL` : `Défaite : −${nf(LAST_LG.score - cur.score)} PL`);
+  }
+  if (!promo && LAST_LVL != null && g.level > LAST_LVL) setTimeout(() => { toast(`Niveau ${g.level} atteint`); confetti(); }, 600);
   if (LAST_XP != null && g.xp > LAST_XP) xpPop(g.xp - LAST_XP);
-  LAST_LVL = g.level; LAST_XP = g.xp;
+  LAST_LVL = g.level; LAST_XP = g.xp; LAST_LG = g.lg ? { label: g.lg.label, score: g.lg.score } : null;
+  if (typeof lgPush === 'function') lgPush();
 }
 function confetti() {
   try { if (matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch { }
@@ -1247,7 +1393,7 @@ function challengesHtml(w) {
 }
 function trophiesHtml() {
   const g = game(), got = g.badges.filter(b => b.earned).length;
-  const prog = b => b.id === 'st' ? `${nf(Math.min(b.val, b.t))} / ${nf(b.t)}` : `${nf(Math.min(b.val, b.t), b.id.startsWith('t') ? 1 : 0)} / ${nf(b.t)}`;
+  const prog = b => b.id.startsWith('lg') ? `${g.lg.peak ? g.lg.peak.T.n : 'Fer'} pour l’instant` : b.id === 'st' ? `${nf(Math.min(b.val, b.t))} / ${nf(b.t)}` : `${nf(Math.min(b.val, b.t), b.id.startsWith('t') ? 1 : 0)} / ${nf(b.t)}`;
   return `<section class="card"><h2 class="sec-t">Trophées <span class="tiny muted">${got}/${g.badges.length}</span></h2>
     <div class="badges">${g.badges.slice().sort((a, b) => b.earned - a.earned).map(b => `<div class="bdg ${b.earned ? '' : 'off'}" title="${esc(b.l + ' : ' + b.d)}">${plateHtml(b.earned ? b.c : 'var(--surface-2)')}<b>${esc(b.l)}</b><span>${b.earned ? esc(b.d) : prog(b)}</span></div>`).join('')}</div></section>`;
 }
@@ -1573,14 +1719,14 @@ function xpPop(n) {
 
 /* Accueil « Aujourd'hui » */
 function gameBar() {
-  const g = game(), w = Math.min(100, g.cur / g.need * 100);
-  return `<section class="card gbar" aria-label="Progression">${plateHtml(g.tier.c)}
-    <div class="gb-mid"><div class="lvl gb-l"><b>Niv. ${g.level}</b> <span>${esc(g.tier.name)}</span></div>
-      <div class="xpbar" role="progressbar" aria-label="Progression du niveau" aria-valuenow="${Math.round(w)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${w}%"></span></div>
-      <div class="tiny muted num-t gb-x">${nf(g.cur)} / ${nf(g.need)} XP${g.todayXp ? ` · <b style="color:var(--ink)">+${nf(g.todayXp)} auj.</b>` : ''}</div></div>
-    <div class="gb-st" title="Semaines d'affilée avec l'objectif de séances${g.jokerLeft ? ' · joker du mois disponible' : ''}">${ICON.flame}<span>${g.streakW}<small>sem.</small></span></div>
-    <div class="gb-st cl" title="Journées clôturées d'affilée">${ICON.check}<span>${g.streakC}<small>j</small></span></div>
-  </section>`;
+  const g = game(), lg = g.lg, w = Math.min(100, Math.max(0, lg.pct)), td = lg.today;
+  const tdTxt = td.done ? `Partie du jour jouée : <b>${LG_RES[td.r][1].toLowerCase()}${td.gain ? ` ${td.gain > 0 ? '+' : '−'}${nf(Math.abs(td.gain))} PL` : ''}</b>` : td.r === 'V' ? `Victoire du jour acquise : <b>+${nf(td.gain)} PL</b> à la clôture` : `Partie du jour : <b>${nf(td.xp)} / ${LG.win} XP</b> pour la victoire`;
+  return `<button class="card gbar lg-card" data-a="lg-open" aria-label="Ligue : ${esc(lg.label)}, ${nf(lg.lp)} PL. Ouvrir le détail">${lgEmblem(lg, 40, 'bar')}
+    <div class="lg-top"><b>${esc(lg.label)}</b><span class="lg-pl" style="--lgc:${lg.T.c2}">${nf(lg.lp)} PL</span></div>
+    <div class="lg-sts"><div class="gb-st" title="Victoires d'affilée">${ICON.flame}<span>${lg.streak}<small>V</small></span></div><div class="gb-st cl" title="Journées clôturées d'affilée">${ICON.check}<span>${g.streakC}<small>j</small></span></div></div>
+    <div class="lg-bot"><div class="xpbar lg-bar" role="progressbar" aria-label="Progression dans la division" aria-valuenow="${Math.round(w)}" aria-valuemin="0" aria-valuemax="100" style="--lgc:${lg.T.c};--lgc2:${lg.T.c2}"><span style="width:${w}%"></span></div>
+      <div class="lg-sub">${lg.next ? `${nf(lg.next.need)} PL avant ${esc(lg.next.label)} · ` : ''}${tdTxt}</div></div>
+  </button>`;
 }
 function quests(t) {
   const cfg = CFG(), tpl = templateFor(t), mus = isMuscuDay(t), car = isCardioDay(t), exm = hval(t, 'exmin') || 0, am = actMin(t);
@@ -2488,7 +2634,7 @@ function render() {
   if (Store.mode === 'loading' && !Object.keys(S.exercises).length) { main.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>'; navUI(); syncUI(); return; }
   main.innerHTML = view.html();
   if (view.after) { try { view.after(); } catch (e) { console.error(e); } }
-  if (LAST_LVL == null || LAST_XP == null) { try { const g = game(); LAST_LVL = g.level; LAST_XP = g.xp; } catch (e) { console.error(e); } }
+  if (LAST_LVL == null || LAST_XP == null || LAST_LG == null) { try { const g = game(); LAST_LVL = g.level; LAST_XP = g.xp; LAST_LG = g.lg ? { label: g.lg.label, score: g.lg.score } : null; } catch (e) { console.error(e); } }
   if (FOCUS.open) renderFocus();
   navUI(); syncUI();
 }
@@ -2920,17 +3066,17 @@ VIEWS.nutrition = {
     const pctW = x => Math.min(100, Math.max(0, x / cfg.kcal * 100));
     const done = dayDone(d), stK = nutStatus(n.tot.kcal, cfg.kcal, 'kcal', done);
     const share = done ? 1 : mealShare(d), stP = nutStatus(n.tot.p, cfg.p, 'p', done, share);
-    const macro = (l, k, t) => { const st = k === 'p' ? stP : nutStatus(n.tot[k], t, k, done); return `<div class="macro"><span>${l}</span><div class="bar"><span class="${st.cls}" style="width:${Math.min(100, n.real[k] / t * 100)}%"></span>${n.est[k] ? `<span class="est" style="width:${Math.min(100 - Math.min(100, n.real[k] / t * 100), n.est[k] / t * 100)}%"></span>` : ''}</div><b>${nf(n.tot[k])} <small class="muted">/ ${nf(t)} g</small></b><span class="st">${st.pace ? `<span class="pill ${st.cls}" title="${esc(st.l)} : ${nf(n.tot[k])} g pour ${nf(st.pace)} g attendus à ce stade">−${nf(st.rest)} g</span>` : st.cls ? `<span class="pill ${st.cls}" title="${esc(st.l)}">${pctTxt(st.d)}</span>` : `<span class="tiny muted">${st.l ? '−' + nf(t - n.tot[k]) + ' g' : ''}</span>`}</span></div>`; };
+    const macro = (l, k, t) => { const st = k === 'p' ? stP : nutStatus(n.tot[k], t, k, done); return `<div class="macro"><span>${mkDot(k)}${l}</span><div class="bar"><span class="m-${k}" style="width:${Math.min(100, n.real[k] / t * 100)}%"></span>${n.est[k] ? `<span class="est" style="width:${Math.min(100 - Math.min(100, n.real[k] / t * 100), n.est[k] / t * 100)}%"></span>` : ''}</div><b>${nf(n.tot[k])} <small class="muted">/ ${nf(t)} g</small></b><span class="st">${st.pace ? `<span class="pill ${st.cls}" title="${esc(st.l)} : ${nf(n.tot[k])} g pour ${nf(st.pace)} g attendus à ce stade">−${nf(st.rest)} g</span>` : st.cls ? `<span class="pill ${st.cls}" title="${esc(st.l)}">${pctTxt(st.d)}</span>` : `<span class="tiny muted">${st.l ? '−' + nf(t - n.tot[k]) + ' g' : ''}</span>`}</span></div>`; };
     QF = [];
     const slots = SLOTS.map(s => {
       const items = nd?.meals?.[s.k] || [], skipped = !!nd?.skip?.[s.k], tot = sumItems(items);
-      let body = items.map((it, j) => { const xp = it.src === 'express', fid = xp ? null : favIdOf(it), fv = fid && S.favorites[fid]; return `<div class="item-w"><button class="item" data-a="nf-edit" data-s="${s.k}" data-j="${j}"><div class="main"><div class="t">${esc(fv ? fv.name : (it.t || 'Sans description'))}</div><div class="s">P ${nf(it.p)} · G ${nf(it.c)} · L ${nf(it.f)} g${it.src === 'ia' || it.src === 'photo' ? ' · estimé par Claude' : xp ? ' · express' : ''}</div></div><span class="k">${nf(it.kcal)}</span></button>${xp ? '' : `<button class="star-btn ${fv ? 'on' : ''}" data-a="nf-star" data-s="${s.k}" data-j="${j}" aria-pressed="${!!fv}" aria-label="${fv ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${ICON.star}</button>`}</div>`; }).join('');
+      let body = items.map((it, j) => { const xp = it.src === 'express', fid = xp ? null : favIdOf(it), fv = fid && S.favorites[fid]; return `<div class="item-w"><button class="item" data-a="nf-edit" data-s="${s.k}" data-j="${j}"><div class="main"><div class="t">${esc(fv ? fv.name : (it.t || 'Sans description'))}</div><div class="s">${macroChips(it)}${it.src === 'ia' || it.src === 'photo' ? ' <span class="muted">· estimé par Claude</span>' : xp ? ' <span class="muted">· express</span>' : ''}</div></div><span class="k">${nf(it.kcal)}</span></button>${xp ? '' : `<button class="star-btn ${fv ? 'on' : ''}" data-a="nf-star" data-s="${s.k}" data-j="${j}" aria-pressed="${!!fv}" aria-label="${fv ? 'Retirer des favoris' : 'Ajouter aux favoris'}">${ICON.star}</button>`}</div>`; }).join('');
       if (!items.length && s.main) {
         if (skipped) body = `<div class="imputed"><span>Repas sauté · 0 kcal</span><button class="lnk" data-a="nf-skip" data-s="${s.k}">Annuler</button></div>`;
         else if (n.counted) { const a = slotAvg(s.k); body = `<div class="imputed"><span>Non renseigné · ${a.basis === 'moyenne' ? 'ta moyenne' : 'part de l\'objectif'} : ~${nf(a.kcal)} kcal</span><button class="lnk" data-a="nf-skip" data-s="${s.k}">Sauté</button></div>`; }
         if (!skipped && d <= today()) body += expressRow(s.k, !n.counted);
       }
-      return `<div class="meal" id="slot-${s.k}"><div class="meal-h"><b>${s.l}</b><div class="row">${items.length ? `<span class="k">${nf(tot.kcal)} kcal</span>` : ''}<button class="plus" data-a="nf-add" data-s="${s.k}" aria-label="Ajouter au ${esc(s.l.toLowerCase())}">${ICON.plus}</button></div></div>${body}${quickRow(s.k)}</div>`;
+      return `<div class="meal" id="slot-${s.k}"><div class="meal-h"><b>${s.l}</b><div class="row">${items.length ? `<span class="k">${nf(tot.kcal)} kcal</span>` : ''}<button class="plus" data-a="nf-add" data-s="${s.k}" aria-label="Ajouter au ${esc(s.l.toLowerCase())}">${ICON.plus}</button></div></div>${items.length ? mealSummary(tot) : ''}${body}${quickRow(s.k)}</div>`;
     }).join('');
     const P = UI.nutri, r = periodRange(P.period, P.off);
     return `
@@ -2942,6 +3088,7 @@ VIEWS.nutrition = {
       ${n.tot.kcal ? `<div class="nut-st">${nutPill(stK)}</div>` : ''}
       <div class="bar" style="height:10px"><span class="${stK.cls}" style="width:${pctW(n.real.kcal)}%"></span>${n.est.kcal ? `<span class="est" style="width:${Math.min(100 - pctW(n.real.kcal), pctW(n.est.kcal))}%"></span>` : ''}</div>
       ${macro('Protéines', 'p', cfg.p)}${macro('Glucides', 'c', cfg.c)}${macro('Lipides', 'f', cfg.f)}
+      ${n.tot.kcal ? (() => { const o = macroKcal(cfg); return `<div class="msplit-w">${mstackHtml(n.tot, 'lg')}${msplitHtml(n.tot)}<div class="mlegend"><span>Part des calories de chaque macro · objectif ${Math.round(o.p / o.s * 100)} / ${Math.round(o.c / o.s * 100)} / ${Math.round(o.f / o.s * 100)} %</span></div></div>`; })() : ''}
       ${stP.pace ? `<div class="tiny muted" style="margin-top:-4px">Protéines ${esc(stP.l.toLowerCase())} : ${nf(n.tot.p)} g pour ${nf(stP.pace)} g attendus après ${SLOTS.filter(s => s.main && ((nd?.meals?.[s.k] || []).length || nd?.skip?.[s.k])).map(s => s.l.toLowerCase()).join(', ')}.</div>` : ''}
       ${!trackStart() ? `<p class="tiny muted" style="margin:0">Dès ton premier repas noté, les repas oubliés seront remplacés par ta moyenne pour garder des totaux fiables à la semaine et au mois.</p>` : ''}
     </section>
@@ -2980,6 +3127,14 @@ function nutriCharts() {
   mkChart('c-nK', { data: { labels, datasets: [barDs('Renseigné', R, s1, { stack: 'k' }), barDs('Estimé', E, hatch(s1), { stack: 'k', borderColor: s1, borderWidth: 1 }), targetDs('Objectif', cfg.kcal, labels.length)] }, options: chartOpts({ stacked: true, yFmt: x => nf(x) + ' kcal' }) });
   mkChart('c-nP', { data: { labels, datasets: [barDs('Protéines', Pr, s1), targetDs('Objectif', cfg.p, labels.length)] }, options: chartOpts({ yFmt: x => nf(x) + ' g' }) });
 }
+/* v6.5 : macros par couleur */
+const MK = { p: 'Protéines', c: 'Glucides', f: 'Lipides' };
+const mkDot = k => `<i class="mk ${k}" aria-hidden="true"></i>`;
+function macroKcal(o) { const kc = { p: (o.p || 0) * 4, c: (o.c || 0) * 4, f: (o.f || 0) * 9 }; kc.s = kc.p + kc.c + kc.f; return kc; }
+function macroChips(o, unit = ' g') { return `<span class="mchips">${['p', 'c', 'f'].map(k => `<span title="${MK[k]}">${mkDot(k)}<b>${nf(o[k] || 0)}</b>${unit}</span>`).join('')}</span>`; }
+function mstackHtml(o, cls = '') { const kc = macroKcal(o); if (!kc.s) return ''; return `<div class="mstack ${cls}" role="img" aria-label="Répartition des calories : protéines ${Math.round(kc.p / kc.s * 100)} %, glucides ${Math.round(kc.c / kc.s * 100)} %, lipides ${Math.round(kc.f / kc.s * 100)} %">${['p', 'c', 'f'].map(k => `<span class="${k}" style="width:${kc[k] / kc.s * 100}%"></span>`).join('')}</div>`; }
+function msplitHtml(o) { const kc = macroKcal(o); if (!kc.s) return ''; return `<div class="msplit">${['p', 'c', 'f'].map(k => `<span>${mkDot(k)}${MK[k]}<b>${Math.round(kc[k] / kc.s * 100)} %</b></span>`).join('')}</div>`; }
+function mealSummary(tot) { return `<div class="meal-sum">${mstackHtml(tot)}${macroChips(tot)}</div>`; }
 /* Composer repas */
 function composerHtml(slot, it = null, j = null) {
   const rec = it ? [] : recentFoods(), q1 = it ? '' : quickRow(slot) + expressRow(slot);
@@ -3241,6 +3396,8 @@ const A = {
   go: el => go(el.dataset.tab),
   'sheet-close': () => { if (AI_CTL) AI_CTL.abort(); closeSheet(); },
   'sheet-ok': () => { const f = SHEET.onOk; closeSheet(); f && f(); },
+  'lg-open': () => { openSheet(lgSheetHtml()); try { lgBoardLoad(); } catch (e) { console.error(e); } },
+  'lg-promo-close': () => { $('.lg-promo')?.remove(); },
   'rest-plus': () => { if (!REST.on) { startRest(15); if (FOCUS.open && FOCUS.phase === 'rest') renderFocus(); return; } REST.end += 15000; REST.dur += 15; tickRest(); },
   'rest-stop': stopRest,
   day: el => { const st = +el.dataset.step; UI.date = st === 0 ? today() : addDays(UI.date, st); UI.addQ = ''; render(); },
@@ -3764,7 +3921,7 @@ async function startApp(session) {
   document.body.classList.remove('auth');
   try { const { data } = await sb.from('profiles').select('user_id,email,name,role').eq('user_id', session.user.id).maybeSingle(); AUTH.profile = data || { role: 'user', email: session.user.email }; }
   catch { AUTH.profile = { role: 'user', email: session.user.email }; }
-  initCaps(); initStore(); wtAutoSync();
+  initCaps(); initStore(); wtAutoSync(); setTimeout(lgPush, 4000);
   if (AUTH.recovery) setTimeout(() => openPwdSheet(true), 300);
 }
 async function boot() {
@@ -4025,6 +4182,32 @@ Object.assign(A, {
   'wt-sync': () => wtSync(true),
   'wt-disconnect': () => confirmSheet({ title: 'Déconnecter Withings ?', text: 'Le Carnet n’ira plus chercher tes données chez Withings. Les données déjà importées restent.', ok: 'Déconnecter', danger: true, onOk: async () => { const { error } = await sb.rpc('withings_disconnect'); toast(error ? error.message : 'Withings déconnecté.'); await wtLoad(); } })
 });
+
+/* ================= Ligue : classement entre utilisateurs (v6.5) ================= */
+let LG_PUSHED = '', LG_PUSH_T = null;
+function lgRow() {
+  let g; try { g = game(); } catch { return null; } const lg = g && g.lg; if (!lg || !AUTH.user) return null;
+  return { user_id: AUTH.user.id, name: AUTH.profile?.name || (AUTH.user.email || '').split('@')[0], label: lg.label, tier: lg.tier, division: lg.div, lp: lg.lp, score: lg.score, streak: lg.streak, wins: lg.wins, games: lg.games };
+}
+function lgPush() {
+  if (!sb || !AUTH.user || Store.mode === 'loading') return;
+  clearTimeout(LG_PUSH_T);
+  LG_PUSH_T = setTimeout(async () => {
+    const row = lgRow(); if (!row) return; const key = JSON.stringify(row); if (key === LG_PUSHED) return; LG_PUSHED = key;
+    try { const { error } = await sb.from('league_board').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (error) throw error; }
+    catch (e) { console.warn('ligue', e); LG_PUSHED = ''; }
+  }, 1500);
+}
+async function lgBoardLoad() {
+  const el = $('#lg-board'); if (!el || !sb || !AUTH.user) return;
+  el.innerHTML = '<div class="skel" style="height:60px"></div>';
+  try {
+    const row = lgRow(); if (row) { const key = JSON.stringify(row); if (key !== LG_PUSHED) { LG_PUSHED = key; const { error } = await sb.from('league_board').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (error) { LG_PUSHED = ''; throw error; } } }
+    const { data, error } = await sb.from('league_board').select('user_id,name,label,tier,division,lp,score,streak,updated_at').order('score', { ascending: false }); if (error) throw error;
+    const box = $('#lg-board'); if (!box) return;
+    box.innerHTML = `<section class="card lg-board"><div class="sec-t">Classement <span class="tiny muted">${data.length} joueur${data.length > 1 ? 's' : ''}</span></div><div class="list">${data.map((r, i) => { const rk = lgRankOf({ tier: r.tier, div: r.division, lp: r.lp }); const me = r.user_id === AUTH.user.id; return `<div class="li ${me ? 'me' : ''}"><span class="lg-pos">${i + 1}</span>${lgEmblem({ T: rk.T, ti: rk.ti, div: r.division }, 26, 'b' + i)}<div class="main"><div class="t">${esc(r.name || 'Joueur')}${me ? ' <span class="tiny muted">(toi)</span>' : ''}</div><div class="s">${esc(rk.label)} · ${nf(r.lp)} PL${r.streak >= 3 ? ` · ${nf(r.streak)} victoires d’affilée` : ''}</div></div></div>`; }).join('')}</div><p class="tiny muted" style="margin:6px 0 0">Chacun met son rang à jour en ouvrant l’app.</p></section>`;
+  } catch (e) { const box = $('#lg-board'); if (box) box.innerHTML = `<p class="tiny muted" style="margin:0">Classement indisponible : ${esc(e.message || String(e))}</p>`; }
+}
 
 UI._t = today();
 boot();
