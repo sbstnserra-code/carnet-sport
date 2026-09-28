@@ -562,6 +562,35 @@ button.pill{border:0;cursor:pointer}
 .gyou{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.4}
 .gyou b{font:700 14px var(--f-d);letter-spacing:.04em;text-transform:uppercase;display:block;margin-bottom:2px}
 .sheet .stack.ef{gap:16px}
+/* v6.7 : objectif corps */
+.tg-head{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center}
+.tg-head .c{text-align:center;font:600 22px var(--f-d);color:var(--muted)}
+.tg-head .c svg{width:22px;height:22px;stroke:var(--muted);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tg-v{display:flex;flex-direction:column;gap:2px}
+.tg-v .l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.tg-v b{font:700 30px/1 var(--f-d)}.tg-v b small{font:600 14px var(--f-b);color:var(--muted);margin-left:3px}
+.tg-v .s{font-size:12.5px;color:var(--ink-2)}
+.tg-v.r{text-align:right;align-items:flex-end}
+.tg-bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;position:relative;margin-top:6px}
+.tg-bar span{display:block;height:100%;border-radius:99px;background:var(--good)}
+.tg-bar.warn span{background:var(--warn)}.tg-bar.crit span{background:var(--crit)}
+.tg-verdict{display:inline-flex;align-items:center;gap:6px;font:700 14px var(--f-d);letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:999px}
+.tg-verdict.ok{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good-text)}
+.tg-verdict.warn{background:color-mix(in srgb,var(--warn) 30%,transparent);color:var(--ink)}
+.tg-verdict.crit{background:color-mix(in srgb,var(--crit) 18%,transparent);color:var(--crit-text)}
+.tg-lines{display:flex;flex-direction:column;gap:8px;font-size:13.5px;color:var(--ink-2);line-height:1.4}
+.tg-lines b{color:var(--ink);font-weight:600}
+.tg-lines .row{align-items:flex-start;gap:8px}
+.tg-lines .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none;margin-top:7px}
+.tg-lines .dot.ok{background:var(--good)}.tg-lines .dot.warn{background:var(--warn)}.tg-lines .dot.crit{background:var(--crit)}
+.tg-chart{width:100%;height:auto;display:block}
+.tg-chart .grid{stroke:var(--line);stroke-width:1}
+.tg-chart .past{fill:none;stroke:var(--s1);stroke-width:2.5;stroke-linejoin:round}
+.tg-chart .need{fill:none;stroke:var(--good);stroke-width:2.5;stroke-dasharray:6 5}
+.tg-chart .trend{fill:none;stroke:var(--muted);stroke-width:2;stroke-dasharray:2 5}
+.tg-chart .lab{font:600 11px var(--f-b);fill:var(--muted)}
+.tg-chart .tgt{fill:var(--good)}.tg-chart .tgt.crit{fill:var(--crit)}.tg-chart .tgt.warn{fill:var(--warn)}
+.tg-chart .now{fill:var(--s1)}
 .bm-leg i.bm-0{background:var(--surface);border:1px dashed var(--line-2)} .bm-leg i.bm-1{background:var(--m1)} .bm-leg i.bm-2{background:var(--m2)} .bm-leg i.bm-3{background:var(--m3)} .bm-leg i.bm-4{background:var(--m4)}
 .bm-leg em{font-style:normal;color:var(--muted);width:100%;text-align:center;font-size:11.5px}
 .mbar{position:relative;grid-column:1/-1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:6px 0 4px}
@@ -713,7 +742,7 @@ const SLOTS = [
   { k: 'pd', l: 'Petit-déjeuner', share: .25, main: true }, { k: 'dej', l: 'Déjeuner', share: .40, main: true },
   { k: 'col', l: 'Collation', share: 0, main: false }, { k: 'din', l: 'Dîner', share: .35, main: true }];
 const SL = Object.fromEntries(SLOTS.map(s => [s.k, s.l]));
-const DEFAULTS = { tol: 5, kcal: 2300, p: 170, c: 240, f: 70, steps: 8000, muscu: 3, cardio: 2, rest: 90, impute: 'moyenne', planName: '', planStart: '', planEnd: '', goal: 'manuel', pace: 'normale', kcalMode: 'auto', train: 'hyper' };
+const DEFAULTS = { tol: 5, kcal: 2300, p: 170, c: 240, f: 70, steps: 8000, muscu: 3, cardio: 2, rest: 90, impute: 'moyenne', planName: '', planStart: '', planEnd: '', goal: 'manuel', pace: 'normale', kcalMode: 'auto', train: 'hyper', tDate: '', tKg: null, tFat: null };
 const HFIELDS = [
   { k: 'steps', l: 'Pas', u: '', d: 0, grp: 'watch' }, { k: 'akcal', l: 'Kcal actives', u: 'kcal', d: 0, grp: 'watch' },
   { k: 'exmin', l: 'Exercice', u: 'min', d: 0, grp: 'watch' }, { k: 'km', l: 'Distance', u: 'km', d: 1, grp: 'watch' },
@@ -1293,6 +1322,84 @@ function recapHtml(d) {
     <div class="banner">${mus >= cfg.muscu ? `Objectif de la semaine atteint : ${mus}/${cfg.muscu} séances.${g.streakW > 1 ? ` Série en cours : ${g.streakW} semaines.` : ''}` : `Semaine : ${mus}/${cfg.muscu} séances. Encore ${cfg.muscu - mus} pour tenir l'objectif.`}</div>
     ${rpeHtml(d)}
     <div class="row between wrap"><button class="btn ghost" data-a="sheet-close">Fermer</button><button class="btn accent" data-a="rc-open" data-d="${d}">Partager en image</button></div>`;
+}
+
+/* ================= v6.7 : objectif corps (date, poids, masse grasse) et faisabilité ================= */
+const KCAL_FAT = 7700, TG_MAX_LOSS = 0.8, TG_OK_LOSS = 0.6, TG_MAX_GAIN = 0.45, TG_OK_GAIN = 0.25; // kg par semaine
+function weightSeries(days = 28, upTo = today()) {
+  const from = addDays(upTo, -(days - 1)); return Object.keys(S.health).filter(d => d >= from && d <= upTo && S.health[d].weight != null).sort().map(d => ({ d, w: +S.health[d].weight, f: S.health[d].fat != null ? +S.health[d].fat : null }));
+}
+function weightTrend(pts) { // pente en kg / semaine (régression linéaire sur les jours)
+  if (pts.length < 4) return null; const x0 = pts[0].d; let n = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+  for (const p of pts) { const x = diffDays(x0, p.d); n++; sx += x; sy += p.w; sxx += x * x; sxy += x * p.w; }
+  const den = n * sxx - sx * sx; if (!den) return null; return (n * sxy - sx * sy) / den * 7;
+}
+function bodyTarget() {
+  const c = CFG(), t = today(); if (!c.tDate || !(+c.tKg)) return null;
+  const pts = weightSeries(28), last7 = weightSeries(7);
+  if (!last7.length && !pts.length) return { set: true, noData: true, date: c.tDate, kg: +c.tKg, fat: c.tFat ? +c.tFat : null };
+  const src = last7.length ? last7 : pts.slice(-3);
+  const w = src.reduce((a, p) => a + p.w, 0) / src.length, fs = src.filter(p => p.f != null), f = fs.length ? fs.reduce((a, p) => a + p.f, 0) / fs.length : null;
+  const days = diffDays(t, c.tDate), weeks = days / 7, kg = +c.tKg, fat = c.tFat ? +c.tFat : null;
+  const dKg = kg - w, rate = weeks > 0 ? dKg / weeks : null, loss = dKg < 0;
+  const fatNow = f != null ? w * f / 100 : null, leanNow = f != null ? w - fatNow : null;
+  const fatT = fat != null ? kg * fat / 100 : null, leanT = fat != null ? kg - fatT : null;
+  const dFat = fatNow != null && fatT != null ? fatT - fatNow : null, dLean = leanNow != null && leanT != null ? leanT - leanNow : null;
+  const slope = weightTrend(pts), proj = slope != null && weeks > 0 ? w + slope * weeks : null;
+  const fatToLose = dFat != null ? -dFat : loss ? -dKg * .85 : 0;
+  const deficitNeed = days > 0 && fatToLose > 0 ? fatToLose * KCAL_FAT / days : (days > 0 && !loss && dKg > 0 ? -(dKg * 2500) / days : 0);
+  const ka = MACRO_GOALS[c.goal] ? kcalAuto(c) : null, tdee = ka ? ka.td.kcal : (tdeeInfo()?.kcal || null), deficitNow = tdee ? tdee - c.kcal : null;
+  // verdict
+  let level = 'ok', title = 'Jouable', why = [];
+  if (days <= 0) { level = 'crit'; title = 'Date passée'; }
+  else if (rate == null) { level = 'warn'; title = 'À préciser'; }
+  else if (loss) {
+    const r = -rate; if (r <= TG_OK_LOSS) { level = 'ok'; title = r <= 0.3 ? 'Confortable' : 'Jouable'; } else if (r <= TG_MAX_LOSS) { level = 'warn'; title = 'Ambitieux'; } else { level = 'crit'; title = 'Irréaliste à cette date'; }
+  } else if (dKg > 0) { const r = rate; if (r <= TG_OK_GAIN) { level = 'ok'; title = 'Jouable'; } else if (r <= TG_MAX_GAIN) { level = 'warn'; title = 'Ambitieux'; } else { level = 'crit'; title = 'Irréaliste à cette date'; } }
+  else { level = 'ok'; title = 'Déjà atteint'; }
+  if (dLean != null && dLean < -1) { if (level === 'ok') level = 'warn'; why.push({ k: 'warn', t: `Ta cible de masse grasse implique de perdre <b>${nf(-dLean, 1)} kg de muscle</b> : vise plutôt ${nf(Math.round((1 - leanNow / kg) * 1000) / 10, 1)} % à ${nf(kg)} kg, ou ${nf(kg + Math.abs(dLean), 1)} kg à ${nf(fat, 1)} %.` }); }
+  if (dLean != null && dLean > 1) { if (level === 'ok') level = 'warn'; why.push({ k: 'warn', t: `Ta cible suppose de <b>gagner ${nf(dLean, 1)} kg de muscle</b> pendant une perte de gras : rare sans débutant ou sans reprise, compte plutôt sur un maintien de la masse maigre.` }); }
+  // date réaliste (au rythme maximal conseillé) et date au rythme actuel
+  const realistic = loss && rate != null && -rate > TG_OK_LOSS ? addDays(t, Math.ceil(-dKg / TG_OK_LOSS * 7)) : (!loss && dKg > 0 && rate > TG_OK_GAIN ? addDays(t, Math.ceil(dKg / TG_OK_GAIN * 7)) : null);
+  const atTrend = slope && ((loss && slope < 0) || (!loss && slope > 0)) ? addDays(t, Math.ceil(dKg / slope * 7)) : null;
+  return { set: true, noData: false, date: c.tDate, kg, fat, w, f, days, weeks, dKg, rate, loss, fatNow, leanNow, fatT, leanT, dFat, dLean, slope, proj, deficitNeed, deficitNow, tdee, kcalNeed: tdee ? Math.round((tdee - deficitNeed) / 50) * 50 : null, level, title, why, realistic, atTrend, pts,
+    startW: (() => { const lh = c.tStart ? lastHealth('weight', addDays(c.tStart, 3)) : null; if (lh) return lh.v; const all = Object.keys(S.health).filter(d => S.health[d].weight != null).sort(); return all.length ? +S.health[all[0]].weight : w; })(), start: c.tStart || null };
+}
+function tgChart(T) {
+  const pts = T.pts.length ? T.pts : [{ d: today(), w: T.w }], W = 320, H = 120, padL = 34, padR = 12, padT = 10, padB = 20;
+  const d0 = pts[0].d, dEnd = T.date > today() ? T.date : today(), span = Math.max(1, diffDays(d0, dEnd));
+  const ys = [...pts.map(p => p.w), T.kg]; if (T.proj != null) ys.push(T.proj);
+  let ymin = Math.min(...ys), ymax = Math.max(...ys); const padY = Math.max(.6, (ymax - ymin) * .15); ymin -= padY; ymax += padY;
+  const X = d => padL + diffDays(d0, d) / span * (W - padL - padR), Y = w => padT + (ymax - w) / (ymax - ymin) * (H - padT - padB);
+  const past = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.d).toFixed(1)} ${Y(p.w).toFixed(1)}`).join(' ');
+  const t = today(), xt = X(t), yt = Y(T.w), need = `M${xt.toFixed(1)} ${yt.toFixed(1)} L${X(dEnd).toFixed(1)} ${Y(T.kg).toFixed(1)}`;
+  const trend = T.proj != null ? `M${xt.toFixed(1)} ${yt.toFixed(1)} L${X(dEnd).toFixed(1)} ${Y(Math.max(ymin, Math.min(ymax, T.proj))).toFixed(1)}` : '';
+  const ticks = [ymax - padY, ymin + padY].map(v => `<text class="lab" x="2" y="${(Y(v) + 4).toFixed(1)}">${nf(v, 1)}</text><line class="grid" x1="${padL}" x2="${W - padR}" y1="${Y(v).toFixed(1)}" y2="${Y(v).toFixed(1)}"/>`).join('');
+  return `<svg class="tg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Poids passé, trajectoire nécessaire et tendance actuelle">${ticks}
+    <path class="past" d="${past}"/>${trend ? `<path class="trend" d="${trend}"/>` : ''}<path class="need" d="${need}"/>
+    <circle class="now" cx="${xt.toFixed(1)}" cy="${yt.toFixed(1)}" r="4"/><circle class="tgt ${T.level}" cx="${X(dEnd).toFixed(1)}" cy="${Y(T.kg).toFixed(1)}" r="5"/>
+    <text class="lab" x="${X(d0).toFixed(1)}" y="${H - 5}">${fmtDM(d0)}</text><text class="lab" x="${(X(dEnd) - 2).toFixed(1)}" y="${H - 5}" text-anchor="end">${fmtDM(dEnd)} · ${nf(T.kg, 1)} kg</text></svg>`;
+}
+function bodyTargetHtml() {
+  const T = bodyTarget(); if (!T) return '';
+  const arrow = '<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+  if (T.noData) return `<section class="card stack"><div class="row between"><h2 class="sec-t">Objectif ${fmtDM(T.date)}</h2><span class="tg-verdict warn">Pas encore de pesée</span></div><p class="small muted" style="margin:0">Cible ${nf(T.kg, 1)} kg${T.fat != null ? ` · ${nf(T.fat, 1)} % de masse grasse` : ''}. Note une première pesée pour que le Carnet mesure l’écart.</p></section>`;
+  const done = T.startW != null && T.startW !== T.kg ? Math.max(0, Math.min(100, (T.startW - T.w) / (T.startW - T.kg) * 100)) : 0;
+  const lines = [];
+  if (T.days > 0) lines.push({ k: T.level, t: `Reste <b>${nf(Math.abs(T.dKg), 1)} kg</b> en <b>${T.days} jours</b> : ${nf(Math.abs(T.rate), 2)} kg par semaine${T.loss ? ` (conseillé : 0,3 à 0,6, maximum 0,8)` : ` (conseillé : 0,25 au plus en prise de muscle)`}.` });
+  if (T.slope != null) lines.push({ k: (T.loss ? T.slope <= T.rate : T.slope >= T.rate) ? 'ok' : 'warn', t: `Ta vitesse des 4 dernières semaines : <b>${T.slope < 0 ? '−' : '+'}${nf(Math.abs(T.slope), 2)} kg par semaine</b>${T.proj != null ? `, soit <b>${nf(T.proj, 1)} kg</b> le ${fmtDM(T.date)} si rien ne change` : ''}${T.atTrend && T.atTrend !== T.date ? ` ; à ce rythme, ${nf(T.kg, 1)} kg le ${fmtDM(T.atTrend)}` : ''}.` });
+  if (T.fat != null && T.f != null) lines.push({ k: T.dLean != null && Math.abs(T.dLean) <= 1 ? 'ok' : 'warn', t: `Masse grasse ${nf(T.f, 1)} % → ${nf(T.fat, 1)} % : <b>${nf(-T.dFat, 1)} kg de gras</b> à perdre, masse maigre ${T.dLean != null ? (Math.abs(T.dLean) <= 1 ? 'conservée' : (T.dLean > 0 ? `en hausse de ${nf(T.dLean, 1)} kg` : `en baisse de ${nf(-T.dLean, 1)} kg`)) : ''} (${nf(T.leanNow, 1)} → ${nf(T.leanT, 1)} kg).` });
+  if (T.deficitNeed > 0) lines.push({ k: T.deficitNow != null ? (T.deficitNow >= T.deficitNeed * .9 ? 'ok' : 'warn') : 'warn', t: `Déficit nécessaire ≈ <b>${nf(T.deficitNeed)} kcal par jour</b>${T.kcalNeed ? `, soit ${nf(T.kcalNeed)} kcal par jour pour toi` : ''}${T.deficitNow != null ? ` ; ton réglage actuel donne ≈ ${nf(Math.max(0, T.deficitNow))} kcal de déficit (${nf(CFG().kcal)} kcal)${T.deficitNow >= T.deficitNeed * .9 ? ', ça suffit' : ', il faudrait descendre'}` : ''}.` });
+  if (T.realistic) lines.push({ k: 'warn', t: `À un rythme sain, ${nf(T.kg, 1)} kg est atteignable au plus tôt le <b>${fmtDayLong(T.realistic)}</b>.` });
+  for (const w of T.why) lines.push(w);
+  return `<section class="card stack tg-card">
+    <div class="row between wrap"><h2 class="sec-t">Objectif du ${fmtDayLong(T.date).toLowerCase()}</h2><span class="tg-verdict ${T.level}">${esc(T.title)}</span></div>
+    <div class="tg-head"><div class="tg-v"><span class="l">Aujourd’hui</span><b>${nf(T.w, 1)}<small>kg</small></b>${T.f != null ? `<span class="s">${nf(T.f, 1)} % de gras · ${nf(T.leanNow, 1)} kg maigre</span>` : ''}</div><div class="c">${arrow}<br>${T.days > 0 ? `${T.days} j` : 'échu'}</div><div class="tg-v r"><span class="l">Cible</span><b>${nf(T.kg, 1)}<small>kg</small></b>${T.fat != null ? `<span class="s">${nf(T.fat, 1)} % de gras${T.leanT != null ? ` · ${nf(T.leanT, 1)} kg maigre` : ''}</span>` : ''}</div></div>
+    <div class="tg-bar ${T.level}"><span style="width:${done}%"></span></div><div class="row between tiny muted"><span>départ ${nf(T.startW, 1)} kg</span><span>${nf(done)} % du chemin</span></div>
+    ${tgChart(T)}
+    <div class="tg-lines">${lines.map(l => `<div class="row"><span class="dot ${l.k}"></span><span>${l.t}</span></div>`).join('')}</div>
+    <div class="row wrap" style="gap:4px 12px"><button class="lnk" data-a="go" data-tab="reglages">Modifier l’objectif</button></div>
+  </section>`;
 }
 
 /* ================= v6.6 : objectif d'entraînement, choix par muscle, fiche exercice ================= */
@@ -3412,6 +3519,7 @@ VIEWS.corps = {
       <div class="stack"><p class="small" style="margin:0">Lance ton Raccourci « Carnet Santé » : il copie les données Apple Watch et Withings. Colle-les ci-dessous.</p>
       <textarea class="inp" id="hi-text" rows="4" placeholder="date=2026-09-18&#10;pas=8543&#10;kcal_actives=512&#10;poids=82,4&#10;masse_grasse=18,5"></textarea>
       <div class="row wrap"><button class="btn" data-a="h-import">Importer</button><button class="btn ghost" data-a="h-paste">Coller et importer</button><button class="lnk" data-a="guide">Créer le Raccourci</button></div></div></details>
+    ${bodyTargetHtml()}
     ${grp('watch', 'Activité', 'Apple Watch')}${grp('scale', 'Balance', 'Withings')}${grp('recup', 'Récupération', 'sommeil', sleepExtra(d))}
     <section class="stack"><div class="row between wrap"><h2 class="h1" style="font-size:24px">Tendances</h2><div class="chips">${RANGES.filter(r => r.k !== 'tout').map(r => `<button class="chip ${r.k === R ? 'on' : ''}" data-a="body-range" data-v="${r.k}">${r.l}</button>`).join('')}</div></div>
     ${bodyTrendHtml()}</section>`;
@@ -3475,6 +3583,12 @@ VIEWS.reglages = {
       <p class="tiny muted" style="margin:0">Calories, glucides et lipides sont des plafonds : vert dans la marge, orange jusqu’à 3 fois la marge au-dessus (4 fois en dessous), rouge au-delà. Les protéines sont un minimum : vert dès que la marge est atteinte, pas de pénalité au-dessus. Pendant la journée, être en dessous n’est jamais signalé.</p>
       <label class="field">Repas non renseignés
         <select class="inp" id="cfg-impute" data-ch="cfg-impute"><option value="moyenne" ${c.impute === 'moyenne' ? 'selected' : ''}>Remplacés par ma moyenne des 28 derniers jours</option><option value="objectif" ${c.impute === 'objectif' ? 'selected' : ''}>Remplacés par une part de mon objectif</option></select></label>
+    </section>
+    <section class="card stack"><h2 class="sec-t">Objectif corps</h2>
+      <p class="tiny muted" style="margin:0">Une date, un poids, une masse grasse : le Carnet te dit si c'est jouable et suit le chemin dans Corps.</p>
+      <div class="grid2"><label class="field">Date cible<input class="inp" type="date" id="cfg-tDate" data-in="cfg-t" data-k="tDate" value="${esc(c.tDate || '')}"></label><label class="field">Poids cible (kg)<input class="inp" id="cfg-tKg" data-in="cfg" data-k="tKg" inputmode="decimal" value="${v(c.tKg)}" placeholder="ex. 83"></label></div>
+      <label class="field">Masse grasse cible (%, facultatif)<input class="inp" id="cfg-tFat" data-in="cfg" data-k="tFat" inputmode="decimal" value="${v(c.tFat)}" placeholder="ex. 21"></label>
+      ${(() => { const T = bodyTarget(); return T && !T.noData ? `<div class="row between wrap"><span class="tg-verdict ${T.level}">${esc(T.title)}</span><span class="small muted">${nf(Math.abs(T.rate || 0), 2)} kg/sem. sur ${T.days} j</span><button class="lnk" data-a="go" data-tab="corps">Voir le détail</button></div>` : c.tDate && c.tKg ? '<p class="tiny muted" style="margin:0">En attente d’une pesée.</p>' : ''; })()}
     </section>
     <section class="card stack"><h2 class="sec-t">Programme en cours</h2>
       <label class="field">Nom<input class="inp" id="cfg-planName" data-in="cfg-t" data-k="planName" value="${esc(c.planName)}" placeholder="ex. Recomposition 8 semaines"></label>
@@ -3941,8 +4055,9 @@ const IN = {
   'sess-rpe': el => { const s = S.sessions[UI.date]; if (s) { s.rpe = toNum(el.value); touch('sessions', UI.date); } },
   'sess-note': el => { const s = S.sessions[UI.date]; if (s) { s.note = el.value; touch('sessions', UI.date, 1200); } },
   h: el => { const d = UI.hdate, k = el.dataset.k, n = toNum(el.value); const h = (S.health[d] ||= { date: d }); if (n == null) delete h[k]; else h[k] = n; if (!HFIELDS.some(f => h[f.k] != null)) delete S.health[d]; else if (h.src === 'raccourci') h.src = 'mixte'; touch('health', d, 1000); if (k === 'weight' || k === 'fat') syncMacros(); },
-  cfg: el => { const n = toNum(el.value); if (n == null) return; (S.settings.main ||= {})[el.dataset.k] = n; touch('settings', 'main', 1000); if (el.dataset.k === 'bmr') applyGoal(S.settings.main); if (['kcal', 'p', 'c', 'f', 'bmr'].includes(el.dataset.k)) macroLive(); },
-  'cfg-t': el => { (S.settings.main ||= {})[el.dataset.k] = el.value; touch('settings', 'main', 1000); }
+  cfg: el => { const n = toNum(el.value); if (n == null) { if (['tKg', 'tFat'].includes(el.dataset.k) && el.value.trim() === '') { (S.settings.main ||= {})[el.dataset.k] = null; touch('settings', 'main', 1000); } return; } (S.settings.main ||= {})[el.dataset.k] = n; if (el.dataset.k === 'tKg' && !(S.settings.main.tStart)) S.settings.main.tStart = today(); touch('settings', 'main', 1000); if (el.dataset.k === 'bmr') applyGoal(S.settings.main); if (['kcal', 'p', 'c', 'f', 'bmr'].includes(el.dataset.k)) macroLive(); },
+  'cfg-t': el => { const m = (S.settings.main ||= {}); m[el.dataset.k] = el.value; if (el.dataset.k === 'tDate' && el.value && !m.tStart) m.tStart = today(); touch('settings', 'main', 1000); },
+  'cfg-tstart': () => { }
 };
 const CH = {
   'prog-ex': el => { UI.prog.ex = el.value; saveUI(); render(); },
