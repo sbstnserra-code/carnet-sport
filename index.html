@@ -90,6 +90,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);font-weight:500;font-size:14px;display:inline-flex;align-items:center;gap:6px}
 .chip.on{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.pg-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 8px;margin-bottom:4px;border-bottom:1px solid var(--line)}.pg-tabs .chip{flex:none;min-height:32px;font-size:13.5px}
 .chip small{color:inherit;opacity:.7;font-size:12px}
 .seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:3px;gap:2px}
 .seg button{min-height:32px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:600;color:var(--ink-2)}
@@ -2043,7 +2044,7 @@ function gameBar() {
 function quests(t) {
   const cfg = CFG(), tpl = templateFor(t), mus = isMuscuDay(t), car = isCardioDay(t), exm = hval(t, 'exmin') || 0, am = actMin(t);
   const q = [];
-  if (tpl || mus) q.push({ l: mus ? 'Séance faite' : `Séance ${tpl[1].name}`, s: mus ? `${nf(dayTonnage(t))} kg · ${muscuSets(t)} séries` : 'Prévue aujourd’hui · mode salle', done: mus, p: mus ? 100 : 0, xp: 50, a: mus ? 'go-seance' : 'gym-go', attrs: mus ? `data-d="${t}"` : `data-tpl="${tpl[0]}"` });
+  if (tpl || mus) q.push({ l: mus ? 'Séance faite' : `Séance ${tpl[1].name}`, s: mus ? `${nf(dayTonnage(t))} kg · ${muscuSets(t)} séries` : 'Prévue aujourd’hui', done: mus, p: mus ? 100 : 0, xp: 50, a: mus ? 'go-seance' : 'gym-go', attrs: mus ? `data-d="${t}"` : `data-tpl="${tpl[0]}"` });
   else { const ok = car || exm >= WALK_MIN; q.push({ l: 'Repos actif · 30 min', s: car ? cardioDesc(t) : am ? `${cardioDesc(t)} · encore ${nf(WALK_MIN - am)} min` : exm ? `${nf(exm)} min d’exercice sur la Watch` : 'Marche, vélo, natation…', done: ok, p: ok ? 100 : Math.max(am, exm) / WALK_MIN * 100, xp: 25, a: 'act-new', attrs: '' }); }
   const mn = mealsNoted(t), kc = dayNutri(t).real.kcal;
   q.push({ l: 'Repas notés', v: `${mn}/3`, s: kc ? `${nf(kc)} kcal notées` : 'Détaillé, favori ou express', done: mn >= 3, p: mn / 3 * 100, xp: 15, a: 'meal-now', attrs: 'data-s="auto"' });
@@ -2058,7 +2059,7 @@ function nextAction(t = today(), now = new Date()) {
   const has = s => !!((nd?.meals?.[s] || []).length || nd?.skip?.[s]);
   const tpl = templateFor(t), mus = isMuscuDay(t), closed = !!nd?.closed, fu = firstUse();
   const meal = (s, l) => ({ a: 'meal-now', attrs: `data-s="${s}"`, l, sub: 'Favori, express ou détaillé' });
-  const gym = tpl && !mus ? { a: 'gym-go', attrs: `data-tpl="${tpl[0]}"`, l: `Lancer la séance ${tpl[1].name}`, sub: 'Mode salle plein écran' } : null;
+  const gym = tpl && !mus ? { a: 'gym-go', attrs: '', l: 'Démarrer la séance', sub: `Tu choisis tes groupes · séance type du jour : ${tpl[1].name}` } : null;
   const act = !tpl && !mus && !isCardioDay(t) ? { a: 'act-new', attrs: '', l: 'Noter une activité', sub: `Marche, run, vélo… ${WALK_MIN} min comptent pour le cardio` } : null;
   const close = { a: 'rit-open', attrs: `data-d="${t}"`, l: 'Clôturer la journée', sub: 'Repas manquants, activité, synchro · +30 XP' };
   if (h < 11 && !has('pd')) {
@@ -3240,7 +3241,7 @@ function weekBodyHtml() {
     const status = (cur, tgt) => (!inPast && cur < tgt) ? `<span class="pill">En cours</span>` : (cur < tgt ? `<span class="pill warn">Manqué</span>` : '');
     const cta = (P.off === 0) ? (tdS && idx().days.includes(t)
       ? `<button class="btn block" data-a="go-seance" data-d="${t}">Reprendre la séance du jour</button>`
-      : `<button class="btn block" data-a="go-seance" data-d="${t}" ${tpl ? `data-tpl="${tpl[0]}"` : ''}>${tpl ? `Démarrer : ${esc(tpl[1].name)}` : 'Démarrer une séance'}</button>`) : '';
+      : `<button class="btn block" data-a="go-seance" data-d="${t}">Démarrer une séance</button>`) : '';
     return `
     <section class="hero">
       <div class="row between wrap"><div><div class="eyebrow">${esc(r.label)}</div><h1 class="h1">${esc(r.title)}</h1></div>
@@ -3348,12 +3349,15 @@ function setRow(e, i, j, d, kind) {
   if (kind === 'cardio') return `<div class="set cardio ${s.ok ? 'ok' : ''}" data-i="${i}" data-j="${j}"><span class="n">${n}</span>${inp('min', 'min', 'numeric')}${inp('km', 'km')}${inp('bpm', 'bpm', 'numeric')}${ok}${del}</div>`;
   return `<div class="set ${s.ok ? 'ok' : ''} ${s.d ? 'drop' : ''}" data-i="${i}" data-j="${j}"><span class="n" title="${s.d ? 'Dégressive' : 'Série ' + n}">${s.d ? '↳' : n}</span>${isPdc(kind, e.ex) ? inpPdc() : inp('kg', 'kg')}<span class="x">×</span>${inp('r', 'reps', 'numeric')}${ok}${del}</div>`;
 }
+function pgFocus(d) { const sg = S.sessions[d]?.groups || []; return sg.includes(UI.pgF) ? UI.pgF : sg[sg.length - 1] || null; }
 function proposals(d) {
   const s = S.sessions[d], q = norm(UI.addQ.trim());
   const inS = new Set((s?.entries || []).map(e => e.ex));
-  const groups = q ? GROUPS.map(g => g.k) : (s?.groups || []);
-  if (!groups.length) return `<p class="small muted" style="margin:0">Choisis un ou plusieurs groupes ci-dessus : les exercices correspondants s'affichent ici, avec ta dernière performance.</p>`;
+  const sg = s?.groups || [], foc = pgFocus(d);
+  const groups = q ? GROUPS.map(g => g.k) : (foc ? [foc] : []);
+  if (!groups.length) return `<p class="small muted" style="margin:0">Touche un groupe ci-dessus : ses exercices s'affichent ici, avec ta dernière performance. Rien n’est ajouté tant que tu ne choisis pas.</p>`;
   const uses = idx().uses; const out = [];
+  if (!q && sg.length > 1) out.push(`<div class="pg-tabs" role="tablist">${sg.map(g => `<button class="chip ${g === foc ? 'on' : ''}" data-a="pg-f" data-g="${g}" aria-selected="${g === foc}">${GL[g] || g}</button>`).join('')}</div>`);
   let exact = false;
   for (const g of groups) {
     const list = Object.entries(S.exercises).filter(([id, e]) => !e.archived && e.group === g && !inS.has(id) && (!q || norm(e.name).includes(q)))
@@ -3372,7 +3376,7 @@ function proposals(d) {
   }
   if (q && !exact) out.push(`<button class="btn ghost block" data-a="ex-new" data-name="${esc(UI.addQ.trim())}">Créer « ${esc(UI.addQ.trim())} »</button>`);
   if (!q) out.push(`<button class="lnk" data-a="ex-new" data-name="">+ Créer un nouvel exercice</button>`);
-  return out.join('') || `<p class="small muted" style="margin:0">Tous les exercices de ces groupes sont déjà dans la séance.</p>`;
+  return out.join('') || `<p class="small muted" style="margin:0">Tous les exercices de ce groupe sont déjà dans la séance.</p>`;
 }
 function rerenderCard(i) {
   const d = UI.date, e = S.sessions[d]?.entries?.[i], el = $(`#cards article[data-i="${i}"]`);
@@ -3879,7 +3883,7 @@ const A = {
   'dash-off': el => { UI.dash.off = Math.min(0, UI.dash.off + +el.dataset.step); render(); },
   'nutri-period': el => { UI.nutri = { period: el.dataset.v, off: 0 }; render(); },
   'nutri-off': el => { UI.nutri.off = Math.min(0, UI.nutri.off + +el.dataset.step); render(); },
-  'go-seance': el => { UI.date = el.dataset.d || today(); UI.tab = 'seance'; saveUI(); if (el.dataset.tpl && !(S.sessions[UI.date]?.entries || []).some(e => kindOf(e.ex) !== 'cardio')) applyTemplate(el.dataset.tpl); render(); window.scrollTo({ top: 0 }); },
+  'go-seance': el => { UI.date = el.dataset.d || today(); UI.tab = 'seance'; UI.addQ = ''; saveUI(); render(); window.scrollTo({ top: 0 }); },
   'see-prog': el => { UI.prog.mode = 'exo'; UI.prog.ex = el.dataset.id; closeSheet(); go('progres'); },
   'prog-mode': el => { UI.prog.mode = el.dataset.v; saveUI(); render(); },
   'prog-range': el => { UI.prog.range = el.dataset.v; saveUI(); render(); },
@@ -3887,7 +3891,9 @@ const A = {
   'prog-group': el => { UI.prog.group = el.dataset.v; saveUI(); render(); },
   'body-range': el => { UI.body.range = el.dataset.v; render(); },
   'tpl-apply': el => { applyTemplate(el.dataset.id); render(); },
-  grp: el => { const s = ensureSession(UI.date), g = el.dataset.g; s.groups = s.groups.includes(g) ? s.groups.filter(x => x !== g) : [...s.groups, g]; cleanupSession(UI.date); render(); },
+  grp: el => { const s = ensureSession(UI.date), g = el.dataset.g, on = s.groups.includes(g); s.groups = on ? s.groups.filter(x => x !== g) : [...s.groups, g]; UI.pgF = on ? (UI.pgF === g ? null : UI.pgF) : g; UI.addQ = ''; cleanupSession(UI.date); render();
+    if (!on && (s.entries || []).length) $('#props')?.closest('section')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); },
+  'pg-f': el => { UI.pgF = el.dataset.g; const p = $('#props'); if (p) p.innerHTML = proposals(UI.date); },
   'ref-nav': el => { const r = refPick(UI.date); if (!r) return; const i = Math.max(0, Math.min(r.list.length - 1, r.i + +el.dataset.step)); UI.ref.n = i - r.best; UI.ref.open = true; render(); },
   'ex-add-many': el => {
     const d = UI.date, s = ensureSession(d), pre = s.entries.slice();
@@ -3905,7 +3911,7 @@ const A = {
   'cfg-pace': el => { const m = (S.settings.main ||= {}); m.pace = el.dataset.v; applyGoal(m); render(); toast(`${goalParams(m).l} : ${nf(m.kcal)} kcal, ${m.p} g de protéines, ${m.c} g de glucides, ${m.f} g de lipides.`); },
   'cfg-train': el => { const m = (S.settings.main ||= {}); m.train = TRAIN[el.dataset.v] ? el.dataset.v : 'hyper'; touch('settings', 'main'); if (!$('#sheet-wrap').hidden) openSheet(trainGuideHtml()); render(); },
   'train-guide': () => openSheet(trainGuideHtml()),
-  'pk-open': () => { pkState().q = ''; pkState().sel = null; if (!pkState().group) pkState().group = (S.sessions[UI.date]?.groups || [])[0] || ''; openSheet(pickerHtml()); },
+  'pk-open': () => { pkState().q = ''; pkState().sel = null; pkState().group = pgFocus(UI.date) || pkState().group || ''; openSheet(pickerHtml()); },
   'pk-m': el => { pkState().sel = pkState().sel === el.dataset.m ? null : el.dataset.m; pkState().q = ''; pkRefresh(); },
   'pk-g': el => { pkState().group = el.dataset.g; pkState().sel = null; pkState().q = ''; pkRefresh(); },
   'pk-clear': () => { pkState().sel = null; pkState().q = ''; pkRefresh(); },
@@ -4040,7 +4046,6 @@ const A = {
   'gym-go': el => {
     const t = today(); UI.date = t; UI.tab = 'seance'; UI.addQ = ''; saveUI();
     const mus = () => (S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio');
-    if (!mus() && el.dataset.tpl) applyTemplate(el.dataset.tpl);
     render(); window.scrollTo({ top: 0 }); if (mus()) focusOpen();
   },
   weigh: el => { const c = SHEET.ctx; openWeigh(el.dataset.back === 'rit' && c?.d ? c.d : today(), el.dataset.back || null); },
