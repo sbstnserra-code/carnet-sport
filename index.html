@@ -3891,7 +3891,12 @@ const A = {
   'prog-group': el => { UI.prog.group = el.dataset.v; saveUI(); render(); },
   'body-range': el => { UI.body.range = el.dataset.v; render(); },
   'tpl-apply': el => { applyTemplate(el.dataset.id); render(); },
-  grp: el => { const s = ensureSession(UI.date), g = el.dataset.g, on = s.groups.includes(g); s.groups = on ? s.groups.filter(x => x !== g) : [...s.groups, g]; UI.pgF = on ? (UI.pgF === g ? null : UI.pgF) : g; UI.addQ = ''; cleanupSession(UI.date); render();
+  grp: el => { const d = UI.date, s = ensureSession(d), g = el.dataset.g, on = s.groups.includes(g), bak = (s.entries || []).slice();
+    // décocher un groupe retire ses exercices pas encore faits (aucune série validée) ; ceux déjà commencés restent
+    const gone = on ? bak.filter(e => (exOf(e.ex).group === g || scGroupId(e.ex) === g) && !doneSets(e).length) : [];
+    if (gone.length) s.entries = bak.filter(e => !gone.includes(e));
+    s.groups = on ? s.groups.filter(x => x !== g) : [...s.groups, g]; UI.pgF = on ? (UI.pgF === g ? null : UI.pgF) : g; UI.addQ = ''; cleanupSession(d); render();
+    if (gone.length) toast(`${gone.length} exercice${gone.length > 1 ? 's' : ''} ${GL[g] || g} retiré${gone.length > 1 ? 's' : ''} de la séance`, { label: 'Annuler', fn: () => { const s2 = ensureSession(d); s2.entries = bak; if (!s2.groups.includes(g)) s2.groups.push(g); touch('sessions', d); render(); } });
     if (!on && (s.entries || []).length) $('#props')?.closest('section')?.scrollIntoView({ block: 'start', behavior: 'smooth' }); },
   'pg-f': el => { UI.pgF = el.dataset.g; const p = $('#props'); if (p) p.innerHTML = proposals(UI.date); },
   'ref-nav': el => { const r = refPick(UI.date); if (!r) return; const i = Math.max(0, Math.min(r.list.length - 1, r.i + +el.dataset.step)); UI.ref.n = i - r.best; UI.ref.open = true; render(); },
