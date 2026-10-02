@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="Carnet">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
 <style>
 :root{
   --ground:#ECEEEA; --surface:#FFFFFF; --surface-2:#F3F4F1; --ink:#14171A; --ink-2:#4F555A; --muted:#7D8387;
@@ -2639,7 +2639,7 @@ const RC_FMTS = [{ k: 'seance', l: 'Séance' }, { k: 'story', l: 'Story' }, { k:
 let RC_FONTS = null;
 function rcFonts() {
   if (!RC_FONTS) RC_FONTS = Promise.race([
-    Promise.all(['500', '600', '700'].flatMap(w => [document.fonts.load(`${w} 40px "Barlow Condensed"`), document.fonts.load(`${w} 40px Barlow`)])).catch(() => null),
+    Promise.all(['500', '600', '700'].flatMap(w => [document.fonts.load(`${w} 40px "Barlow Condensed"`), document.fonts.load(`${w} 40px Barlow`)]).concat(document.fonts.load('800 40px "Barlow Condensed"'))).catch(() => null),
     sleep(2500)]);
   return RC_FONTS;
 }
@@ -2996,49 +2996,75 @@ function scBody(by, groups, W, H) {
   return { canvas: c, crop: F.crop, views: F.views };
 }
 function scVal(x, v, u, Xr, Y, big = 42, small = 22) { let uw = 0; if (u) { x.font = rcF(600, small); uw = x.measureText(u).width + 3; rcT(x, u, Xr, Y, rcF(600, small), '#8A9095', 'right'); } rcT(x, v, Xr - uw, Y, rcF(700, big), '#FFFFFF', 'right'); }
+const scMix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+const scSpW = (x, s, font, sp) => { x.font = font; const ch = [...s]; return ch.reduce((a, c) => a + x.measureText(c).width, 0) + sp * Math.max(0, ch.length - 1); };
+function scShield(x, lg, X, Y, w) { // écusson de ligue (même dessin que lgEmblem)
+  const T = lg.T; x.save(); x.translate(X, Y); x.scale(w / 48, w / 48);
+  const g = x.createLinearGradient(0, 0, 48, 56); g.addColorStop(0, T.c); g.addColorStop(1, T.c2);
+  const p = new Path2D('M24 2 44 10v20c0 12-10 20-20 24C14 50 4 42 4 30V10z'); x.fillStyle = g; x.fill(p); x.lineJoin = 'round'; x.lineWidth = 2; x.strokeStyle = T.c2; x.stroke(p);
+  x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,255,255,.38)'; x.stroke(new Path2D('M24 8 39 14v15c0 9-7.5 15.5-15 18.5C16.5 44.5 9 38 9 29V14z'));
+  x.fillStyle = '#fff'; x.strokeStyle = '#fff';
+  if (T.apex) { if (lg.ti === 9) x.fill(new Path2D('M13 36l3.5-13 7.5 7 7.5-7 3.5 13z')); else if (lg.ti === 8) x.fill(new Path2D('M24 16l2.7 6.2 6.7.6-5 4.4 1.5 6.6-5.9-3.5-5.9 3.5 1.5-6.6-5-4.4 6.7-.6z')); else { x.lineWidth = 3.2; x.beginPath(); x.arc(24, 29, 7.5, 0, Math.PI * 2); x.stroke(); } }
+  else if (lg.div) rcT(x, LG_ROMAN[lg.div], 24, 36, rcF(700, 21), '#fff', 'center');
+  x.restore();
+}
+function scRays(x, cx, cy) { // rayons dorés derrière le titre
+  const [c, o] = rcCanvas(1080, 1100); o.fillStyle = 'rgba(242,183,5,.10)';
+  for (let i = 0; i < 20; i++) { const a0 = (i * 18 - 90) * Math.PI / 180; o.beginPath(); o.moveTo(cx, cy); o.arc(cx, cy, 1500, a0, a0 + Math.PI / 30); o.closePath(); o.fill(); }
+  o.globalCompositeOperation = 'destination-in'; const g = o.createRadialGradient(cx, cy, 0, cx, cy, 661); g.addColorStop(0, '#000'); g.addColorStop(.363, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); o.fillStyle = g; o.fillRect(0, 0, 1080, 1100);
+  x.drawImage(c, 0, 0);
+}
 function rcSeance(R) {
   const es = R.es.filter(e => e.kind !== 'cardio'); if (!es.length) return rcStory(R);
-  const G = uniq(es.map(e => scGroupId(e.id))).map(g => { const xs = es.filter(e => scGroupId(e.id) === g), ws = xs.filter(e => e.kind === 'w');
-    return { g, sets: xs.reduce((a, e) => a + e.sets.length, 0), reps: xs.reduce((a, e) => a + (e.reps || 0), 0), max: Math.max(0, ...ws.flatMap(e => e.sets.map(q => +q.kg || 0))), vol: xs.reduce((a, e) => a + (e.ton || 0), 0), recs: xs.filter(e => e.pr).length, bw: !ws.length }; })
+  const G = uniq(es.map(e => scGroupId(e.id))).map(g => { const xs = es.filter(e => scGroupId(e.id) === g); return { g, sets: xs.reduce((a, e) => a + e.sets.length, 0), vol: xs.reduce((a, e) => a + (e.ton || 0), 0) }; })
     .filter(v => v.sets).sort((a, b) => b.sets - a.sets || b.vol - a.vol).slice(0, 6);
-  const totSets = G.reduce((a, v) => a + v.sets, 0), recs = R.es.filter(e => e.pr).sort((a, b) => (b.cmp ?? -1e9) - (a.cmp ?? -1e9));
-  const [c, x] = rcCanvas(1080, 1920), L = 64, IW = 952, RR = L + IW, c1 = scCol(G[0].g), c2 = scCol((G[1] || G[0]).g);
-  x.fillStyle = '#0B0D10'; x.fillRect(0, 0, 1080, 1920);
-  for (const [cx, cy, r, col, a] of [[250, 610, 620, c1, '40'], [890, 810, 620, c2, '30']]) { const g = x.createRadialGradient(cx, cy, 0, cx, cy, r); g.addColorStop(0, col + a); g.addColorStop(1, col + '00'); x.fillStyle = g; x.fillRect(0, 0, 1080, 1920); }
+  const totSets = es.reduce((a, e) => a + e.sets.length, 0), nRec = R.recs || 0, lg = game().lg;
+  const [c, x] = rcCanvas(1080, 1920), L = 64, IW = 952, RR = L + IW, CX = 540;
+  x.fillStyle = '#0B0D10'; x.fillRect(0, 0, 1080, 1920); scRays(x, CX, 330);
   // haut
-  rcMark(x, L, 108, 44, '#EDEFEB'); rcSp(x, `${R.dayLong}${R.dur ? ' · ' + R.dur + ' min' : ''}`.toUpperCase(), RR, 106, rcF(600, 30), '#9AA0A5', 4, 'right');
-  rcSp(x, 'CARTE DE SÉANCE', L, 186, rcF(700, 30), '#F2B705', 9);
-  const nm = scPseudo(), nz = rcFit(x, nm, 640, 700, 132, 70); rcT(x, nm, L - 4, 300, rcF(700, nz), '#FFFFFF');
-  const title = G.map(v => (SC_SHORT[v.g] || scLab(v.g))).join(' · ').toUpperCase(), tz = rcFit(x, title, 700, 700, 42, 26); rcSp(x, title, L, 352, rcF(700, tz), '#D9DDE0', 1);
-  let cx = L; for (const t of [R.tier && R.tier.name, R.xpDay ? `+${nf(R.xpDay)} XP` : null].filter(Boolean)) { x.font = rcF(700, 26); const w = x.measureText(t.toUpperCase()).width + 34; rcBox(x, cx, 372, w, 44, 22, '#1c2024', '#2c3238'); rcSp(x, t.toUpperCase(), cx + 17, 403, rcF(700, 26), '#C7CCCF', 1.5); cx += w + 10; }
-  { const hx = RR - 200, hy = 150, pts = [[100, 0], [200, 57], [200, 171], [100, 228], [0, 171], [0, 57]]; x.beginPath(); pts.forEach(([a, b], i) => i ? x.lineTo(hx + a, hy + b) : x.moveTo(hx + a, hy + b)); x.closePath();
-    const hg = x.createLinearGradient(0, hy, 0, hy + 228); if (recs.length) { hg.addColorStop(0, '#F2B705'); hg.addColorStop(1, '#c98a4b'); } else { hg.addColorStop(0, '#3a4047'); hg.addColorStop(1, '#262b30'); } x.fillStyle = hg; x.fill();
-    const ink = recs.length ? '#14171A' : '#EDEFEB'; rcT(x, String(recs.length), hx + 100, hy + 140, rcF(700, 104), ink, 'center'); rcSp(x, recs.length > 1 ? 'RECORDS' : 'RECORD', hx + 100, hy + 184, rcF(700, 22), ink, 4, 'center'); }
-  // bas : pied, records, tableau, chiffres (de bas en haut)
-  const footY = 1856; let nRec = Math.min(recs.length, G.length >= 5 ? 2 : 3);
-  const lay = () => { const recH = nRec ? 64 + nRec * 62 : 0, recY = footY - 50 - recH, tabH = 60 + G.length * 72 + 8, tabY = (nRec ? recY - 16 : footY - 50) - tabH, kpiY = tabY - 16 - 116; return { recH, recY, tabH, tabY, kpiY }; };
-  let Y = lay(); if (Y.kpiY - 12 - 440 < 380 && nRec) { nRec = Math.max(0, nRec - 1); Y = lay(); } if (Y.kpiY - 12 - 440 < 380 && nRec) { nRec = 0; Y = lay(); }
-  // mannequin
-  const B = scBody(scBy(R.d), G.map(v => v.g), IW, Y.kpiY - 14 - 436); x.drawImage(B.canvas, L, 436); RC_LAST = { crop: B.crop, views: B.views, groups: G.map(v => v.g), nRec };
-  // chiffres
-  const tw = (IW - 36) / 4, kp = [[nf(R.ton), 'kg', 'SOULEVÉS'], [String(totSets), '', 'SÉRIES'], [R.dur ? String(R.dur) : '–', R.dur ? 'min' : '', 'DURÉE'], [R.rpe ? String(R.rpe) : '–', R.rpe ? '/10' : '', 'EFFORT']];
-  kp.forEach(([v, u, l], i) => { const X = L + i * (tw + 12); rcBox(x, X, Y.kpiY, tw, 116, 22, 'rgba(23,26,29,.92)', '#262b30'); x.font = rcF(700, 58); const vw = x.measureText(v).width; x.font = rcF(600, 26); const uw = u ? x.measureText(u).width + 3 : 0; const sx = X + tw / 2 - (vw + uw) / 2; rcT(x, v, sx, Y.kpiY + 66, rcF(700, 58), '#FFFFFF'); if (u) rcT(x, u, sx + vw + 3, Y.kpiY + 66, rcF(600, 26), '#9AA0A5'); rcSp(x, l, X + tw / 2, Y.kpiY + 98, rcF(600, 20, true), '#8A9095', 2, 'center'); });
-  // tableau par muscle
-  rcBox(x, L, Y.tabY, IW, Y.tabH, 26, 'rgba(23,26,29,.92)', '#262b30');
-  const cols = [510, 632, 800, 986]; rcSp(x, 'PAR MUSCLE', 90, Y.tabY + 40, rcF(600, 18, true), '#6f767c', 2); ['SÉRIES', 'REPS', 'CHARGE MAX', 'VOLUME'].forEach((t, i) => rcSp(x, t, cols[i], Y.tabY + 40, rcF(600, 18, true), '#6f767c', 1.6, 'right'));
-  G.forEach((v, i) => { const ry = Y.tabY + 56 + i * 72, col = scCol(v.g); x.fillStyle = '#20252a'; x.fillRect(90, ry, 896, 2);
-    rcBox(x, 90, ry + 16, 14, 40, 6, col); const nmx = scLab(v.g).toUpperCase(), nw = rcSp(x, nmx, 118, ry + 51, rcF(700, 40), col, .8);
-    if (v.recs) { const t = v.recs > 1 ? `${v.recs} RECORDS` : 'RECORD'; x.font = rcF(700, 20); const w = x.measureText(t).width + 18; rcBox(x, 130 + nw, ry + 22, w, 30, 7, '#F2B705'); rcT(x, t, 130 + nw + w / 2, ry + 44, rcF(700, 20), '#14171A', 'center'); }
-    scVal(x, String(v.sets), '', cols[0], ry + 52); scVal(x, nf(v.reps), '', cols[1], ry + 52); if (v.bw) scVal(x, 'PDC', '', cols[2], ry + 52); else scVal(x, nf(v.max, 1), 'kg', cols[2], ry + 52); scVal(x, nf(v.vol), 'kg', cols[3], ry + 52);
-    rcBox(x, 118, ry + 64, 868, 5, 3, '#1c2024'); rcBox(x, 118, ry + 64, Math.max(6, 868 * v.sets / totSets), 5, 3, col); });
-  // records du jour
-  if (nRec) { const g = x.createLinearGradient(L, Y.recY, RR, Y.recY + Y.recH); g.addColorStop(0, 'rgba(242,183,5,.16)'); g.addColorStop(1, 'rgba(242,183,5,.05)'); rcBox(x, L, Y.recY, IW, Y.recH, 26, g, 'rgba(242,183,5,.55)');
-    rcSp(x, 'RECORDS DU JOUR', 90, Y.recY + 44, rcF(700, 26), '#F2B705', 5); rcSp(x, 'VS DERNIÈRE FOIS', 986, Y.recY + 44, rcF(700, 26), '#C7CCCF', 2.5, 'right');
-    recs.slice(0, nRec).forEach((e, i) => { const ry = Y.recY + 60 + i * 62; if (i) { x.fillStyle = 'rgba(242,183,5,.18)'; x.fillRect(90, ry, 896, 2); }
-      x.font = rcF(700, 29, true); rcT(x, rcEll(x, e.name, 680), 90, ry + 32, rcF(700, 29, true), '#FFFFFF'); x.font = rcF(500, 21, true); rcT(x, rcEll(x, e.not || '', 680), 90, ry + 56, rcF(500, 21, true), '#AEB4B8');
-      rcT(x, e.cmp != null && e.cmp > 0 ? `+${nf(e.cmp)} %` : 'Record', 986, ry + 48, rcF(700, 44), '#F2B705', 'right'); }); }
+  rcMark(x, L, 112, 40, '#C7CCCF'); rcSp(x, `${R.dayLong}${R.dur ? ' · ' + R.dur + ' min' : ''}`.toUpperCase(), RR, 110, rcF(600, 28), '#9AA0A5', 4.5, 'right');
+  // titre
+  const HL = 'SÉANCE VALIDÉE'; let z = 120; while (z > 72 && scSpW(x, HL, rcF(800, z), z * .14) > IW) z -= 4;
+  const hy = 262, hg = x.createLinearGradient(0, hy - z * .72, 0, hy); hg.addColorStop(0, '#FFE27A'); hg.addColorStop(.55, '#F2B705'); hg.addColorStop(1, '#B7801F');
+  x.save(); x.shadowColor = 'rgba(242,183,5,.45)'; x.shadowBlur = 24; x.shadowOffsetY = 6; rcSp(x, HL, CX, hy, rcF(800, z), hg, z * .14, 'center'); x.restore();
+  // écusson, nom, rang
+  const nm = scPseudo(), tl = (lg && lg.label || '').toUpperCase(), nF = rcF(800, 52), tF = rcF(700, 26), shW = 58, shH = shW * 56 / 48, gap = 20;
+  const nmW = scSpW(x, nm, nF, 3), pW = tl ? scSpW(x, tl, tF, 3) + 34 : 0, wy = 330;
+  let wx = CX - ((lg ? shW + gap : 0) + nmW + (pW ? gap + pW : 0)) / 2;
+  if (lg) { scShield(x, lg, wx, wy - shH / 2, shW); wx += shW + gap; }
+  rcSp(x, nm, wx, wy + 19, nF, '#FFFFFF', 3); wx += nmW + gap;
+  if (pW) { rcBox(x, wx, wy - 23, pW, 46, 23, scMix(lg.T.c, '#ffffff', .5)); rcSp(x, tl, wx + 17, wy + 10, tF, '#14171A', 3); }
+  // bas (de bas en haut) : pied, tuiles, muscles touchés
+  const footY = 1846, lootH = 136, lootY = footY - 74 - lootH, rowH = G.length > 4 ? 78 : 86, panH = 74 + G.length * rowH + 14, panY = lootY - 18 - panH;
+  // mannequin cadré sur les muscles travaillés
+  const figY = 392, B = scBody(scBy(R.d), G.map(v => v.g), 1000, panY - 24 - figY); x.drawImage(B.canvas, 40, figY);
+  RC_LAST = { crop: B.crop, views: B.views, groups: G.map(v => v.g), nRec };
+  // muscles touchés
+  rcBox(x, L, panY, IW, panH, 30, 'rgba(23,26,29,.94)', '#2A2F33');
+  rcSp(x, 'MUSCLES TOUCHÉS', L + 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8); rcSp(x, 'SÉRIES', RR - 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8, 'right');
+  const maxS = Math.max(...G.map(v => v.sets)), bx = L + 34 + 230 + 20, bw = RR - 34 - 90 - 20 - bx;
+  G.forEach((v, i) => {
+    const cy = panY + 74 + i * rowH + rowH / 2, col = scCol(v.g), lab = (SC_SHORT[v.g] || scLab(v.g)).toUpperCase(), lz = rcFit(x, lab, 205, 800, 44, 28);
+    rcSp(x, lab, L + 34, cy + lz * .36, rcF(800, lz), col, lz * .04);
+    const by = cy - 11, fw = Math.max(22, bw * v.sets / maxS), fg = x.createLinearGradient(bx, 0, bx + fw, 0); fg.addColorStop(0, scMix(col, '#000000', .25)); fg.addColorStop(1, col);
+    x.save(); rcRR(x, bx, by, bw, 22, 11); x.clip(); x.fillStyle = '#1c2024'; x.fillRect(bx, by, bw, 22);
+    x.shadowColor = col; x.shadowBlur = 18; rcBox(x, bx, by, fw, 22, 11, fg); x.shadowBlur = 0;
+    x.fillStyle = '#17191c'; for (let k = 1; k < 10; k++) x.fillRect(bx + bw * k / 10 - 3, by, 3, 22); x.restore();
+    rcT(x, String(v.sets), RR - 34, cy + 18, rcF(800, 50), '#FFFFFF', 'right');
+  });
+  // tuiles : séries, effort (ou durée), records battus
+  const alt = [R.rpe && [String(R.rpe), '/10', 'EFFORT'], R.dur && [String(R.dur), 'min', 'DURÉE'], [String(es.length), '', es.length > 1 ? 'EXERCICES' : 'EXERCICE'], R.xpDay && [`+${nf(R.xpDay)}`, 'XP', 'GAGNÉS'], [nf(es.reduce((a, e) => a + (e.reps || 0), 0)), '', 'RÉPÉTITIONS']].filter(Boolean);
+  const tiles = [[nf(totSets), '', totSets > 1 ? 'SÉRIES' : 'SÉRIE'], alt.shift(), nRec ? [String(nRec), '', nRec > 1 ? 'RECORDS BATTUS' : 'RECORD BATTU', 1] : alt.shift()], tw = (IW - 28) / 3;
+  tiles.forEach(([v, u, l, pr], i) => {
+    const X = L + i * (tw + 14);
+    if (pr) { const g = x.createLinearGradient(0, lootY, 0, lootY + lootH); g.addColorStop(0, 'rgba(242,183,5,.20)'); g.addColorStop(1, 'rgba(23,26,29,.94)'); rcBox(x, X, lootY, tw, lootH, 24, g, '#F2B705'); }
+    else rcBox(x, X, lootY, tw, lootH, 24, 'rgba(23,26,29,.94)', '#2A2F33');
+    x.font = rcF(800, 66); const vw = x.measureText(v).width; x.font = rcF(600, 28); const uw = u ? x.measureText(u).width + 4 : 0, sx = X + tw / 2 - (vw + uw) / 2;
+    rcT(x, v, sx, lootY + 78, rcF(800, 66), pr ? '#F2B705' : '#FFFFFF'); if (u) rcT(x, u, sx + vw + 4, lootY + 78, rcF(600, 28), '#9AA0A5');
+    rcSp(x, l, X + tw / 2, lootY + 113, rcF(600, 20, true), '#9AA0A5', 2.8, 'center');
+  });
   // pied
-  rcSegs(x, [['Chaque séance est une partie.', rcF(700, 28, true), '#EDEFEB'], [' Joue la tienne.', rcF(500, 28, true), '#9AA0A5']], L, footY); rcMark(x, RR, footY + 4, 44, '#EDEFEB', 'right');
+  rcSegs(x, [['Chaque séance est une partie.', rcF(700, 27, true), '#FFFFFF'], [' Joue la tienne.', rcF(500, 27, true), '#9AA0A5']], L, footY); rcMark(x, RR, footY + 4, 40, '#C7CCCF', 'right');
   return c;
 }
 function rcBuild(d, fmt) { const R = recapData(d); if (!R) return null; return fmt === 'seance' ? rcSeance(R) : fmt === 'story' ? rcStory(R) : fmt === 'fiche' ? rcFiche(R) : rcCarte(R); }
