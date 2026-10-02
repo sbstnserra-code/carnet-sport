@@ -903,7 +903,7 @@ function syncUI() {
 }
 async function initStore() {
   const cached = lsGet(LS_KEY);
-  if (cached && cached.data) { for (const c of COLS) S[c] = cached.data[c] || {}; VER++; }
+  if (cached && cached.data) { for (const c of COLS) S[c] = cached.data[c] || {}; for (const h of Object.values(S.health)) sanH('health', h); VER++; }
   restorePending();
   render();
   let db = null;
@@ -917,6 +917,9 @@ async function initStore() {
   for (const key of [...Store.dirty]) { if (!Store.timers.has(key) && !Store.restored.has(key)) { const [c, id] = key.split('/'); flush(c, id); } }
   syncUI();
 }
+/* v6.9.2 : une mesure impossible (poids 0, masse grasse 0…) ne remplace jamais la dernière vraie valeur */
+const H_OK = { weight: v => v >= 20 && v <= 400, fat: v => v >= 2 && v <= 75, muscle: v => v >= 5 && v <= 100, lean: v => v >= 10 && v <= 250 };
+function sanH(col, d) { if (col !== 'health' || !d || typeof d !== 'object') return d; for (const [k, ok] of Object.entries(H_OK)) if (d[k] != null && !(d[k] !== '' && isFinite(+d[k]) && ok(+d[k]))) delete d[k]; return d; }
 function subscribe(col) {
   let first = true;
   Store.db.collection(col).onSnapshot(snap => {
@@ -924,7 +927,7 @@ function subscribe(col) {
     if (first) {
       first = false;
       const next = {}, redo = [];
-      for (const d of snap.docs) next[d.id] = clone(d.data());
+      for (const d of snap.docs) next[d.id] = sanH(col, clone(d.data()));
       for (const [key, ts] of [...Store.restored]) {
         if (!key.startsWith(col + '/')) continue; const id = key.slice(col.length + 1); Store.restored.delete(key);
         if (Store.timers.has(key)) continue;
@@ -938,7 +941,7 @@ function subscribe(col) {
       for (const ch of snap.docChanges()) {
         const id = ch.doc.id; if (isBusy(col + '/' + id)) continue;
         if (ch.type === 'removed') { if (S[col][id]) { delete S[col][id]; changed = true; } }
-        else { S[col][id] = clone(ch.doc.data()); changed = true; }
+        else { S[col][id] = sanH(col, clone(ch.doc.data())); changed = true; }
       }
     }
     if (changed) { VER++; LAST_LVL = null; LAST_XP = null; lsSave(); scheduleRender(); }
