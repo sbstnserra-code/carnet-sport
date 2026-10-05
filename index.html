@@ -598,6 +598,7 @@ button.pill{border:0;cursor:pointer}
 .mbar .zone{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ink) 14%,transparent)}
 .mbar span{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:var(--s1)}
 .mbar span.hi{background:var(--warn)} .mbar span.lo{background:var(--muted)}
+.mw{display:flex;flex-direction:column;gap:9px;margin:4px 0}.mw-hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.mw-hd .sec-t{margin:0}.mw-t{display:flex;align-items:center;gap:8px;min-width:0}.mw-t i{width:10px;height:10px;border-radius:3px;flex:none}.mw-t b{font-size:14.5px;white-space:nowrap}.mw-t .tiny{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mw-v{font:700 18px/1 var(--f-d);white-space:nowrap}.mw-b{position:relative;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:5px}.mw-b span{position:absolute;top:0;bottom:0;left:0;border-radius:99px}.mw-b span.ind{opacity:.35}.mw-b .zone{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--ink) 16%,transparent)}
 .mus-row .main{display:flex;flex-direction:column}
 .mus-det{border-top:1px solid var(--line);padding-top:12px}
 .ins .dot{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none;background:var(--line-2)}
@@ -1324,6 +1325,7 @@ function recapHtml(d) {
     <div class="recap">${tile('Tonnage', nf(ton), 'kg', dp != null ? deltaHtml(dp, true, ' vs ' + fmtDay(prev)) : '')}${tile('Séries', nf(daySets(d)), '', `<span class="delta">${es.length} exercice${es.length > 1 ? 's' : ''}</span>`)}
     ${tile('Records', nf(recs.length), '', recs.length ? '<span class="delta up">bravo</span>' : '')}${tile('XP du jour', '+' + nf(g.byDay[d] || 0), '', `<span class="delta">Niveau ${g.level} · ${esc(g.tier.name)}</span>`)}</div>
     ${recs.length ? `<div class="list">${recs.map(e => `<div class="li"><span class="badge-pr">Record</span><div class="main"><div class="t">${esc(exOf(e.ex).name)}</div><div class="s">${esc(notation(doneSets(e), kindOf(e.ex), e.ex))}</div></div></div>`).join('')}</div>` : ''}
+    ${mwDayHtml(d)}
     <div class="banner">${mus >= cfg.muscu ? `Objectif de la semaine atteint : ${mus}/${cfg.muscu} séances.${g.streakW > 1 ? ` Série en cours : ${g.streakW} semaines.` : ''}` : `Semaine : ${mus}/${cfg.muscu} séances. Encore ${cfg.muscu - mus} pour tenir l'objectif.`}</div>
     ${rpeHtml(d)}
     <div class="row between wrap"><button class="btn ghost" data-a="sheet-close">Fermer</button><button class="btn accent" data-a="rc-open" data-d="${d}">Partager en image</button></div>`;
@@ -2123,7 +2125,8 @@ function weekRecapHtml(w) {
       ${tile('Poids', wt ? nf(wt.v, 1) : '–', wt ? 'kg' : '', wt && wp ? deltaHtml(wt.v - wp.v, false, ' kg', 1, true) : '')}${tile('XP gagnés', '+' + nf(xp), '', `<span class="delta">Niveau ${g.level} · ${esc(g.tier.name)}</span>`)}
       ${tile('Kcal / jour', kc != null ? nf(kc) : '–', '', fb != null ? `<span class="delta">fiabilité ${Math.round(fb * 100)} %</span>` : '')}${tile('Pas / jour', steps != null ? nf(steps) : '–')}</div>
     ${ch.length ? `<div class="stack" style="gap:0">${ch.map(c => `<div class="goal"><span class="gl">${esc(c.l)}</span><span class="gv">${c.done ? `<span class="pill good">${ICON.check} Réussi</span>` : `${c.fmt(c.cur)} <small>/ ${c.fmt(c.tgt)}</small>`}</span></div>`).join('')}</div>` : ''}
-    <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+    ${mwWeekHtml(w)}
+    <div class="row between wrap"><button class="btn ghost" data-a="sheet-close">Fermer</button>${mus ? `<button class="btn accent" data-a="rc-week" data-w="${w}">Partager en image</button>` : ''}</div>`;
 }
 function weekStateHtml(w) {
   const g = game(), st = g.weeks[w], off = isOffWeek(w), cw = weekStart(today());
@@ -2635,7 +2638,7 @@ const BODY_MAP = {"f":{"chest":{"l":["M272.91 422.84c-18.95-17.19-22-57-12.64-78
 /* ================= v5.0 : recap de séance en image (Story, Carte, Complète) ================= */
 const RCF = { d: '"Barlow Condensed","Arial Narrow",sans-serif', b: 'Barlow,system-ui,-apple-system,"Segoe UI",sans-serif' };
 const rcF = (w, s, b = false) => `${w} ${s}px ${b ? RCF.b : RCF.d}`;
-const RC_FMTS = [{ k: 'seance', l: 'Séance' }, { k: 'story', l: 'Story' }, { k: 'carte', l: 'Carte' }, { k: 'fiche', l: 'Complète' }];
+const RC_FMTS = [{ k: 'seance', l: 'Séance' }, { k: 'semaine', l: 'Semaine' }, { k: 'story', l: 'Story' }, { k: 'carte', l: 'Carte' }, { k: 'fiche', l: 'Complète' }];
 let RC_FONTS = null;
 function rcFonts() {
   if (!RC_FONTS) RC_FONTS = Promise.race([
@@ -2928,7 +2931,7 @@ const SC_ZONES = [['chest', 'front', ['pecs']], ['deltoids', 'front', ['epaules.
 const SC_NONM = new Set(['head', 'hands', 'feet', 'knees', 'ankles', 'neck']);
 const SC_CROP = { upper: [108, 88, 620, 730], lower: [226, 590, 502, 1352], full: [40, 88, 688, 1352] };
 let SC_P2D = null, RC_LAST = null, RC_PT = 0;
-const scCol = g => SC_COL[g] || '#8E93A6';
+const scCol = g => MW_COL[g] || SC_COL[g] || '#8E93A6';
 function scPaths() {
   if (SC_P2D) return SC_P2D; const P = { front: {}, back: {} };
   for (const side of ['front', 'back']) { const src = BODY_MAP[side === 'front' ? 'f' : 'b']; for (const [k, v] of Object.entries(src)) P[side][k] = [...v.l, ...v.r, ...v.c].map(d => new Path2D(d)); P[side].__b = new Path2D(side === 'front' ? BODY_MAP.bf : BODY_MAP.bb); }
@@ -2952,7 +2955,7 @@ function scZones(by) {
   for (const [slug, side, keys] of SC_ZONES) {
     let tot = 0; const g = {};
     for (const [k, v] of Object.entries(by)) { if (!keys.some(q => k === q || k.startsWith(q + '.'))) continue; for (const [gr, x] of Object.entries(v)) { tot += x; g[gr] = (g[gr] || 0) + x; } }
-    if (tot <= 0) continue; const dom = Object.entries(g).sort((a, b) => b[1] - a[1])[0][0];
+    if (tot <= 0) continue; const dom = keys[0].split('.')[0];
     if (!out[side][slug] || out[side][slug].tot < tot) out[side][slug] = { tot, g: dom };
   }
   return out;
@@ -2964,12 +2967,12 @@ function scFrame(Z, groups) {
   if (!f && !b) f = b = true;
   return { crop, views: [f && 'front', b && 'back'].filter(Boolean) };
 }
-function scBody(by, groups, W, H) {
+function scBody(by, groups, W, H, f = 1) {
   const Z = scZones(by), P = scPaths(), F = scFrame(Z, groups);
   const [x0, y0, x1, y1] = SC_CROP[F.crop], vw = x1 - x0, vh = y1 - y0, gap = F.crop === 'lower' ? 70 : 10, n = F.views.length;
   const totW = vw * n + gap * (n - 1), k = Math.min(W / totW, H / vh), ox = (W - totW * k) / 2, oy = (H - vh * k) / 2;
   const [c, o] = rcCanvas(Math.ceil(W), Math.ceil(H));
-  const lvl = t => t >= 4 ? 1 : t >= 2 ? .8 : t >= 1 ? .62 : .45;
+  const lvl = t => (t /= f) >= 4 ? 1 : t >= 2 ? .8 : t >= 1 ? .62 : .45;
   F.views.forEach((side, i) => {
     const vx = ox + i * (vw + gap) * k, Q = P[side], z = Z[side];
     o.save(); o.beginPath(); o.rect(vx, 0, vw * k, H); o.clip();
@@ -3014,17 +3017,55 @@ function scRays(x, cx, cy) { // rayons dorés derrière le titre
   o.globalCompositeOperation = 'destination-in'; const g = o.createRadialGradient(cx, cy, 0, cx, cy, 661); g.addColorStop(0, '#000'); g.addColorStop(.363, '#000'); g.addColorStop(1, 'rgba(0,0,0,0)'); o.fillStyle = g; o.fillRect(0, 0, 1080, 1100);
   x.drawImage(c, 0, 0);
 }
-function rcSeance(R) {
-  const es = R.es.filter(e => e.kind !== 'cardio'); if (!es.length) return rcStory(R);
-  const G = uniq(es.map(e => scGroupId(e.id))).map(g => { const xs = es.filter(e => scGroupId(e.id) === g); return { g, sets: xs.reduce((a, e) => a + e.sets.length, 0), vol: xs.reduce((a, e) => a + (e.ton || 0), 0) }; })
-    .filter(v => v.sets).sort((a, b) => b.sets - a.sets || b.vol - a.vol).slice(0, 6);
-  const totSets = es.reduce((a, e) => a + e.sets.length, 0), nRec = R.recs || 0, lg = game().lg;
-  const [c, x] = rcCanvas(1080, 1920), L = 64, IW = 952, RR = L + IW, CX = 540;
+/* ================= v7.1 : part du travail par muscle (moteur principal + en appui) ================= */
+const MW_COL = { pecs: '#FF5A4F', epaules: '#B58CFF', biceps: '#3FA2FF', triceps: '#FF6FB5', avantbras: '#8FB3FF', abdos: '#2ED3B7', dos: '#E8C547', trapezes: '#F3DE8A', lombaires: '#C9963A', quadriceps: '#FF8A3D', ischios: '#D9622B', fessiers: '#FFB347', adducteurs: '#FFD08A', mollets: '#9BE15D' };
+const MW_SHORT = { pecs: 'Pecs', ischios: 'Ischios' };
+const mwCol = k => k === 'autres' ? '#6F767C' : MW_COL[k] || '#8E93A6';
+const mwLab = (k, short = false) => k === 'autres' ? 'Autres' : (short && MW_SHORT[k]) || (MUSL[k] ? MUSL[k].l : k);
+const mwPct = p => p < 1 ? '< 1 %' : `${Math.round(p)} %`;
+function mwWork(days) { // séries effectives par muscle : dir = moteur principal (poids 1), ind = en appui (poids < 1)
+  const o = {}; let tot = 0;
+  for (const d of days) for (const e of S.sessions[d]?.entries || []) {
+    if (kindOf(e.ex) === 'cardio') continue;
+    const n = (e.sets || []).reduce((a, x) => a + (x.ok ? (x.d ? .5 : 1) : 0), 0); if (!n) continue;
+    for (const [m, w] of exMap(e.ex)) { if (!(w > 0)) continue; const r = (o[m] ||= { k: m, dir: 0, ind: 0, v: 0 }), q = n * w; r.v += q; r[w >= 1 ? 'dir' : 'ind'] += q; tot += q; }
+  }
+  const rows = Object.values(o).sort((a, b) => b.v - a.v); for (const r of rows) r.pct = tot ? r.v / tot * 100 : 0;
+  return { rows, tot };
+}
+function mwSub(r) { const sr = v => `${n1(v)} série${v >= 2 ? 's' : ''}`; return r.dir && r.ind ? `${sr(r.dir)} + ${n1(r.ind)} en appui` : r.dir ? sr(r.dir) : r.ind ? `${n1(r.ind)} en appui` : 'rien'; }
+function mwRow(r, top, right, sub, zone) {
+  const c = mwCol(r.k), X = v => Math.min(100, v / top * 100);
+  return `<div class="mw-r"><div class="mw-t"><i style="background:${c}" aria-hidden="true"></i><b>${esc(mwLab(r.k))}</b><span class="tiny muted">${esc(sub)}</span><span class="mw-v num-t">${right}</span></div>
+    <div class="mw-b" aria-hidden="true">${zone ? `<i class="zone" style="left:${X(zone[0])}%;width:${X(zone[1]) - X(zone[0])}%"></i>` : ''}<span class="ind" style="width:${X(r.dir + r.ind)}%;background:${c}"></span><span style="width:${X(r.dir)}%;background:${c}"></span></div></div>`;
+}
+const MW_NOTE = 'Plein : séries où le muscle est le moteur principal. Clair : il aide sur d’autres exercices (une série y compte pour ½).';
+function mwDayHtml(d) {
+  const W = mwWork([d]); if (!W.rows.length) return '';
+  return `<div class="mw"><div class="mw-hd"><h3 class="sec-t">Muscles touchés</h3><span class="tiny muted">part du travail</span></div>
+    ${W.rows.map(r => mwRow(r, W.rows[0].v, mwPct(r.pct), mwSub(r))).join('')}
+    <p class="tiny muted" style="margin:2px 0 0">${MW_NOTE} Le % est la part de chaque muscle dans le travail total de la séance.</p></div>`;
+}
+function mwStat(r) { const M = MUSL[r.k]; if (!M || M.opt) return ''; return r.v < M.min * .5 ? 'Faible' : r.v < M.min ? 'Un peu juste' : r.v > M.max * 1.15 ? 'Élevé' : 'Dans la cible'; }
+function mwWeekHtml(w) {
+  const days = sessionDaysIn(w, addDays(w, 6)).filter(isMuscuDay), W = mwWork(days); if (!W.rows.length) return '';
+  const keys = [...MUS.filter(M => !M.opt).map(M => M.k), ...W.rows.map(r => r.k).filter(k => !MUSL[k] || MUSL[k].opt)];
+  const rows = keys.map(k => W.rows.find(r => r.k === k) || { k, dir: 0, ind: 0, v: 0, pct: 0 }), top = Math.max(24, ...rows.map(r => r.v * 1.05));
+  const low = rows.filter(r => /Faible|juste/.test(mwStat(r)));
+  return `<div class="mw"><div class="mw-hd"><h3 class="sec-t">Travail par muscle</h3><span class="tiny muted">séries de la semaine · cible en gris</span></div>
+    ${rows.map(r => { const M = MUSL[r.k]; return mwRow(r, top, n1(r.v), [mwStat(r), r.v ? `${mwPct(r.pct)} du travail` : ''].filter(Boolean).join(' · ') || 'bonus', M && !M.opt ? [M.min, M.max] : null); }).join('')}
+    ${low.length ? `<div class="banner">Sous la cible : ${low.map(r => `${esc(mwLab(r.k))} (${n1(r.v)})`).join(', ')}. À caser la semaine prochaine.</div>` : ''}
+    <p class="tiny muted" style="margin:2px 0 0">${MW_NOTE} Cible usuelle : 10 à 20 séries par semaine et par muscle.</p></div>`;
+}
+function scByDays(days) { const o = {}; for (const d of days) for (const [k, v] of Object.entries(scBy(d))) for (const [g, x] of Object.entries(v)) (o[k] ||= {})[g] = (o[k][g] || 0) + x; return o; }
+/* Carte image commune (séance et semaine) : rayons, titre or, écusson, mannequin, panneau des muscles, 3 tuiles */
+function scCard(o) {
+  const [c, x] = rcCanvas(1080, 1920), L = 64, IW = 952, RR = L + IW, CX = 540, lg = game().lg;
   x.fillStyle = '#0B0D10'; x.fillRect(0, 0, 1080, 1920); scRays(x, CX, 330);
   // haut
-  rcMark(x, L, 112, 40, '#C7CCCF'); rcSp(x, `${R.dayLong}${R.dur ? ' · ' + R.dur + ' min' : ''}`.toUpperCase(), RR, 110, rcF(600, 28), '#9AA0A5', 4.5, 'right');
+  rcMark(x, L, 112, 40, '#C7CCCF'); rcSp(x, o.right.toUpperCase(), RR, 110, rcF(600, 28), '#9AA0A5', 4.5, 'right');
   // titre
-  const HL = 'SÉANCE VALIDÉE'; let z = 120; while (z > 72 && scSpW(x, HL, rcF(800, z), z * .14) > IW) z -= 4;
+  const HL = o.title; let z = 120; while (z > 64 && scSpW(x, HL, rcF(800, z), z * .14) > IW) z -= 4;
   const hy = 262, hg = x.createLinearGradient(0, hy - z * .72, 0, hy); hg.addColorStop(0, '#FFE27A'); hg.addColorStop(.55, '#F2B705'); hg.addColorStop(1, '#B7801F');
   x.save(); x.shadowColor = 'rgba(242,183,5,.45)'; x.shadowBlur = 24; x.shadowOffsetY = 6; rcSp(x, HL, CX, hy, rcF(800, z), hg, z * .14, 'center'); x.restore();
   // écusson, nom, rang
@@ -3034,28 +3075,36 @@ function rcSeance(R) {
   if (lg) { scShield(x, lg, wx, wy - shH / 2, shW); wx += shW + gap; }
   rcSp(x, nm, wx, wy + 19, nF, '#FFFFFF', 3); wx += nmW + gap;
   if (pW) { rcBox(x, wx, wy - 23, pW, 46, 23, scMix(lg.T.c, '#ffffff', .5)); rcSp(x, tl, wx + 17, wy + 10, tF, '#14171A', 3); }
-  // bas (de bas en haut) : pied, tuiles, muscles touchés
-  const footY = 1846, lootH = 136, lootY = footY - 74 - lootH, rowH = G.length > 4 ? 78 : 86, panH = 74 + G.length * rowH + 14, panY = lootY - 18 - panH;
+  // bas (de bas en haut) : pied, tuiles, panneau
+  const P = o.panel, n = P.rows.length, rowH = n > 5 ? 72 : 86, legH = 44;
+  const footY = 1846, lootH = 136, lootY = footY - 74 - lootH, panH = 74 + Math.max(1, n) * rowH + 6 + legH, panY = lootY - 18 - panH;
   // mannequin cadré sur les muscles travaillés
-  const figY = 392, B = scBody(scBy(R.d), G.map(v => v.g), 1000, panY - 24 - figY); x.drawImage(B.canvas, 40, figY);
-  RC_LAST = { crop: B.crop, views: B.views, groups: G.map(v => v.g), nRec };
-  // muscles touchés
+  const figY = 392, B = scBody(o.by, o.groups, 1000, panY - 24 - figY, o.lvlF || 1); x.drawImage(B.canvas, 40, figY);
+  RC_LAST = Object.assign({ crop: B.crop, views: B.views }, o.last);
+  // panneau des muscles
   rcBox(x, L, panY, IW, panH, 30, 'rgba(23,26,29,.94)', '#2A2F33');
-  rcSp(x, 'MUSCLES TOUCHÉS', L + 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8); rcSp(x, 'SÉRIES', RR - 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8, 'right');
-  const maxS = Math.max(...G.map(v => v.sets)), bx = L + 34 + 230 + 20, bw = RR - 34 - 90 - 20 - bx;
-  G.forEach((v, i) => {
-    const cy = panY + 74 + i * rowH + rowH / 2, col = scCol(v.g), lab = (SC_SHORT[v.g] || scLab(v.g)).toUpperCase(), lz = rcFit(x, lab, 205, 800, 44, 28);
+  rcSp(x, P.l, L + 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8); rcSp(x, P.r, RR - 34, panY + 50, rcF(700, 24), '#9AA0A5', 4.8, 'right');
+  const bx = L + 34 + 230 + 20, bw = RR - 34 - 116 - 20 - bx, Xw = v => Math.max(0, Math.min(bw, bw * v / P.top)), vz = n > 5 ? 44 : 50;
+  if (!n) rcT(x, 'Aucune série de muscu', CX, panY + 74 + rowH / 2 + 10, rcF(600, 30, true), '#9AA0A5', 'center');
+  P.rows.forEach((r, i) => {
+    const cy = panY + 74 + i * rowH + rowH / 2, col = mwCol(r.k), lab = mwLab(r.k, true).toUpperCase(), lz = rcFit(x, lab, 205, 800, n > 5 ? 40 : 44, 26);
     rcSp(x, lab, L + 34, cy + lz * .36, rcF(800, lz), col, lz * .04);
-    const by = cy - 11, fw = Math.max(22, bw * v.sets / maxS), fg = x.createLinearGradient(bx, 0, bx + fw, 0); fg.addColorStop(0, scMix(col, '#000000', .25)); fg.addColorStop(1, col);
+    const by = cy - 11, wd = Xw(r.dir), wt = Xw(r.dir + r.ind);
     x.save(); rcRR(x, bx, by, bw, 22, 11); x.clip(); x.fillStyle = '#1c2024'; x.fillRect(bx, by, bw, 22);
-    x.shadowColor = col; x.shadowBlur = 18; rcBox(x, bx, by, fw, 22, 11, fg); x.shadowBlur = 0;
+    if (r.zone) { const z0 = Xw(r.zone[0]), z1 = Xw(r.zone[1]); x.fillStyle = 'rgba(255,255,255,.13)'; x.fillRect(bx + z0, by, z1 - z0, 22); }
+    if (wt > 0) { x.globalAlpha = .42; rcBox(x, bx, by, Math.max(22, wt), 22, 11, col); x.globalAlpha = 1; }
+    if (wd > 0) { const fg = x.createLinearGradient(bx, 0, bx + Math.max(22, wd), 0); fg.addColorStop(0, scMix(col, '#000000', .25)); fg.addColorStop(1, col); x.shadowColor = col; x.shadowBlur = 18; rcBox(x, bx, by, Math.max(22, wd), 22, 11, fg); x.shadowBlur = 0; }
     x.fillStyle = '#17191c'; for (let k = 1; k < 10; k++) x.fillRect(bx + bw * k / 10 - 3, by, 3, 22); x.restore();
-    rcT(x, String(v.sets), RR - 34, cy + 18, rcF(800, 50), '#FFFFFF', 'right');
+    const [vn, vu] = r.val; let ux = RR - 34; if (vu) { const uw = rcT(x, vu, ux, cy + 18, rcF(600, 30), '#9AA0A5', 'right'); ux -= uw + 6; }
+    rcT(x, vn, ux, cy + 18, rcF(800, vz), '#FFFFFF', 'right');
   });
-  // tuiles : séries, effort (ou durée), records battus
-  const alt = [R.rpe && [String(R.rpe), '/10', 'EFFORT'], R.dur && [String(R.dur), 'min', 'DURÉE'], [String(es.length), '', es.length > 1 ? 'EXERCICES' : 'EXERCICE'], R.xpDay && [`+${nf(R.xpDay)}`, 'XP', 'GAGNÉS'], [nf(es.reduce((a, e) => a + (e.reps || 0), 0)), '', 'RÉPÉTITIONS']].filter(Boolean);
-  const tiles = [[nf(totSets), '', totSets > 1 ? 'SÉRIES' : 'SÉRIE'], alt.shift(), nRec ? [String(nRec), '', nRec > 1 ? 'RECORDS BATTUS' : 'RECORD BATTU', 1] : alt.shift()], tw = (IW - 28) / 3;
-  tiles.forEach(([v, u, l, pr], i) => {
+  // légende
+  { const ly = panY + panH - 30; let lx = L + 34; const sw = (fill, a) => { x.globalAlpha = a; rcBox(x, lx, ly - 15, 26, 16, 5, fill); x.globalAlpha = 1; lx += 38; };
+    const tx = t => { lx += rcSp(x, t, lx, ly, rcF(600, 18, true), '#8A9095', 1.6) + 34; };
+    sw('#C7CCCF', 1); tx('MOTEUR PRINCIPAL'); sw('#C7CCCF', .42); tx('EN APPUI'); if (P.zone) { sw('#4a4f55', 1); tx('CIBLE'); } }
+  // tuiles
+  const tw = (IW - 28) / 3;
+  o.tiles.forEach(([v, u, l, pr], i) => {
     const X = L + i * (tw + 14);
     if (pr) { const g = x.createLinearGradient(0, lootY, 0, lootY + lootH); g.addColorStop(0, 'rgba(242,183,5,.20)'); g.addColorStop(1, 'rgba(23,26,29,.94)'); rcBox(x, X, lootY, tw, lootH, 24, g, '#F2B705'); }
     else rcBox(x, X, lootY, tw, lootH, 24, 'rgba(23,26,29,.94)', '#2A2F33');
@@ -3067,15 +3116,38 @@ function rcSeance(R) {
   rcSegs(x, [['Chaque séance est une partie.', rcF(700, 27, true), '#FFFFFF'], [' Joue la tienne.', rcF(500, 27, true), '#9AA0A5']], L, footY); rcMark(x, RR, footY + 4, 40, '#C7CCCF', 'right');
   return c;
 }
-function rcBuild(d, fmt) { const R = recapData(d); if (!R) return null; return fmt === 'seance' ? rcSeance(R) : fmt === 'story' ? rcStory(R) : fmt === 'fiche' ? rcFiche(R) : rcCarte(R); }
+function rcSeance(R) {
+  const es = R.es.filter(e => e.kind !== 'cardio'); if (!es.length) return rcStory(R);
+  const W = mwWork([R.d]); if (!W.rows.length) return rcStory(R);
+  const gs = {}; for (const e of es) { const g = scGroupId(e.id); gs[g] = (gs[g] || 0) + e.sets.length; } const groups = Object.keys(gs).sort((a, b) => gs[b] - gs[a]);
+  const totSets = es.reduce((a, e) => a + e.sets.length, 0), nRec = R.recs || 0;
+  let rows = W.rows.map(r => ({ ...r })); if (rows.length > 6) { const rest = rows.slice(5), sum = k => rest.reduce((a, r) => a + r[k], 0); rows = rows.slice(0, 5).concat({ k: 'autres', dir: sum('dir'), ind: sum('ind'), v: sum('v'), pct: sum('pct') }); }
+  rows.forEach(r => r.val = [r.pct < 1 ? '<1' : String(Math.round(r.pct)), '%']);
+  const alt = [R.rpe && [String(R.rpe), '/10', 'EFFORT'], R.dur && [String(R.dur), 'min', 'DURÉE'], [String(es.length), '', es.length > 1 ? 'EXERCICES' : 'EXERCICE'], R.xpDay && [`+${nf(R.xpDay)}`, 'XP', 'GAGNÉS'], [nf(es.reduce((a, e) => a + (e.reps || 0), 0)), '', 'RÉPÉTITIONS']].filter(Boolean);
+  const tiles = [[nf(totSets), '', totSets > 1 ? 'SÉRIES' : 'SÉRIE'], alt.shift(), nRec ? [String(nRec), '', nRec > 1 ? 'RECORDS BATTUS' : 'RECORD BATTU', 1] : alt.shift()];
+  return scCard({ right: `${R.dayLong}${R.dur ? ' · ' + R.dur + ' min' : ''}`, title: 'SÉANCE VALIDÉE', by: scBy(R.d), groups,
+    panel: { l: 'MUSCLES TOUCHÉS', r: 'PART DU TRAVAIL', rows, top: Math.max(...rows.map(r => r.v)) }, tiles, last: { kind: 'seance', groups, nRec, mus: W.rows.map(r => r.k) } });
+}
+function rcWeek(d) {
+  const wk = weekStart(d), we = addDays(wk, 6), days = sessionDaysIn(wk, we).filter(isMuscuDay), cfg = CFG(), W = mwWork(days);
+  const ents = days.flatMap(x => (S.sessions[x].entries || []).filter(e => kindOf(e.ex) !== 'cardio' && doneSets(e).length).map(e => [x, e]));
+  const gs = {}; for (const [, e] of ents) { const g = scGroupId(e.ex); gs[g] = (gs[g] || 0) + doneSets(e).length; } const groups = Object.keys(gs).sort((a, b) => gs[b] - gs[a]);
+  const sets = days.reduce((a, x) => a + daySets(x), 0), recs = ents.filter(([x, e]) => isPR(e.ex, x, doneSets(e))).length, ton = days.reduce((a, x) => a + dayTonnage(x), 0);
+  const rows = W.rows.slice(0, 7).map(r => ({ ...r, zone: MUSL[r.k] && !MUSL[r.k].opt ? [MUSL[r.k].min, MUSL[r.k].max] : null, val: [n1(r.v), ''] }));
+  const tiles = [[String(days.length), '/' + cfg.muscu, days.length > 1 ? 'SÉANCES' : 'SÉANCE'], [nf(sets), '', sets > 1 ? 'SÉRIES' : 'SÉRIE'], recs ? [String(recs), '', recs > 1 ? 'RECORDS BATTUS' : 'RECORD BATTU', 1] : [nf(ton / 1000, 1), 't', 'SOULEVÉES']];
+  return scCard({ right: `Semaine du ${fmtDM(wk)} au ${fmtDM(we)}`, title: days.length >= cfg.muscu ? 'SEMAINE VALIDÉE' : 'BILAN DE LA SEMAINE', by: scByDays(days), groups: groups.length ? groups : ['pecs'], lvlF: 2.5,
+    panel: { l: 'SÉRIES PAR MUSCLE', r: 'CIBLE EN GRIS', rows, top: Math.max(24, ...rows.map(r => r.v * 1.05)), zone: true }, tiles, last: { kind: 'semaine', groups, nRec: recs, mus: W.rows.map(r => r.k), days: days.length } });
+}
+function rcBuild(d, fmt) { if (fmt === 'semaine') return rcWeek(d); const R = recapData(d); if (!R) return null; return fmt === 'seance' ? rcSeance(R) : fmt === 'story' ? rcStory(R) : fmt === 'fiche' ? rcFiche(R) : rcCarte(R); }
 /* Feuille de partage */
 function rcSheetHtml(c) {
-  return `<h2>Partager la séance</h2><p class="small muted">${fmtDayLong(c.d)}</p>
+  const wk = c.fmt === 'semaine' ? weekStart(c.d) : null;
+  return `<h2>Partager ${wk ? 'la semaine' : 'la séance'}</h2><p class="small muted">${wk ? `Semaine du ${fmtDM(wk)} au ${fmtDM(addDays(wk, 6))}` : fmtDayLong(c.d)}</p>
     ${segHtml('rc-fmt', RC_FMTS, c.fmt)}
     <div class="rc-prev" id="rc-prev">${c.url ? `<img src="${c.url}" alt="Recap de la séance, format ${esc(RC_FMTS.find(f => f.k === c.fmt).l)}">` : '<span class="small muted">Préparation de l’image…</span>'}</div>
-    ${c.fmt === 'seance' ? `<label class="field">Nom affiché sur l’image<input class="inp" id="rc-pseudo" data-in="rc-pseudo" maxlength="12" value="${esc((S.settings.main || {}).pseudo || scPseudo())}" autocomplete="off"></label>` : ''}
-    <p class="tiny muted" style="margin:0;text-align:center">Séance pour montrer les muscles travaillés, Story et Carte pour les chiffres, Complète pour archiver. Tu peux aussi faire un appui long sur l’image pour l’enregistrer dans Photos.</p>
-    <div class="row between wrap"><button class="btn ghost" data-a="rc-back" data-d="${c.d}">Retour au bilan</button><button class="btn accent" data-a="rc-share" id="rc-share" ${c.blob ? '' : 'disabled'}>Enregistrer ou partager</button></div>`;
+    ${c.fmt === 'seance' || c.fmt === 'semaine' ? `<label class="field">Nom affiché sur l’image<input class="inp" id="rc-pseudo" data-in="rc-pseudo" maxlength="12" value="${esc((S.settings.main || {}).pseudo || scPseudo())}" autocomplete="off"></label>` : ''}
+    <p class="tiny muted" style="margin:0;text-align:center">Séance et Semaine pour montrer les muscles travaillés, Story et Carte pour les chiffres, Complète pour archiver. Tu peux aussi faire un appui long sur l’image pour l’enregistrer dans Photos.</p>
+    <div class="row between wrap"><button class="btn ghost" data-a="rc-back" data-d="${c.d}" ${c.wk ? `data-w="${c.wk}"` : ''}>Retour au bilan</button><button class="btn accent" data-a="rc-share" id="rc-share" ${c.blob ? '' : 'disabled'}>Enregistrer ou partager</button></div>`;
 }
 async function rcRender() {
   const c = SHEET.ctx; if (!c || c.mode !== 'rc') return;
@@ -3090,10 +3162,10 @@ async function rcRender() {
   const p = $('#rc-prev'); if (p) p.innerHTML = `<img src="${c.url}" alt="Recap de la séance" data-w="${cv.width}" data-h="${cv.height}">`;
   const b = $('#rc-share'); if (b) b.disabled = false;
 }
-function openRecapImg(d) { const c = { mode: 'rc', d, fmt: RC_FMTS.some(f => f.k === UI.rcFmt) ? UI.rcFmt : 'seance' }; openSheet(rcSheetHtml(c), c); rcRender(); }
+function openRecapImg(d, fmt, wk) { const c = { mode: 'rc', d, wk, fmt: fmt || (RC_FMTS.some(f => f.k === UI.rcFmt) && UI.rcFmt !== 'semaine' ? UI.rcFmt : 'seance') }; openSheet(rcSheetHtml(c), c); rcRender(); }
 async function rcShare() {
   const c = SHEET.ctx; if (!c || c.mode !== 'rc' || !c.blob) return;
-  const name = `seance-${c.d}-${c.fmt}.png`;
+  const name = c.fmt === 'semaine' ? `semaine-${weekStart(c.d)}.png` : `seance-${c.d}-${c.fmt}.png`;
   try {
     const file = new File([c.blob], name, { type: 'image/png' });
     if (navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); return; }
@@ -3339,6 +3411,7 @@ VIEWS.seance = {
       <div id="props" class="props">${proposals(d)}</div></section>
     ${s ? `<section class="card stack">
       <div id="sess-sum" class="small">${sessSummary(d)}</div>
+      <div id="sess-mw">${mwDayHtml(d)}</div>
       <div class="grid2"><label class="field">Durée (min)<input class="inp" id="sess-dur" data-in="sess-dur" inputmode="numeric" value="${v(s.dur)}" placeholder="ex. 65"></label>
       <label class="field">Ressenti (1 à 10)<input class="inp" id="sess-rpe" data-in="sess-rpe" inputmode="numeric" value="${v(s.rpe)}" placeholder="ex. 7"></label></div>
       <label class="field">Note<textarea class="inp" id="sess-note" data-in="sess-note" rows="2" placeholder="Sensations, fatigue, réglages…">${esc(s.note || '')}</textarea></label>
@@ -3412,6 +3485,7 @@ function rerenderCard(i) {
   if (!e || !el) { render(); return; }
   el.outerHTML = exCard(e, i, d);
   const sum = $('#sess-sum'); if (sum) sum.innerHTML = sessSummary(d);
+  const mw = $('#sess-mw'); if (mw) mw.innerHTML = mwDayHtml(d);
 }
 /* ================= Vue : Progrès ================= */
 const RANGES = [{ k: '1m', l: '1 mois', days: 30 }, { k: '3m', l: '3 mois', days: 91 }, { k: '6m', l: '6 mois', days: 182 }, { k: '1a', l: '1 an', days: 365 }, { k: 'tout', l: 'Tout', days: null }];
@@ -3954,9 +4028,10 @@ const A = {
   'cfg-kmode': el => { const m = (S.settings.main ||= {}); m.kcalMode = el.dataset.v; applyGoal(m); render(); },
   'cfg-recalc': () => { const m = S.settings.main, k0 = m?.kcal; applyGoal(m); render(); toast(m.kcal === k0 ? `Toujours ${nf(m.kcal)} kcal : rien ne change.` : `Nouvel objectif : ${nf(m.kcal)} kcal (avant ${nf(k0)}).`); },
   'rc-open': el => openRecapImg(el.dataset.d || UI.date),
-  'rc-fmt': el => { const c = SHEET.ctx; if (!c || c.mode !== 'rc' || c.fmt === el.dataset.v) return; c.fmt = el.dataset.v; c.blob = null; UI.rcFmt = c.fmt; saveUI(); rerenderSheet(rcSheetHtml); rcRender(); },
+  'rc-week': el => { const w = el.dataset.w, ds = sessionDaysIn(w, addDays(w, 6)).filter(isMuscuDay); openRecapImg(ds[ds.length - 1] || w, 'semaine', w); },
+  'rc-fmt': el => { const c = SHEET.ctx; if (!c || c.mode !== 'rc' || c.fmt === el.dataset.v) return; c.fmt = el.dataset.v; c.blob = null; if (c.fmt !== 'semaine') { UI.rcFmt = c.fmt; saveUI(); } rerenderSheet(rcSheetHtml); rcRender(); },
   'rc-share': () => rcShare(),
-  'rc-back': el => { const c = SHEET.ctx; if (c?.url) URL.revokeObjectURL(c.url); const d = el.dataset.d; SHEET.ctx = null; openSheet(recapHtml(d)); },
+  'rc-back': el => { const c = SHEET.ctx; if (c?.url) URL.revokeObjectURL(c.url); const d = el.dataset.d; SHEET.ctx = null; openSheet(el.dataset.w ? weekRecapHtml(el.dataset.w) : recapHtml(d)); },
   'rpe-set': el => { const d = el.dataset.d, s = S.sessions[d]; if (!s) return; const v = +el.dataset.v; if (s.rpe === v) delete s.rpe; else s.rpe = v; touch('sessions', d); pendingRender = true; const sh = $('#sheet'), sc = sh.scrollTop; if (!$('#sheet-wrap').hidden) { sh.innerHTML = recapHtml(d); sh.scrollTop = sc; } },
   'ex-add': el => { if (el.dataset.close && !$('#sheet-wrap').hidden) { closeSheet(); toast(`${exOf(el.dataset.id).name} ajouté à la séance`); } const s = ensureSession(UI.date); s.entries.push(newEntry(el.dataset.id, UI.date)); const g = exOf(el.dataset.id).group; if (g && !s.groups.includes(g)) s.groups.push(g); UI.addQ = ''; touch('sessions', UI.date); render(); const cards = $$('#cards article'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
   'ex-menu': el => { const { i, e } = curEntry(el); if (!e) return; const n = S.sessions[UI.date].entries.length; openSheet(`<h2>${esc(exOf(e.ex).name)}</h2>${exMuscleTxt(e.ex) ? `<p class="small muted">Travaille : ${exMuscleTxt(e.ex)}</p>` : ''}<div class="list">
