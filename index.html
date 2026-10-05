@@ -653,7 +653,7 @@ button.pill{border:0;cursor:pointer}
 .auth nav.tabs,.auth #sync,.auth .icon-btn{display:none}
 .auth #view{padding-top:8px}
 .pwd-box{font:600 17px var(--f-d);letter-spacing:.6px;user-select:all;-webkit-user-select:all}
-.lock-ico{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px}.lock-li{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface-2);color:var(--muted);flex:none}.lock-li .lock-ico{margin:0}
+.lock-ico{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px;flex:none}.lock-li{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface-2);color:var(--muted);flex:none}.lock-li .lock-ico,.lock-li svg{margin:0;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4}.lock-li.ok{color:var(--good-text,#1f7a3d)}.lock-li.big{width:52px;height:52px;border-radius:14px}.lock-li.big .lock-ico{width:24px;height:24px}.lock-page{align-items:flex-start}.is-locked{position:relative;opacity:.55}.is-locked::after{content:'';position:absolute;top:3px;right:3px;width:11px;height:11px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/contain no-repeat}.brick-row{align-items:center;gap:10px}.brick-row .seg{flex:none}.opt-chk{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14.5px}.opt-chk input{width:18px;height:18px}
 </style>
 </head>
 <body>
@@ -1583,6 +1583,7 @@ function lgEmblem(lg, size = 44, id = 'e') {
   return `<svg class="lg-emb" width="${size}" height="${Math.round(size * 56 / 48)}" viewBox="0 0 48 56" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${T.c}"/><stop offset="1" stop-color="${T.c2}"/></linearGradient></defs><path d="M24 2 44 10v20c0 12-10 20-20 24C14 50 4 42 4 30V10z" fill="url(#${gid})" stroke="${T.c2}" stroke-width="2" stroke-linejoin="round"/><path d="M24 8 39 14v15c0 9-7.5 15.5-15 18.5C16.5 44.5 9 38 9 29V14z" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="1.5"/>${inner}</svg>`;
 }
 function lgPromo(lg) {
+  if (!canUse('ligue')) return;
   $('.lg-promo')?.remove();
   const el = document.createElement('div'); el.className = 'lg-promo'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Promotion');
   el.innerHTML = `<div class="lg-promo-in"><div class="eyebrow">Promotion</div>${lgEmblem(lg, 128, 'promo')}<h2>${esc(lg.label)}</h2><p>${lg.next ? `${nf(lg.lp)} PL. Prochaine étape : ${esc(lg.next.label)} dans ${nf(lg.next.need)} PL.` : 'Tu es au sommet.'}</p><button class="btn accent" data-a="lg-promo-close">Continuer</button></div>`;
@@ -1704,6 +1705,7 @@ function confetti() {
   requestAnimationFrame(step);
 }
 function challengesHtml(w) {
+  if (!canUse('ligue')) return '';
   const ch = weekChallenges(w), n = ch.filter(c => c.done).length;
   if (!ch.length) return `<section class="card"><h2 class="sec-t">Défis de la semaine</h2><p class="small muted" style="margin:0">Semaine off : pas de défis, ta série est en pause.</p></section>`;
   return `<section class="card"><h2 class="sec-t">Défis de la semaine <span class="pill ${n === ch.length ? 'good' : ''}">${n}/${ch.length} · +30 XP chacun</span></h2>
@@ -2038,6 +2040,7 @@ function xpPop(n) {
 
 /* Accueil « Aujourd'hui » */
 function gameBar() {
+  if (!canUse('ligue')) return '';
   const g = game(), lg = g.lg, w = Math.min(100, Math.max(0, lg.pct)), td = lg.today;
   const tdTxt = td.done ? `Partie du jour jouée : <b>${LG_RES[td.r][1].toLowerCase()}${td.gain ? ` ${td.gain > 0 ? '+' : '−'}${nf(Math.abs(td.gain))} PL` : ''}</b>` : td.r === 'V' ? `Victoire du jour acquise : <b>+${nf(td.gain)} PL</b> à la clôture` : `Partie du jour : <b>${nf(td.xp)} / ${LG.win} XP</b> pour la victoire`;
   return `<button class="card gbar lg-card" data-a="lg-open" aria-label="Ligue : ${esc(lg.label)}, ${nf(lg.lp)} PL. Ouvrir le détail">${lgEmblem(lg, 40, 'bar')}
@@ -2085,7 +2088,7 @@ function nextAction(t = today(), now = new Date()) {
   return null;
 }
 function todayCard(t) {
-  const qs = quests(t), na = nextAction(t), nDone = qs.filter(q => q.done).length, tpl = templateFor(t);
+  const qs = quests(t).filter(q => !A2B[q.a] || canUse(A2B[q.a])), na = (x => x && (!A2B[x.a] || canUse(A2B[x.a])) ? x : null)(nextAction(t)), nDone = qs.filter(q => q.done).length, tpl = templateFor(t);
   return `<section class="card today-card"><div class="row between"><div><div class="eyebrow">Aujourd'hui</div><h1 class="h1" style="font-size:24px">${fmtDayLong(t)}</h1></div><span class="pill ${nDone === qs.length ? 'good' : ''}">${nDone}/${qs.length} quêtes</span></div>
     <div class="quests">${qs.map(q => `<button class="qst ${q.done ? 'done' : ''}" data-a="${q.a}" ${q.attrs}>${q.done ? `<span class="chk">${ICON.check}</span>` : `<span class="ring" style="--p:${Math.max(0, Math.min(100, Math.round(q.p)))}"></span>`}<span class="main"><span class="t">${esc(q.l)}${q.v ? ` <b class="num-t">${esc(q.v)}</b>` : ''}</span><span class="s">${esc(q.s)}</span></span>${q.done ? '' : `<span class="xp-h">+${q.xp} XP</span>`}</button>`).join('')}</div>
     ${na ? `<button class="btn ${na.ghost ? 'ghost' : 'accent'} block next-btn" data-a="${na.a}" ${na.attrs}><span>${esc(na.l)}</span><small>${na.sub}</small></button>` : `<div class="banner" style="justify-content:center">${ICON.check.replace('<svg', '<svg class="ico" style="width:18px;height:18px"')} Journée bouclée. À demain !</div>`}
@@ -2099,6 +2102,7 @@ function todayCard(t) {
 const LS_RECAP = 'carnet-sport-recap';
 function recapWeekFor(t = today(), now = new Date()) { const wd = dow(t); if (wd === 6 && now.getHours() >= 17) return weekStart(t); if (wd === 0) return addDays(weekStart(t), -7); return null; }
 function recapCard(t) {
+  if (!canUse('recap')) return '';
   const w = recapWeekFor(t); if (!w || lsGet(LS_RECAP) === w) return '';
   const we = addDays(w, 6), any = idx().days.some(d => d >= w && d <= we) || Object.keys(S.nutrition).some(d => d >= w && d <= we); if (!any) return '';
   return `<section class="card recap-card"><div class="row between"><div><div class="eyebrow">Récap de la semaine</div><b>Du ${fmtDM(w)} au ${fmtDM(we)}</b></div><button class="btn accent sm" data-a="wk-recap" data-w="${w}">Voir</button></div></section>`;
@@ -2125,7 +2129,7 @@ function weekRecapHtml(w) {
       ${tile('Tonnage', nf(ton), 'kg', pton ? deltaHtml(pct(ton, pton), true, ' vs sem. préc.') : '')}${tile('Records', nf(prs))}
       ${tile('Poids', wt ? nf(wt.v, 1) : '–', wt ? 'kg' : '', wt && wp ? deltaHtml(wt.v - wp.v, false, ' kg', 1, true) : '')}${tile('XP gagnés', '+' + nf(xp), '', `<span class="delta">Niveau ${g.level} · ${esc(g.tier.name)}</span>`)}
       ${tile('Kcal / jour', kc != null ? nf(kc) : '–', '', fb != null ? `<span class="delta">fiabilité ${Math.round(fb * 100)} %</span>` : '')}${tile('Pas / jour', steps != null ? nf(steps) : '–')}</div>
-    ${ch.length ? `<div class="stack" style="gap:0">${ch.map(c => `<div class="goal"><span class="gl">${esc(c.l)}</span><span class="gv">${c.done ? `<span class="pill good">${ICON.check} Réussi</span>` : `${c.fmt(c.cur)} <small>/ ${c.fmt(c.tgt)}</small>`}</span></div>`).join('')}</div>` : ''}
+    ${ch.length && canUse('ligue') ? `<div class="stack" style="gap:0">${ch.map(c => `<div class="goal"><span class="gl">${esc(c.l)}</span><span class="gv">${c.done ? `<span class="pill good">${ICON.check} Réussi</span>` : `${c.fmt(c.cur)} <small>/ ${c.fmt(c.tgt)}</small>`}</span></div>`).join('')}</div>` : ''}
     ${mwWeekHtml(w)}
     <div class="row between wrap"><button class="btn ghost" data-a="sheet-close">Fermer</button>${mus ? `<button class="btn accent" data-a="rc-week" data-w="${w}">Partager en image</button>` : ''}</div>`;
 }
@@ -2139,7 +2143,7 @@ function weekStateHtml(w) {
 }
 function weekSummary() {
   const t = today(), w = weekStart(t), cfg = CFG(), days = sessionDaysIn(w, addDays(w, 6)), ch = weekChallenges(w);
-  return `${days.filter(isMuscuDay).length}/${cfg.muscu} séances · ${days.filter(isCardioDay).length}/${cfg.cardio} cardio${ch.length ? ` · défis ${ch.filter(c => c.done).length}/${ch.length}` : ' · semaine off'}`;
+  return `${days.filter(isMuscuDay).length}/${cfg.muscu} séances · ${days.filter(isCardioDay).length}/${cfg.cardio} cardio${!canUse('ligue') ? '' : ch.length ? ` · défis ${ch.filter(c => c.done).length}/${ch.length}` : ' · semaine off'}`;
 }
 
 /* Hors ligne : file d'attente persistée */
@@ -2168,13 +2172,13 @@ function parseClock(s) { const m = String(s ?? '').trim().match(/^(\d{1,2})\s*[:
 const clockMin = s => { const c = parseClock(s); if (!c) return null; let m = +c.slice(0, 2) * 60 + +c.slice(3); if (m < 720) m += 1440; return m; }; // minutes depuis midi la veille
 function avgClock(k, a, b) { let n = 0, s = 0; for (const [d, h] of Object.entries(S.health)) if (d >= a && d <= b) { const m = clockMin(h[k]); if (m != null) { n++; s += m; } } if (!n) return null; const m = Math.round(s / n) % 1440; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; }
 function sleepChip(d, cls = 'chip', sfx = 'v') {
-  if (!SAMPLE || !SAMPLE_IMG || SAMPLE_OFF) return `<button class="${cls}" data-a="sl-open" data-d="${d}">Noter ma nuit</button>`;
+  if (!SAMPLE || !SAMPLE_IMG || SAMPLE_OFF || !iaSleep()) return `<button class="${cls}" data-a="sl-open" data-d="${d}">Noter ma nuit</button>`;
   return `<label class="${cls}" for="sl-file-${sfx}-${d}">Capture sommeil</label><input type="file" id="sl-file-${sfx}-${d}" accept="image/*" hidden data-ch="sl-file" data-d="${d}">`;
 }
 const MOON = '<svg viewBox="0 0 24 24" class="ico"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
-function sleepQa(t) { return SAMPLE && SAMPLE_IMG && !SAMPLE_OFF ? `<label for="sl-file-a-${t}">${MOON}Sommeil</label><input type="file" id="sl-file-a-${t}" accept="image/*" hidden data-ch="sl-file" data-d="${t}">` : `<button data-a="sl-open" data-d="${t}">${MOON}Sommeil</button>`; }
+function sleepQa(t) { return SAMPLE && SAMPLE_IMG && !SAMPLE_OFF && iaSleep() ? `<label for="sl-file-a-${t}">${MOON}Sommeil</label><input type="file" id="sl-file-a-${t}" accept="image/*" hidden data-ch="sl-file" data-d="${t}">` : `<button data-a="sl-open" data-d="${t}">${MOON}Sommeil</button>`; }
 function sleepHtml(c) {
-  const f = c.vals || {}, busy = c.busy, imgOK = SAMPLE && SAMPLE_IMG && !SAMPLE_OFF;
+  const f = c.vals || {}, busy = c.busy, imgOK = SAMPLE && SAMPLE_IMG && !SAMPLE_OFF && iaSleep();
   const inp = (k, l, val, ph, mode = 'text') => `<label class="field">${l}<input class="inp" id="sl-${k}" inputmode="${mode}" value="${esc(val ?? '')}" placeholder="${ph}" autocomplete="off"></label>`;
   return `<h2>Sommeil</h2>
     <p class="small muted" id="sl-status" role="status">${busy ? 'Lecture de la capture…' : c.err ? esc(c.err) : c.read ? `Lu sur ta capture${f.source ? ' ' + esc(f.source) : ''}. Vérifie, corrige si besoin, puis enregistre.` : imgOK ? 'Saisis les valeurs ou ajoute une capture de l’écran Sommeil.' : 'Colle le texte de ta capture, ou saisis les valeurs.'}</p>
@@ -2222,11 +2226,11 @@ function applySleep(c, r) {
   c.read = true; return true;
 }
 async function readSleep(file, d, back, text = null) {
-  if (file && (!SAMPLE || !SAMPLE_IMG)) { toast('Lecture d’image indisponible ici : colle le texte de la capture.'); return; }
+  if (file && (!SAMPLE || !SAMPLE_IMG || !iaSleep())) { toast('Lecture d’image indisponible ici : colle le texte de la capture.'); return; }
   let c = SHEET.ctx && SHEET.ctx.mode === 'sleep' ? SHEET.ctx : null;
   if (c) slSync(); else c = openSleep(d, back);
   const miss = "Je n'ai pas trouvé de données de sommeil. Prends l'écran Sommeil de la nuit, vue « J ».";
-  if (text && (!SAMPLE || SAMPLE_OFF)) { c.err = applySleep(c, parseSleepText(text)) ? '' : miss; rerenderSheet(sleepHtml); return; }
+  if (text && (!SAMPLE || SAMPLE_OFF || !iaSleep())) { c.err = applySleep(c, parseSleepText(text)) ? '' : miss; rerenderSheet(sleepHtml); return; }
   c.busy = true; c.err = ''; rerenderSheet(sleepHtml);
   const t = today();
   const what = file ? "Voici une capture d'écran d'une app de suivi du sommeil (app Santé d'Apple, Withings ou autre). Lis uniquement les valeurs affichées"
@@ -2239,14 +2243,14 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
 {"date":"${t}","endormi_min":432,"au_lit_min":470,"profond_min":58,"paradoxal_min":92,"leger_min":270,"eveille_min":12,"coucher":"23:48","lever":"06:52","score":null,"source":"Santé"}`;
   AI_CTL = new AbortController();
   try {
-    const opts = { modelTier: 'quick', signal: AI_CTL.signal }; if (file) opts.images = file;
+    const opts = { modelTier: 'quick', feature: 'ia_sommeil', signal: AI_CTL.signal }; if (file) opts.images = file;
     const r = await SAMPLE.json(prompt, opts);
     if (!SHEET.ctx || SHEET.ctx !== c) return;
     if (!applySleep(c, r) && !(text && applySleep(c, parseSleepText(text)))) c.err = miss;
   } catch (e) {
     const code = e && e.code;
     if (text && code !== 'cancelled' && applySleep(c, parseSleepText(text))) c.err = '';
-    else c.err = { cancelled: '', plan_locked: 'Lecture automatique réservée à la version complète : colle le texte de la capture ou saisis les valeurs.', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? 'Lecture interrompue, réessaie.';
+    else c.err = { cancelled: '', plan_locked: 'Lecture automatique non incluse dans ta formule : colle le texte de la capture ou saisis les valeurs.', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? 'Lecture interrompue, réessaie.';
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(code)) SAMPLE_OFF = true;
     if (code === 'images_unavailable') SAMPLE_IMG = false;
   } finally {
@@ -2257,7 +2261,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
 function sleepExtra(d) {
   const h = S.health[d] || {};
   return `<div class="row between wrap" style="gap:8px"><span class="small muted">${h.bed || h.wake ? `Coucher <b style="color:var(--ink)">${esc(h.bed || '–')}</b> · lever <b style="color:var(--ink)">${esc(h.wake || '–')}</b>` : 'À partir d’une capture de l’écran Sommeil (Santé ou Withings) : les chiffres sont lus pour toi.'}</span>
-    <div class="row">${SAMPLE && SAMPLE_IMG && !SAMPLE_OFF ? sleepChip(d, 'btn sm ghost', 'v') : ''}<button class="btn sm ghost" data-a="sl-open" data-d="${d}">${h.sleep != null ? 'Modifier' : SAMPLE && SAMPLE_IMG && !SAMPLE_OFF ? 'Saisir' : 'Noter ma nuit'}</button></div></div>`;
+    <div class="row">${SAMPLE && SAMPLE_IMG && !SAMPLE_OFF && iaSleep() ? sleepChip(d, 'btn sm ghost', 'v') : ''}<button class="btn sm ghost" data-a="sl-open" data-d="${d}">${h.sleep != null ? 'Modifier' : SAMPLE && SAMPLE_IMG && !SAMPLE_OFF && iaSleep() ? 'Saisir' : 'Noter ma nuit'}</button></div></div>`;
 }
 /* ================= Muscles : analyse par portion, carte du corps, suggestions ================= */
 const MUS = [
@@ -2522,6 +2526,7 @@ function coachDoc(t = today(), now = new Date()) {
   return null;
 }
 function coachCard(t) {
+  if (!canUse('coach')) return '';
   const c = coachDoc(t); if (!c) return '';
   const [w, d] = c, read = lsGet(LS_COACH) === w && !UI.coachOpen;
   const pts = (Array.isArray(d.points) ? d.points : []).slice(0, 5);
@@ -3042,6 +3047,7 @@ function mwRow(r, top, right, sub, zone) {
 }
 const MW_NOTE = 'Plein : séries où le muscle est le moteur principal. Clair : il aide sur d’autres exercices (une série y compte pour ½).';
 function mwDayHtml(d) {
+  if (!canUse('muscles')) return '';
   const W = mwWork([d]); if (!W.rows.length) return '';
   return `<div class="mw"><div class="mw-hd"><h3 class="sec-t">Muscles touchés</h3><span class="tiny muted">part du travail</span></div>
     ${W.rows.map(r => mwRow(r, W.rows[0].v, mwPct(r.pct), mwSub(r))).join('')}
@@ -3049,6 +3055,7 @@ function mwDayHtml(d) {
 }
 function mwStat(r) { const M = MUSL[r.k]; if (!M || M.opt) return ''; return r.v < M.min * .5 ? 'Faible' : r.v < M.min ? 'Un peu juste' : r.v > M.max * 1.15 ? 'Élevé' : 'Dans la cible'; }
 function mwWeekHtml(w) {
+  if (!canUse('muscles')) return '';
   const days = sessionDaysIn(w, addDays(w, 6)).filter(isMuscuDay), W = mwWork(days); if (!W.rows.length) return '';
   const keys = [...MUS.filter(M => !M.opt).map(M => M.k), ...W.rows.map(r => r.k).filter(k => !MUSL[k] || MUSL[k].opt)];
   const rows = keys.map(k => W.rows.find(r => r.k === k) || { k, dir: 0, ind: 0, v: 0, pct: 0 }), top = Math.max(24, ...rows.map(r => r.v * 1.05));
@@ -3196,7 +3203,8 @@ function destroyCharts() { while (CHARTS.length) { try { CHARTS.pop().destroy();
 function render() {
   if (!AUTH.ready) return;
   destroyCharts();
-  const view = VIEWS[UI.tab] || VIEWS.accueil;
+  if (UI.tab === 'progres' && UI.prog?.mode === 'muscles' && !canUse('muscles')) UI.prog.mode = 'exo';
+  const view = (TAB_BRICK[UI.tab] && !canUse(TAB_BRICK[UI.tab])) ? lockedView(TAB_BRICK[UI.tab]) : (VIEWS[UI.tab] || VIEWS.accueil);
   const main = $('#view');
   if (Store.mode === 'loading' && !Object.keys(S.exercises).length) { main.innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>'; navUI(); syncUI(); return; }
   main.innerHTML = view.html();
@@ -3731,7 +3739,7 @@ function macroInputs(it) {
     </div>`;
 }
 function aiButtons() {
-  if (SAMPLE_LOCK) return planLockHtml();
+  if (!canUse('ia_repas')) return planLockHtml('ia_repas');
   if (!SAMPLE || SAMPLE_OFF) return `<span class="tiny muted">${SAMPLE_OFF ? 'Estimation automatique non configurée : saisis les valeurs.' : 'Saisis les valeurs.'}</span>`;
   return `<button class="btn sm accent" data-a="nf-estimate">Estimer automatiquement</button>
     ${SAMPLE_IMG ? `<label class="btn sm ghost" for="nf-photo">Photo du repas</label><input type="file" id="nf-photo" accept="image/*" capture="environment" hidden data-ch="nf-photo">` : ''}`;
@@ -3750,7 +3758,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
 {"items":[{"nom":"Blanc de poulet grillé","quantite":"200 g","kcal":330,"proteines":62,"glucides":0,"lipides":7}],"resume":"poulet, riz, brocolis"}`;
   AI_CTL = new AbortController();
   try {
-    const opts = { modelTier: 'quick', signal: AI_CTL.signal }; if (file) opts.images = file;
+    const opts = { modelTier: 'quick', feature: 'ia_repas', signal: AI_CTL.signal }; if (file) opts.images = file;
     const res = await SAMPLE.json(prompt, opts);
     const items = (Array.isArray(res?.items) ? res.items : []).map(x => ({ nom: String(x.nom || x.name || ''), quantite: String(x.quantite || ''), kcal: +x.kcal || 0, p: +(x.proteines ?? x.p) || 0, c: +(x.glucides ?? x.c) || 0, f: +(x.lipides ?? x.f) || 0 }));
     if (!items.length) { st.textContent = "Je n'ai rien reconnu. Précise les aliments et quantités."; return; }
@@ -3763,7 +3771,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
     st.textContent = 'Estimation prête : ajuste si besoin, puis ajoute.';
   } catch (e) {
     const c = e && e.code;
-    const msg = { cancelled: '', plan_locked: 'Réservé à la version complète : saisis les valeurs à la main.', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c];
+    const msg = { cancelled: '', plan_locked: 'Option non incluse dans ta formule : saisis les valeurs à la main.', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c];
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) SAMPLE_OFF = true;
     if (c === 'images_unavailable') SAMPLE_IMG = false;
     if (st) st.textContent = msg ?? 'Estimation interrompue, réessaie.';
@@ -4342,11 +4350,11 @@ const CH = {
     el.value = '';
   }
 };
-document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (!el || el.disabled) return; const f = A[el.dataset.a]; if (f) { e.preventDefault(); f(el, e); setTimeout(() => { try { checkLevel(); } catch (err) { console.error(err); } }, 0); } });
+document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (!el || el.disabled) return; const f = A[el.dataset.a]; if (f && brickGate(el)) { e.preventDefault(); return; } if (f) { e.preventDefault(); f(el, e); setTimeout(() => { try { checkLevel(); } catch (err) { console.error(err); } }, 0); } });
 document.addEventListener('toggle', e => { if (e.target && e.target.id === 'week-det') { UI.weekOpen = e.target.open; saveUI(); } }, true);
 document.addEventListener('toggle', e => { const t = e.target; if (!t || !t.id) return; if (t.id === 'ls-det' && UI.ref) UI.ref.open = t.open; else if (t.id.startsWith('pm-')) (UI.pmOpen ||= {})[t.id.slice(3)] = t.open; }, true);
 document.addEventListener('input', e => { const el = e.target.closest('[data-in]'); if (el && IN[el.dataset.in]) IN[el.dataset.in](el, e); });
-document.addEventListener('change', e => { const el = e.target.closest('[data-ch]'); if (el && CH[el.dataset.ch]) CH[el.dataset.ch](el, e); });
+document.addEventListener('change', e => { const el = e.target.closest('[data-ch]'); if (el && CH[el.dataset.ch] && !chGate(el)) CH[el.dataset.ch](el, e); });
 document.addEventListener('submit', e => {
   const f = e.target.closest('form[data-submit="quick"]'); if (!f) return; e.preventDefault();
   const i = +f.dataset.i, entry = S.sessions[UI.date]?.entries?.[i]; if (!entry) return;
@@ -4369,22 +4377,84 @@ const sb = (window.supabase && /^https:/.test(SB_URL)) ? supabase.createClient(S
 const AUTH = { user: null, session: null, profile: null, ready: false, recovery: false, out: false };
 const fnHeaders = () => ({ 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (AUTH.session?.access_token || SB_KEY) });
 const mkErr = (code, msg) => Object.assign(new Error(msg || code), { code });
-/* v7.2 : formules. Gratuite : tout le suivi, sans les fonctions IA (chaque appel coûte). Complète : tout. Un admin a tout.
-   Le vrai blocage est côté serveur (fonction ai, colonne profiles.plan que seul un admin peut changer) ; ici on affiche seulement. */
+/* v7.3 : briques. L'admin choisit pour chaque brique « gratuite » (incluse pour tous) ou « option » (formule complète,
+   ou activée compte par compte). Contrôles côté serveur : IA, import Santé, ligue. Les autres briques sont des écrans
+   de l'app, verrouillés dans l'interface. Le socle (séances, accueil, réglages) est toujours inclus. */
 let SAMPLE_LOCK = false;
-const PLAN_LAB = { gratuit: 'Gratuite', complet: 'Complète' };
-const PLAN_LOCKED = ['Estimation automatique des repas, par description ou photo', 'Lecture automatique des captures de sommeil (le copier-coller du texte reste possible)'];
-const planOf = () => AUTH.profile?.role === 'admin' ? 'complet' : (AUTH.profile?.plan === 'complet' ? 'complet' : 'gratuit');
-const canUse = f => planOf() === 'complet' || f !== 'ia';
+const BRICKS = [
+  ['seances_types', 'Entraînement', 'Séances types', 'Créer, appliquer et refaire des séances modèles'],
+  ['salle', 'Entraînement', 'Mode salle plein écran', 'Séance guidée série par série, minuteur de repos'],
+  ['guide_exos', 'Entraînement', 'Guide des exercices', 'Choix par muscle, fiches exercices, conseils séries et reps'],
+  ['coach', 'Entraînement', 'Coach de progression', 'Suggestions de charge et bilan du coach'],
+  ['progres', 'Entraînement', 'Progrès et records', 'Onglet Progrès : courbes, records, analyse par groupe et par muscle'],
+  ['muscles', 'Entraînement', 'Part du travail par muscle', 'Muscles touchés en séance et travail de la semaine par muscle'],
+  ['nutrition', 'Nutrition', 'Nutrition', 'Onglet Nutrition : repas, favoris, calories et macros'],
+  ['ia_repas', 'Nutrition', 'Estimation IA des repas', 'Calories et macros estimées depuis une description ou une photo', 1],
+  ['corps', 'Corps et santé', 'Mesures corporelles', 'Onglet Corps : poids, masse grasse, courbes'],
+  ['sommeil', 'Corps et santé', 'Sommeil', 'Saisie et suivi des nuits'],
+  ['ia_sommeil', 'Corps et santé', 'Lecture IA du sommeil', 'Lecture automatique des captures de l’écran Sommeil', 1],
+  ['import_sante', 'Corps et santé', 'Import Santé iPhone', 'Import automatique (Raccourci ou Health Auto Export) et import par copier-coller', 1],
+  ['withings', 'Corps et santé', 'Withings', 'Connexion de la balance et de la montre Withings'],
+  ['ligue', 'Motivation', 'Ligue et défis', 'Ligue, classement entre utilisateurs, défis de la semaine', 1],
+  ['rituel', 'Motivation', 'Clôture de la journée', 'Bilan du soir : repas manquants, activité, synchro'],
+  ['recap', 'Motivation', 'Récap de la semaine', 'Bilan de la semaine, le dimanche soir et le lundi'],
+  ['partage', 'Motivation', 'Images à partager', 'Cartes Séance et Semaine à publier'],
+  ['export', 'Données', 'Export et sauvegarde', 'Export CSV des séries, sauvegarde et restauration']];
+const BRICK = Object.fromEntries(BRICKS.map(([k, g, l, d, srv]) => [k, { k, g, l, d, srv: !!srv }]));
+const BRICK_DEF = { ia_repas: 'option', ia_sommeil: 'option' }; // si la base ne répond pas
+let BTIERS = {}; const BRICK_DENY = new Set();
+const brickTier = k => BTIERS[k] || BRICK_DEF[k] || 'gratuit';
+const amAdmin = () => AUTH.profile?.role === 'admin';
+const planOf = () => amAdmin() ? 'complet' : (AUTH.profile?.plan === 'complet' ? 'complet' : 'gratuit');
+function canUse(k) { if (!BRICK[k]) return true; if (BRICK_DENY.has(k)) return false; if (planOf() === 'complet') return true; return brickTier(k) === 'gratuit' || (AUTH.profile?.options || []).includes(k); }
+const iaSleep = () => canUse('sommeil') && canUse('ia_sommeil');
+const ACT_BRICK = {
+  seances_types: 'tpl-apply tpl-edit tpl-save tpl-del tpl-from-session tpl-swap sess-redo', salle: 'focus-open', guide_exos: 'pk-open ex-fiche train-guide',
+  coach: 'ex-sugg coach-toggle', progres: 'see-prog', muscles: 'mus-sel mus-src mus-all mus-add mus-add-to',
+  nutrition: 'meal-now nf-add hq-add q-add nf-copyday dt-open nutri-off nutri-period fav-new', corps: 'weigh', sommeil: 'sl-open',
+  import_sante: 'h-import h-paste guide hae-token hae-guide', withings: 'wt-connect wt-sync', ligue: 'lg-open', rituel: 'rit-open',
+  recap: 'wk-recap', partage: 'rc-open rc-week', export: 'export-csv export-json', ia_repas: 'nf-estimate' };
+const A2B = {}; for (const [k, v] of Object.entries(ACT_BRICK)) for (const x of v.split(' ')) A2B[x] = k;
+const TAB_BRICK = { progres: 'progres', nutrition: 'nutrition', corps: 'corps' };
+const CH_BRICK = { 'imp-file': 'export', 'nf-photo': 'ia_repas', 'sl-file': 'ia_sommeil' };
+function brickOf(el) { const a = el.dataset.a; if (a === 'go' || a === 'go-today') return TAB_BRICK[el.dataset.tab] || null; if (a === 'prog-mode' && el.dataset.v === 'muscles') return 'muscles'; return A2B[a] || null; }
+function brickGate(el) { if (el.dataset.a === 'go' || el.dataset.a === 'go-today') return false; const k = brickOf(el); if (!k || canUse(k)) return false; openSheet(lockSheetHtml(k)); return true; }
+function chGate(el) { const k = CH_BRICK[el.dataset.ch]; if (!k || canUse(k)) return false; try { el.value = ''; } catch { } openSheet(lockSheetHtml(k)); return true; }
+const lockedView = k => ({ html: () => lockPageHtml(k) });
+let LOCK_RAF = 0;
+function markLocks() { $$('[data-a]').forEach(el => { const k = brickOf(el); el.classList.toggle('is-locked', !!k && !canUse(k)); }); }
+const LOCK_OBS = typeof MutationObserver !== 'undefined' ? new MutationObserver(() => { if (LOCK_RAF) return; LOCK_RAF = requestAnimationFrame(() => { LOCK_RAF = 0; markLocks(); }); }) : null;
 const LOCK_SVG = '<svg class="ico lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
-function planLockHtml() { return `<button class="btn sm ghost" data-a="plan-info">${LOCK_SVG} Estimer automatiquement</button><span class="tiny muted">Réservé à la version complète</span>`; }
+function planLockHtml(k = 'ia_repas') { return `<button class="btn sm ghost" data-a="lock-info" data-k="${k}">${LOCK_SVG} Estimer automatiquement</button><span class="tiny muted">Option non incluse dans ta formule</span>`; }
+function lockSheetHtml(k) {
+  const b = BRICK[k] || { l: 'Fonction', d: '' };
+  return `<h2>${esc(b.l)}</h2>${b.d ? `<p class="small" style="margin:0">${esc(b.d)}.</p>` : ''}
+    <div class="banner">${LOCK_SVG}<span>Cette brique est une option : elle n’est pas incluse dans ta formule. Demande à l’administrateur de l’app de l’activer sur ton compte.</span></div>
+    <div class="row between wrap"><button class="btn ghost" data-a="plan-info">Voir ma formule</button><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+function lockPageHtml(k) {
+  const b = BRICK[k];
+  return `<section class="card stack lock-page"><span class="lock-li big">${LOCK_SVG}</span><h1 class="h1" style="margin:0">${esc(b.l)}</h1>
+    <p class="small muted" style="margin:0">${esc(b.d)}.</p>
+    <div class="banner">Cette brique est une option, pas incluse dans ta formule. Demande à l’administrateur de l’app de l’activer sur ton compte.</div>
+    <button class="btn ghost" data-a="plan-info">Voir ma formule</button></section>`;
+}
 function planSheetHtml() {
-  return `<h2>Version gratuite</h2>
-    <p class="small" style="margin:0">Ton compte est en version gratuite : tout le suivi est inclus (séances, nutrition, mesures, sommeil, ligue, récaps, images à partager). Ces fonctions sont réservées à la version complète :</p>
-    <div class="list">${PLAN_LOCKED.map(t => `<div class="li"><span class="lock-li">${LOCK_SVG}</span><div class="main"><div class="t" style="white-space:normal">${esc(t)}</div></div></div>`).join('')}</div>
-    <p class="small muted" style="margin:0">Pour y accéder, demande à l’administrateur de l’app de passer ton compte en version complète. En attendant, saisis les valeurs à la main.</p>
+  const groups = [...new Set(BRICKS.map(b => b[1]))], comp = planOf() === 'complet';
+  return `<h2>Ta formule : ${comp ? 'Complète' : 'Gratuite'}</h2>
+    <p class="small" style="margin:0">${comp ? 'Toutes les briques sont incluses.' : 'Le socle (séances, accueil, réglages) et les briques cochées sont inclus. Les briques avec un cadenas sont des options : demande à l’administrateur de l’app de les activer.'}</p>
+    ${groups.map(g => `<div class="eyebrow" style="margin-top:6px">${esc(g)}</div><div class="list">${BRICKS.filter(b => b[1] === g).map(([k, , l, d]) => { const ok = canUse(k); return `<div class="li"><span class="lock-li ${ok ? 'ok' : ''}">${ok ? ICON.check : LOCK_SVG}</span><div class="main"><div class="t">${esc(l)}</div><div class="s" style="white-space:normal">${esc(d)}</div></div></div>`; }).join('')}</div>`).join('')}
     <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
 }
+function bricksAdminHtml() {
+  const groups = [...new Set(BRICKS.map(b => b[1]))];
+  return `<section class="card stack" id="bricks-admin"><h2 class="sec-t">Briques de l’app</h2>
+    <p class="tiny muted" style="margin:0">Gratuite : incluse pour tous les comptes. Option : réservée aux comptes en formule complète, ou activée compte par compte dans Utilisateurs. Le socle (séances, accueil, réglages) est toujours inclus. « Serveur » : aussi bloquée côté serveur.</p>
+    ${groups.map(g => `<div class="eyebrow" style="margin-top:6px">${esc(g)}</div><div class="list">${BRICKS.filter(b => b[1] === g).map(([k, , l, d, srv]) => `<div class="li brick-row" data-k="${k}"><div class="main"><div class="t">${esc(l)}${srv ? ' <span class="pill" style="padding:0 6px;font-size:11px">serveur</span>' : ''}</div><div class="s" style="white-space:normal">${esc(d)}</div></div>${segHtml('brick-tier', [{ k: 'gratuit', l: 'Gratuite' }, { k: 'option', l: 'Option' }], brickTier(k)).replace(/data-a="brick-tier"/g, `data-a="brick-tier" data-k="${k}"`)}</div>`).join('')}</div>`).join('')}
+  </section>`;
+}
+const optsOf = u => (u?.options || []).filter(k => BRICK[k]);
+function planLabel(u) { if (u.role === 'admin') return 'administrateur'; if (u.plan === 'complet') return 'complète'; const n = optsOf(u).filter(k => brickTier(k) === 'option').length; return `gratuite${n ? ` + ${n} option${n > 1 ? 's' : ''}` : ''}`; }
 function sbErr(e) {
   if (e && e.code && /^[a-z_]+$/.test(e.code)) return e;
   const m = String(e?.message || e || '');
@@ -4479,21 +4549,21 @@ function fileToB64(file, max = 1280) {
 const AI = {
   async limits() { return { images: SAMPLE_IMG }; },
   async json(prompt, opts = {}) {
-    const body = { prompt, tier: opts.modelTier || 'quick' };
+    const body = { prompt, tier: opts.modelTier || 'quick', feature: opts.feature || 'ia_repas' };
     if (opts.images) body.image = await fileToB64(opts.images);
     let r;
     try { r = await fetch(SB_URL + '/functions/v1/ai', { method: 'POST', headers: fnHeaders(), body: JSON.stringify(body), signal: opts.signal }); }
     catch (e) { throw e && e.name === 'AbortError' ? mkErr('cancelled') : mkErr('unavailable'); }
     if (r.status === 503) throw mkErr('not_granted', 'clé IA absente');
     if (r.status === 429) throw mkErr('rate_limited');
-    if (r.status === 403) { let j = null; try { j = await r.json(); } catch { } if (j && j.code === 'plan') { SAMPLE_LOCK = true; SAMPLE_OFF = true; throw mkErr('plan_locked', j.error); } throw mkErr('not_granted'); }
+    if (r.status === 403) { let j = null; try { j = await r.json(); } catch { } if (j && j.code === 'plan') { BRICK_DENY.add(j.feature || body.feature); throw mkErr('plan_locked', j.error); } throw mkErr('not_granted'); }
     if (r.status === 401) throw mkErr('not_granted');
     if (!r.ok) throw mkErr('error', 'HTTP ' + r.status);
     const j = await r.json(); return j.json;
   }
 };
 async function initCaps() {
-  SAMPLE = AI; SAMPLE_IMG = true; SAMPLE_OFF = false; SAMPLE_LOCK = !canUse('ia'); if (SAMPLE_LOCK) SAMPLE_OFF = true;
+  SAMPLE = AI; SAMPLE_IMG = true; SAMPLE_OFF = false; SAMPLE_LOCK = !canUse('ia_repas') && !canUse('ia_sommeil');
   DL = {
     async save({ filename, data }) {
       const blob = data instanceof Blob ? data : new Blob([data], { type: /\.json$/.test(filename) ? 'application/json' : 'text/plain' });
@@ -4536,8 +4606,11 @@ async function startApp(session) {
   LS_KEY = 'carnet-sport-v1:' + session.user.id;
   document.body.classList.remove('auth');
   const PK = 'carnet-sport-profil:' + session.user.id; let cached = null; try { cached = JSON.parse(localStorage.getItem(PK) || 'null'); } catch { }
-  try { const { data, error } = await sb.from('profiles').select('user_id,email,name,role,plan').eq('user_id', session.user.id).maybeSingle(); if (error) throw error; AUTH.profile = data || { role: 'user', email: session.user.email }; if (data) try { localStorage.setItem(PK, JSON.stringify(data)); } catch { } }
+  try { const { data, error } = await sb.from('profiles').select('user_id,email,name,role,plan,options').eq('user_id', session.user.id).maybeSingle(); if (error) throw error; AUTH.profile = data || { role: 'user', email: session.user.email }; if (data) try { localStorage.setItem(PK, JSON.stringify(data)); } catch { } }
   catch { AUTH.profile = cached || { role: 'user', email: session.user.email }; }
+  const TK = 'carnet-sport-briques'; try { BTIERS = JSON.parse(localStorage.getItem(TK) || '{}') || {}; } catch { BTIERS = {}; }
+  try { const { data, error } = await sb.from('feature_tiers').select('key,tier'); if (error) throw error; if (data && data.length) { BTIERS = Object.fromEntries(data.map(x => [x.key, x.tier])); try { localStorage.setItem(TK, JSON.stringify(BTIERS)); } catch { } } } catch { }
+  if (LOCK_OBS) LOCK_OBS.observe(document.body, { childList: true, subtree: true });
   initCaps(); initStore(); wtAutoSync(); setTimeout(lgPush, 4000);
   if (AUTH.recovery) setTimeout(() => openPwdSheet(true), 300);
 }
@@ -4582,7 +4655,7 @@ async function savePwd(form) {
 let USERS = null;
 async function adminCall(action, payload = {}) {
   const map = { list: ['admin_list_users', {}], create: ['admin_create_user', { p_email: payload.email, p_password: payload.password, p_name: payload.name || '', p_role: payload.role || 'user' }],
-    update: ['admin_update_user', { p_id: payload.id, p_name: payload.name ?? null, p_role: payload.role ?? null }], plan: ['admin_set_plan', { p_id: payload.id, p_plan: payload.plan }], reset: ['admin_reset_password', { p_id: payload.id, p_password: payload.password }], delete: ['admin_delete_user', { p_id: payload.id }] };
+    update: ['admin_update_user', { p_id: payload.id, p_name: payload.name ?? null, p_role: payload.role ?? null }], plan: ['admin_set_plan', { p_id: payload.id, p_plan: payload.plan }], options: ['admin_set_options', { p_id: payload.id, p_options: payload.options || [] }], tier: ['admin_set_feature', { p_key: payload.key, p_tier: payload.tier }], reset: ['admin_reset_password', { p_id: payload.id, p_password: payload.password }], delete: ['admin_delete_user', { p_id: payload.id }] };
   const m = map[action]; if (!m) throw new Error('action inconnue');
   const { data, error } = await sb.rpc(m[0], m[1]);
   if (error) throw new Error(/JWT|permission|Réservé/.test(error.message) ? 'Réservé aux administrateurs' : error.message.replace(/^.*?: /, ''));
@@ -4593,19 +4666,19 @@ function accountHtml() {
   const p = AUTH.profile || {}, admin = p.role === 'admin';
   return `<section class="card stack"><h2 class="sec-t">Compte</h2>
       <p class="small" style="margin:0"><b>${esc(AUTH.user?.email || '')}</b>${p.name ? ` · ${esc(p.name)}` : ''}${admin ? ' · administrateur, toutes les fonctions' : ''}</p>
-      ${admin ? '' : `<p class="small" style="margin:0">Formule : <b>${PLAN_LAB[planOf()]}</b>${planOf() === 'gratuit' ? ' · sans l’IA' : ' · toutes les fonctions'}</p>`}
-      <div class="row wrap">${!admin && planOf() === 'gratuit' ? `<button class="btn sm ghost" data-a="plan-info">${LOCK_SVG} Ce qui est réservé</button>` : ''}<button class="btn sm ghost" data-a="pwd-change">Changer le mot de passe</button><button class="btn sm ghost danger" data-a="logout">Se déconnecter</button></div>
+      ${admin ? '' : `<p class="small" style="margin:0">Formule : <b>${planLabel(p)}</b>${planOf() === 'complet' ? ' · toutes les briques' : ` · ${BRICKS.filter(b => canUse(b[0])).length} briques sur ${BRICKS.length}`}</p>`}
+      <div class="row wrap">${!admin ? `<button class="btn sm ghost" data-a="plan-info">Ma formule</button>` : ''}<button class="btn sm ghost" data-a="pwd-change">Changer le mot de passe</button><button class="btn sm ghost danger" data-a="logout">Se déconnecter</button></div>
     </section>
     ${admin ? `<section class="card stack"><div class="row between"><h2 class="sec-t">Utilisateurs</h2><button class="btn sm ghost" data-a="user-new">Nouveau</button></div>
-      <p class="tiny muted" style="margin:0">Chaque compte a ses propres données : personne ne voit celles des autres, toi compris. Formule gratuite : tout sauf l’IA (estimation des repas, lecture des captures de sommeil).</p>
-      <div id="users-list" class="list"><span class="tiny muted">Chargement…</span></div></section>` : ''}`;
+      <p class="tiny muted" style="margin:0">Chaque compte a ses propres données : personne ne voit celles des autres, toi compris. Formule gratuite : briques gratuites + options cochées pour le compte. Formule complète : toutes les briques.</p>
+      <div id="users-list" class="list"><span class="tiny muted">Chargement…</span></div></section>${bricksAdminHtml()}` : ''}`;
 }
 async function loadUsers(force) {
   const el = $('#users-list'); if (!el) return;
   if (!USERS || force) { try { USERS = (await adminCall('list')).users || []; } catch (e) { el.innerHTML = `<span class="tiny muted">Liste indisponible : ${esc(e.message || '')}</span>`; return; }
-    try { const { data } = await sb.from('profiles').select('user_id,plan'); const m = Object.fromEntries((data || []).map(x => [x.user_id, x.plan])); USERS.forEach(u => { u.plan = m[u.id] || 'gratuit'; }); } catch { } }
+    try { const { data } = await sb.from('profiles').select('user_id,plan,options'); const m = Object.fromEntries((data || []).map(x => [x.user_id, x])); USERS.forEach(u => { u.plan = m[u.id]?.plan || 'gratuit'; u.options = m[u.id]?.options || []; }); } catch { } }
   const list = USERS.slice().sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, 'fr'));
-  el.innerHTML = list.map(u => `<button class="li" data-a="user-edit" data-id="${u.id}"><div class="main"><div class="t">${esc(u.name || u.email)}</div><div class="s">${esc(u.email)} · ${u.role === 'admin' ? 'administrateur' : `utilisateur · ${u.plan === 'complet' ? 'complète' : 'gratuite'}`} · ${u.last_sign_in_at ? 'vu ' + relDay(u.last_sign_in_at.slice(0, 10)) : 'jamais connecté'}</div></div>${ICON.right}</button>`).join('') || '<span class="tiny muted">Aucun utilisateur.</span>';
+  el.innerHTML = list.map(u => `<button class="li" data-a="user-edit" data-id="${u.id}"><div class="main"><div class="t">${esc(u.name || u.email)}</div><div class="s">${esc(u.email)} · ${u.role === 'admin' ? 'administrateur' : `utilisateur · ${planLabel(u)}`} · ${u.last_sign_in_at ? 'vu ' + relDay(u.last_sign_in_at.slice(0, 10)) : 'jamais connecté'}</div></div>${ICON.right}</button>`).join('') || '<span class="tiny muted">Aucun utilisateur.</span>';
 }
 function userFormHtml(u) {
   const pwd = u ? '' : genPwd(), me = u && u.id === AUTH.user.id;
@@ -4614,30 +4687,40 @@ function userFormHtml(u) {
       <label class="field">E-mail<input class="inp" id="us-email" type="email" inputmode="email" value="${esc(u?.email || '')}" ${u ? 'readonly' : 'required data-autofocus'}></label>
       <label class="field">Prénom<input class="inp" id="us-name" value="${esc(u?.name || '')}" placeholder="ex. Cyril"></label>
       <label class="field">Rôle<select class="inp" id="us-role" ${me ? 'disabled' : ''}><option value="user" ${u?.role !== 'admin' ? 'selected' : ''}>Utilisateur</option><option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>Administrateur</option></select></label>
-      <label class="field">Formule<select class="inp" id="us-plan" ${u?.role === 'admin' ? 'disabled' : ''}><option value="gratuit" ${(u?.plan || 'gratuit') !== 'complet' && u?.role !== 'admin' ? 'selected' : ''}>Gratuite : tout sauf l’IA</option><option value="complet" ${u?.plan === 'complet' || u?.role === 'admin' ? 'selected' : ''}>Complète : tout, IA comprise</option></select></label>
+      <label class="field">Formule<select class="inp" id="us-plan" data-ch="us-plan" ${u?.role === 'admin' ? 'disabled' : ''}><option value="gratuit" ${u?.plan !== 'complet' && u?.role !== 'admin' ? 'selected' : ''}>Gratuite + options cochées</option><option value="complet" ${u?.plan === 'complet' || u?.role === 'admin' ? 'selected' : ''}>Complète : toutes les briques</option></select></label>
+      ${u?.role === 'admin' ? '' : `<div class="field" id="us-opts-wrap" ${u?.plan === 'complet' ? 'hidden' : ''}><span>Options activées pour ce compte</span>${BRICKS.filter(b => brickTier(b[0]) === 'option').map(([k, , l]) => `<label class="opt-chk"><input type="checkbox" name="us-opt" value="${k}" ${optsOf(u).includes(k) ? 'checked' : ''}> ${esc(l)}</label>`).join('') || '<span class="tiny muted">Aucune brique en option pour l’instant : tout est gratuit.</span>'}</div>`}
       ${u ? '' : `<label class="field">Mot de passe provisoire (à lui transmettre, il le changera dans Réglages)<div class="row" style="gap:8px"><input class="inp pwd-box" id="us-pwd" value="${pwd}" readonly><button class="btn sm ghost" type="button" data-a="pwd-copy" data-t="#us-pwd">Copier</button></div></label>`}
       <p class="small" id="us-msg" style="margin:0;min-height:1.2em"></p>
       <div class="row end wrap">${u && !me ? `<button class="btn sm ghost" type="button" data-a="user-reset" data-id="${u.id}">Nouveau mot de passe</button><button class="btn sm ghost danger" type="button" data-a="user-del" data-id="${u.id}" data-email="${esc(u.email)}">Supprimer</button>` : ''}<button class="btn ghost" type="button" data-a="sheet-close">Fermer</button><button class="btn" type="submit">${u ? 'Enregistrer' : 'Créer le compte'}</button></div>
     </form>`;
 }
 async function saveUser(form) {
-  const id = form.dataset.id, email = form.querySelector('#us-email').value.trim().toLowerCase(), name = form.querySelector('#us-name').value.trim(), role = form.querySelector('#us-role').value, plan = form.querySelector('#us-plan')?.value || 'gratuit', msg = form.querySelector('#us-msg'), btn = form.querySelector('button[type=submit]');
+  const id = form.dataset.id, email = form.querySelector('#us-email').value.trim().toLowerCase(), name = form.querySelector('#us-name').value.trim(), role = form.querySelector('#us-role').value, plan = form.querySelector('#us-plan')?.value || 'gratuit', opts = [...form.querySelectorAll('input[name="us-opt"]:checked')].map(x => x.value), msg = form.querySelector('#us-msg'), btn = form.querySelector('button[type=submit]');
   msg.style.color = 'var(--crit-text)'; btn.disabled = true;
   try {
-    if (id) { const old = (USERS || []).find(x => x.id === id); await adminCall('update', { id, name, role }); if (role !== 'admin' && old && (old.plan || 'gratuit') !== plan) await adminCall('plan', { id, plan }); await loadUsers(true); closeSheet(); toast('Compte mis à jour.'); }
+    if (id) { const old = (USERS || []).find(x => x.id === id); await adminCall('update', { id, name, role }); if (role !== 'admin' && old && (old.plan || 'gratuit') !== plan) await adminCall('plan', { id, plan }); const keep = optsOf(old).filter(k => brickTier(k) !== 'option'), nopts = [...new Set([...keep, ...opts])].sort(); if (role !== 'admin' && old && nopts.join() !== optsOf(old).slice().sort().join()) await adminCall('options', { id, options: nopts }); await loadUsers(true); closeSheet(); toast('Compte mis à jour.'); }
     else {
       const password = form.querySelector('#us-pwd').value;
       if (!email) throw new Error('E-mail requis.');
-      const cr = await adminCall('create', { email, name, role, password }); if (role !== 'admin' && plan === 'complet' && cr.data) await adminCall('plan', { id: cr.data, plan }); await loadUsers(true);
+      const cr = await adminCall('create', { email, name, role, password }); if (role !== 'admin' && plan === 'complet' && cr.data) await adminCall('plan', { id: cr.data, plan }); if (role !== 'admin' && plan !== 'complet' && opts.length && cr.data) await adminCall('options', { id: cr.data, options: opts }); await loadUsers(true);
       msg.style.color = 'var(--good-text)'; msg.innerHTML = `Compte créé. Transmets à ${esc(name || email)} son e-mail et le mot de passe provisoire ci-dessus.`;
       btn.hidden = true;
     }
   } catch (e) { msg.textContent = e.message || 'Erreur'; } finally { btn.disabled = false; }
 }
+CH['us-plan'] = el => { const w = $('#us-opts-wrap'); if (w) w.hidden = el.value === 'complet'; };
 Object.assign(A, {
   logout: async () => { flushAll(); await sb.auth.signOut(); },
   'pwd-change': () => openPwdSheet(false),
   'plan-info': () => openSheet(planSheetHtml()),
+  'lock-info': el => openSheet(lockSheetHtml(el.dataset.k)),
+  'brick-tier': async el => {
+    const k = el.dataset.k, v = el.dataset.v, prev = brickTier(k); if (prev === v) return;
+    const paint = () => { const sec = $('#bricks-admin'); if (sec) sec.outerHTML = bricksAdminHtml(); };
+    BTIERS[k] = v; paint();
+    try { await adminCall('tier', { key: k, tier: v }); try { localStorage.setItem('carnet-sport-briques', JSON.stringify(BTIERS)); } catch { } toast(`${BRICK[k].l} : ${v === 'option' ? 'en option' : 'gratuite'}`); loadUsers(true); }
+    catch (e) { BTIERS[k] = prev; paint(); toast(e.message || 'Modification impossible.'); }
+  },
   'pwd-forgot': async () => {
     const email = ($('#lg-email')?.value || '').trim(), msg = $('#lg-msg'); if (!email) { if (msg) msg.textContent = 'Indique ton e-mail d’abord.'; return; }
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
@@ -4663,7 +4746,7 @@ const HAE = { row: null, loaded: false, token: null };
 const HAE_URL = SB_URL + '/functions/v1/health-import';
 async function haeLoad() {
   if (!sb || !AUTH.user) return;
-  wtLoad();
+  wtLoad(); if (!canUse('import_sante')) return;
   try { const { data } = await sb.from('import_tokens').select('created_at,last_import_at,last_status,last_summary').eq('user_id', AUTH.user.id).maybeSingle(); HAE.row = data || null; } catch { HAE.row = null; }
   HAE.loaded = true; const el = $('#hae-box'); if (el) el.innerHTML = haeInner();
 }
@@ -4676,7 +4759,9 @@ function haeInner() {
     <label class="field">Adresse de réception (URL)<div class="row" style="gap:8px"><input class="inp" id="hae-url" value="${HAE_URL}" readonly><button class="btn sm ghost" type="button" data-a="pwd-copy" data-t="#hae-url">Copier</button></div></label>
     <div class="row wrap"><button class="btn sm ${r ? 'ghost' : ''}" data-a="hae-token">${r ? 'Nouveau jeton' : 'Activer l’import automatique'}</button><button class="lnk" data-a="sc-guide">Raccourci (gratuit)</button><button class="lnk" data-a="hae-guide">Health Auto Export</button><button class="lnk" data-a="guide">Méthode manuelle</button></div>`;
 }
+function brickCardHtml(k, title) { return `<section class="card stack"><div class="row between"><h2 class="sec-t">${esc(title)}</h2><button class="btn sm ghost" data-a="lock-info" data-k="${k}">${LOCK_SVG} Option</button></div><p class="small muted" style="margin:0">${esc(BRICK[k].d)}. Option non incluse dans ta formule.</p></section>`; }
 function haeHtml() {
+  if (!canUse('import_sante')) return wtHtml() + brickCardHtml('import_sante', 'Import automatique iPhone');
   return wtHtml() + `<section class="card stack"><h2 class="sec-t">Import automatique iPhone</h2>
     <p class="small" style="margin:0">L’iPhone envoie ici chaque jour les données de l’app Santé : pas, calories, sommeil, poids, masse grasse. Deux façons, même jeton : un <b>Raccourci automatique</b> (gratuit, à créer une fois) ou l’app <b>Health Auto Export</b> (achat unique, zéro réglage).</p>
     <div id="hae-box" class="stack">${HAE.loaded ? haeInner() : '<span class="tiny muted">Chargement…</span>'}</div></section>`;
@@ -4736,7 +4821,7 @@ Object.assign(A, {
 const WT = { row: null, loaded: false, busy: false, autoDone: false };
 const WT_URL = SB_URL + '/functions/v1';
 async function wtLoad() {
-  if (!sb || !AUTH.user) return;
+  if (!sb || !AUTH.user || !canUse('withings')) return;
   try { const { data } = await sb.rpc('withings_status'); WT.row = data || null; } catch { WT.row = null; }
   WT.loaded = true; const el = $('#wt-box'); if (el) el.innerHTML = wtInner();
 }
@@ -4757,6 +4842,7 @@ function wtInner() {
       : `<button class="btn sm" data-a="wt-connect" ${WT.busy ? 'disabled' : ''}>Connecter Withings</button>`}</div>`;
 }
 function wtHtml() {
+  if (!canUse('withings')) return brickCardHtml('withings', 'Withings');
   return `<section class="card stack"><h2 class="sec-t">Withings</h2>
     <p class="small" style="margin:0">Relie ton compte Withings : chaque matin, le Carnet récupère directement chez Withings le <b>score de sommeil</b>, les phases, la fréquence cardiaque de la nuit et les pesées de la balance (poids, masse grasse, masse musculaire en %). Ce qui vient de Withings a priorité sur la copie passée par l’app Santé.</p>
     <div id="wt-box" class="stack">${WT.loaded ? wtInner() : '<span class="tiny muted">Chargement…</span>'}</div></section>`;
@@ -4786,7 +4872,7 @@ async function wtSync(force = true, silent = false) {
   WT.busy = false; await wtLoad();
 }
 function wtAutoSync() {
-  if (WT.autoDone || !sb || !AUTH.user) return; WT.autoDone = true;
+  if (WT.autoDone || !sb || !AUTH.user || !canUse('withings')) return; WT.autoDone = true;
   // Retour de la page d'autorisation Withings : le résultat est dans l'adresse
   try {
     const q = new URLSearchParams(location.search); const r = q.get('withings');
@@ -4811,7 +4897,7 @@ function lgRow() {
   return { user_id: AUTH.user.id, name: AUTH.profile?.name || (AUTH.user.email || '').split('@')[0], label: lg.label, tier: lg.tier, division: lg.div, lp: lg.lp, score: lg.score, streak: lg.streak, wins: lg.wins, games: lg.games };
 }
 function lgPush() {
-  if (!sb || !AUTH.user || Store.mode === 'loading') return;
+  if (!sb || !AUTH.user || Store.mode === 'loading' || !canUse('ligue')) return;
   clearTimeout(LG_PUSH_T);
   LG_PUSH_T = setTimeout(async () => {
     const row = lgRow(); if (!row) return; const key = JSON.stringify(row); if (key === LG_PUSHED) return; LG_PUSHED = key;
@@ -4820,7 +4906,7 @@ function lgPush() {
   }, 1500);
 }
 async function lgBoardLoad() {
-  const el = $('#lg-board'); if (!el || !sb || !AUTH.user) return;
+  const el = $('#lg-board'); if (!el || !sb || !AUTH.user || !canUse('ligue')) return;
   el.innerHTML = '<div class="skel" style="height:60px"></div>';
   try {
     const row = lgRow(); if (row) { const key = JSON.stringify(row); if (key !== LG_PUSHED) { LG_PUSHED = key; const { error } = await sb.from('league_board').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (error) { LG_PUSHED = ''; throw error; } } }
