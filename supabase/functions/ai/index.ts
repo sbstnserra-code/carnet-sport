@@ -1,4 +1,4 @@
-// Carnet Sport : estimations (repas, sommeil) via l'API Anthropic. La clé reste côté serveur (secret ANTHROPIC_API_KEY).
+// Carnet Sport : estimations (repas, sommeil) via l'API Anthropic. La clé reste côté serveur (secret ANTHROPIC_API_KEY). v7.2 : réservé aux admins et à la formule complète.
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -26,6 +26,9 @@ Deno.serve(async (req) => {
   const admin = createClient(URL_, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: { user }, error: uErr } = await admin.auth.getUser(token);
   if (uErr || !user) return json({ error: "Session invalide" }, 401);
+  // v7.2 : IA réservée aux admins et à la formule complète (la version gratuite ne coûte rien en appels IA)
+  const { data: prof } = await admin.from("profiles").select("role,plan").eq("user_id", user.id).maybeSingle();
+  if (!prof || (prof.role !== "admin" && prof.plan !== "complet")) return json({ error: "Réservé à la version complète", code: "plan" }, 403);
 
   const prompt = String(body.prompt || "").slice(0, 12000);
   if (!prompt) return json({ error: "prompt requis" }, 400);
