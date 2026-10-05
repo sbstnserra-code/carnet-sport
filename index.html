@@ -653,6 +653,7 @@ button.pill{border:0;cursor:pointer}
 .auth nav.tabs,.auth #sync,.auth .icon-btn{display:none}
 .auth #view{padding-top:8px}
 .pwd-box{font:600 17px var(--f-d);letter-spacing:.6px;user-select:all;-webkit-user-select:all}
+.lock-ico{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px}.lock-li{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface-2);color:var(--muted);flex:none}.lock-li .lock-ico{margin:0}
 </style>
 </head>
 <body>
@@ -2245,7 +2246,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
   } catch (e) {
     const code = e && e.code;
     if (text && code !== 'cancelled' && applySleep(c, parseSleepText(text))) c.err = '';
-    else c.err = { cancelled: '', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? 'Lecture interrompue, réessaie.';
+    else c.err = { cancelled: '', plan_locked: 'Lecture automatique réservée à la version complète : colle le texte de la capture ou saisis les valeurs.', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? 'Lecture interrompue, réessaie.';
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(code)) SAMPLE_OFF = true;
     if (code === 'images_unavailable') SAMPLE_IMG = false;
   } finally {
@@ -3730,6 +3731,7 @@ function macroInputs(it) {
     </div>`;
 }
 function aiButtons() {
+  if (SAMPLE_LOCK) return planLockHtml();
   if (!SAMPLE || SAMPLE_OFF) return `<span class="tiny muted">${SAMPLE_OFF ? 'Estimation automatique non configurée : saisis les valeurs.' : 'Saisis les valeurs.'}</span>`;
   return `<button class="btn sm accent" data-a="nf-estimate">Estimer automatiquement</button>
     ${SAMPLE_IMG ? `<label class="btn sm ghost" for="nf-photo">Photo du repas</label><input type="file" id="nf-photo" accept="image/*" capture="environment" hidden data-ch="nf-photo">` : ''}`;
@@ -3761,7 +3763,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
     st.textContent = 'Estimation prête : ajuste si besoin, puis ajoute.';
   } catch (e) {
     const c = e && e.code;
-    const msg = { cancelled: '', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c];
+    const msg = { cancelled: '', plan_locked: 'Réservé à la version complète : saisis les valeurs à la main.', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c];
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) SAMPLE_OFF = true;
     if (c === 'images_unavailable') SAMPLE_IMG = false;
     if (st) st.textContent = msg ?? 'Estimation interrompue, réessaie.';
@@ -4367,6 +4369,22 @@ const sb = (window.supabase && /^https:/.test(SB_URL)) ? supabase.createClient(S
 const AUTH = { user: null, session: null, profile: null, ready: false, recovery: false, out: false };
 const fnHeaders = () => ({ 'Content-Type': 'application/json', apikey: SB_KEY, Authorization: 'Bearer ' + (AUTH.session?.access_token || SB_KEY) });
 const mkErr = (code, msg) => Object.assign(new Error(msg || code), { code });
+/* v7.2 : formules. Gratuite : tout le suivi, sans les fonctions IA (chaque appel coûte). Complète : tout. Un admin a tout.
+   Le vrai blocage est côté serveur (fonction ai, colonne profiles.plan que seul un admin peut changer) ; ici on affiche seulement. */
+let SAMPLE_LOCK = false;
+const PLAN_LAB = { gratuit: 'Gratuite', complet: 'Complète' };
+const PLAN_LOCKED = ['Estimation automatique des repas, par description ou photo', 'Lecture automatique des captures de sommeil (le copier-coller du texte reste possible)'];
+const planOf = () => AUTH.profile?.role === 'admin' ? 'complet' : (AUTH.profile?.plan === 'complet' ? 'complet' : 'gratuit');
+const canUse = f => planOf() === 'complet' || f !== 'ia';
+const LOCK_SVG = '<svg class="ico lock-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+function planLockHtml() { return `<button class="btn sm ghost" data-a="plan-info">${LOCK_SVG} Estimer automatiquement</button><span class="tiny muted">Réservé à la version complète</span>`; }
+function planSheetHtml() {
+  return `<h2>Version gratuite</h2>
+    <p class="small" style="margin:0">Ton compte est en version gratuite : tout le suivi est inclus (séances, nutrition, mesures, sommeil, ligue, récaps, images à partager). Ces fonctions sont réservées à la version complète :</p>
+    <div class="list">${PLAN_LOCKED.map(t => `<div class="li"><span class="lock-li">${LOCK_SVG}</span><div class="main"><div class="t" style="white-space:normal">${esc(t)}</div></div></div>`).join('')}</div>
+    <p class="small muted" style="margin:0">Pour y accéder, demande à l’administrateur de l’app de passer ton compte en version complète. En attendant, saisis les valeurs à la main.</p>
+    <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
 function sbErr(e) {
   if (e && e.code && /^[a-z_]+$/.test(e.code)) return e;
   const m = String(e?.message || e || '');
@@ -4468,13 +4486,14 @@ const AI = {
     catch (e) { throw e && e.name === 'AbortError' ? mkErr('cancelled') : mkErr('unavailable'); }
     if (r.status === 503) throw mkErr('not_granted', 'clé IA absente');
     if (r.status === 429) throw mkErr('rate_limited');
-    if (r.status === 401 || r.status === 403) throw mkErr('not_granted');
+    if (r.status === 403) { let j = null; try { j = await r.json(); } catch { } if (j && j.code === 'plan') { SAMPLE_LOCK = true; SAMPLE_OFF = true; throw mkErr('plan_locked', j.error); } throw mkErr('not_granted'); }
+    if (r.status === 401) throw mkErr('not_granted');
     if (!r.ok) throw mkErr('error', 'HTTP ' + r.status);
     const j = await r.json(); return j.json;
   }
 };
 async function initCaps() {
-  SAMPLE = AI; SAMPLE_IMG = true; SAMPLE_OFF = false;
+  SAMPLE = AI; SAMPLE_IMG = true; SAMPLE_OFF = false; SAMPLE_LOCK = !canUse('ia'); if (SAMPLE_LOCK) SAMPLE_OFF = true;
   DL = {
     async save({ filename, data }) {
       const blob = data instanceof Blob ? data : new Blob([data], { type: /\.json$/.test(filename) ? 'application/json' : 'text/plain' });
@@ -4482,7 +4501,7 @@ async function initCaps() {
       setTimeout(() => URL.revokeObjectURL(url), 5000); return { status: 'saved' };
     }
   };
-  try {
+  if (!SAMPLE_LOCK) try {
     const r = await fetch(SB_URL + '/functions/v1/ai', { method: 'POST', headers: fnHeaders(), body: JSON.stringify({ ping: true }) });
     if (r.status === 503) SAMPLE_OFF = true; else if (r.ok) { const j = await r.json(); SAMPLE_IMG = j.images !== false; }
   } catch { }
@@ -4516,8 +4535,9 @@ async function startApp(session) {
   AUTH.session = session; AUTH.user = session.user; AUTH.ready = true;
   LS_KEY = 'carnet-sport-v1:' + session.user.id;
   document.body.classList.remove('auth');
-  try { const { data } = await sb.from('profiles').select('user_id,email,name,role').eq('user_id', session.user.id).maybeSingle(); AUTH.profile = data || { role: 'user', email: session.user.email }; }
-  catch { AUTH.profile = { role: 'user', email: session.user.email }; }
+  const PK = 'carnet-sport-profil:' + session.user.id; let cached = null; try { cached = JSON.parse(localStorage.getItem(PK) || 'null'); } catch { }
+  try { const { data, error } = await sb.from('profiles').select('user_id,email,name,role,plan').eq('user_id', session.user.id).maybeSingle(); if (error) throw error; AUTH.profile = data || { role: 'user', email: session.user.email }; if (data) try { localStorage.setItem(PK, JSON.stringify(data)); } catch { } }
+  catch { AUTH.profile = cached || { role: 'user', email: session.user.email }; }
   initCaps(); initStore(); wtAutoSync(); setTimeout(lgPush, 4000);
   if (AUTH.recovery) setTimeout(() => openPwdSheet(true), 300);
 }
@@ -4562,7 +4582,7 @@ async function savePwd(form) {
 let USERS = null;
 async function adminCall(action, payload = {}) {
   const map = { list: ['admin_list_users', {}], create: ['admin_create_user', { p_email: payload.email, p_password: payload.password, p_name: payload.name || '', p_role: payload.role || 'user' }],
-    update: ['admin_update_user', { p_id: payload.id, p_name: payload.name ?? null, p_role: payload.role ?? null }], reset: ['admin_reset_password', { p_id: payload.id, p_password: payload.password }], delete: ['admin_delete_user', { p_id: payload.id }] };
+    update: ['admin_update_user', { p_id: payload.id, p_name: payload.name ?? null, p_role: payload.role ?? null }], plan: ['admin_set_plan', { p_id: payload.id, p_plan: payload.plan }], reset: ['admin_reset_password', { p_id: payload.id, p_password: payload.password }], delete: ['admin_delete_user', { p_id: payload.id }] };
   const m = map[action]; if (!m) throw new Error('action inconnue');
   const { data, error } = await sb.rpc(m[0], m[1]);
   if (error) throw new Error(/JWT|permission|Réservé/.test(error.message) ? 'Réservé aux administrateurs' : error.message.replace(/^.*?: /, ''));
@@ -4572,18 +4592,20 @@ const genPwd = () => { const a = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ
 function accountHtml() {
   const p = AUTH.profile || {}, admin = p.role === 'admin';
   return `<section class="card stack"><h2 class="sec-t">Compte</h2>
-      <p class="small" style="margin:0"><b>${esc(AUTH.user?.email || '')}</b>${p.name ? ` · ${esc(p.name)}` : ''}${admin ? ' · administrateur' : ''}</p>
-      <div class="row wrap"><button class="btn sm ghost" data-a="pwd-change">Changer le mot de passe</button><button class="btn sm ghost danger" data-a="logout">Se déconnecter</button></div>
+      <p class="small" style="margin:0"><b>${esc(AUTH.user?.email || '')}</b>${p.name ? ` · ${esc(p.name)}` : ''}${admin ? ' · administrateur, toutes les fonctions' : ''}</p>
+      ${admin ? '' : `<p class="small" style="margin:0">Formule : <b>${PLAN_LAB[planOf()]}</b>${planOf() === 'gratuit' ? ' · sans l’IA' : ' · toutes les fonctions'}</p>`}
+      <div class="row wrap">${!admin && planOf() === 'gratuit' ? `<button class="btn sm ghost" data-a="plan-info">${LOCK_SVG} Ce qui est réservé</button>` : ''}<button class="btn sm ghost" data-a="pwd-change">Changer le mot de passe</button><button class="btn sm ghost danger" data-a="logout">Se déconnecter</button></div>
     </section>
     ${admin ? `<section class="card stack"><div class="row between"><h2 class="sec-t">Utilisateurs</h2><button class="btn sm ghost" data-a="user-new">Nouveau</button></div>
-      <p class="tiny muted" style="margin:0">Chaque compte a ses propres données : personne ne voit celles des autres, toi compris.</p>
+      <p class="tiny muted" style="margin:0">Chaque compte a ses propres données : personne ne voit celles des autres, toi compris. Formule gratuite : tout sauf l’IA (estimation des repas, lecture des captures de sommeil).</p>
       <div id="users-list" class="list"><span class="tiny muted">Chargement…</span></div></section>` : ''}`;
 }
 async function loadUsers(force) {
   const el = $('#users-list'); if (!el) return;
-  if (!USERS || force) { try { USERS = (await adminCall('list')).users || []; } catch (e) { el.innerHTML = `<span class="tiny muted">Liste indisponible : ${esc(e.message || '')}</span>`; return; } }
+  if (!USERS || force) { try { USERS = (await adminCall('list')).users || []; } catch (e) { el.innerHTML = `<span class="tiny muted">Liste indisponible : ${esc(e.message || '')}</span>`; return; }
+    try { const { data } = await sb.from('profiles').select('user_id,plan'); const m = Object.fromEntries((data || []).map(x => [x.user_id, x.plan])); USERS.forEach(u => { u.plan = m[u.id] || 'gratuit'; }); } catch { } }
   const list = USERS.slice().sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email, 'fr'));
-  el.innerHTML = list.map(u => `<button class="li" data-a="user-edit" data-id="${u.id}"><div class="main"><div class="t">${esc(u.name || u.email)}</div><div class="s">${esc(u.email)} · ${u.role === 'admin' ? 'administrateur' : 'utilisateur'} · ${u.last_sign_in_at ? 'vu ' + relDay(u.last_sign_in_at.slice(0, 10)) : 'jamais connecté'}</div></div>${ICON.right}</button>`).join('') || '<span class="tiny muted">Aucun utilisateur.</span>';
+  el.innerHTML = list.map(u => `<button class="li" data-a="user-edit" data-id="${u.id}"><div class="main"><div class="t">${esc(u.name || u.email)}</div><div class="s">${esc(u.email)} · ${u.role === 'admin' ? 'administrateur' : `utilisateur · ${u.plan === 'complet' ? 'complète' : 'gratuite'}`} · ${u.last_sign_in_at ? 'vu ' + relDay(u.last_sign_in_at.slice(0, 10)) : 'jamais connecté'}</div></div>${ICON.right}</button>`).join('') || '<span class="tiny muted">Aucun utilisateur.</span>';
 }
 function userFormHtml(u) {
   const pwd = u ? '' : genPwd(), me = u && u.id === AUTH.user.id;
@@ -4592,20 +4614,21 @@ function userFormHtml(u) {
       <label class="field">E-mail<input class="inp" id="us-email" type="email" inputmode="email" value="${esc(u?.email || '')}" ${u ? 'readonly' : 'required data-autofocus'}></label>
       <label class="field">Prénom<input class="inp" id="us-name" value="${esc(u?.name || '')}" placeholder="ex. Cyril"></label>
       <label class="field">Rôle<select class="inp" id="us-role" ${me ? 'disabled' : ''}><option value="user" ${u?.role !== 'admin' ? 'selected' : ''}>Utilisateur</option><option value="admin" ${u?.role === 'admin' ? 'selected' : ''}>Administrateur</option></select></label>
+      <label class="field">Formule<select class="inp" id="us-plan" ${u?.role === 'admin' ? 'disabled' : ''}><option value="gratuit" ${(u?.plan || 'gratuit') !== 'complet' && u?.role !== 'admin' ? 'selected' : ''}>Gratuite : tout sauf l’IA</option><option value="complet" ${u?.plan === 'complet' || u?.role === 'admin' ? 'selected' : ''}>Complète : tout, IA comprise</option></select></label>
       ${u ? '' : `<label class="field">Mot de passe provisoire (à lui transmettre, il le changera dans Réglages)<div class="row" style="gap:8px"><input class="inp pwd-box" id="us-pwd" value="${pwd}" readonly><button class="btn sm ghost" type="button" data-a="pwd-copy" data-t="#us-pwd">Copier</button></div></label>`}
       <p class="small" id="us-msg" style="margin:0;min-height:1.2em"></p>
       <div class="row end wrap">${u && !me ? `<button class="btn sm ghost" type="button" data-a="user-reset" data-id="${u.id}">Nouveau mot de passe</button><button class="btn sm ghost danger" type="button" data-a="user-del" data-id="${u.id}" data-email="${esc(u.email)}">Supprimer</button>` : ''}<button class="btn ghost" type="button" data-a="sheet-close">Fermer</button><button class="btn" type="submit">${u ? 'Enregistrer' : 'Créer le compte'}</button></div>
     </form>`;
 }
 async function saveUser(form) {
-  const id = form.dataset.id, email = form.querySelector('#us-email').value.trim().toLowerCase(), name = form.querySelector('#us-name').value.trim(), role = form.querySelector('#us-role').value, msg = form.querySelector('#us-msg'), btn = form.querySelector('button[type=submit]');
+  const id = form.dataset.id, email = form.querySelector('#us-email').value.trim().toLowerCase(), name = form.querySelector('#us-name').value.trim(), role = form.querySelector('#us-role').value, plan = form.querySelector('#us-plan')?.value || 'gratuit', msg = form.querySelector('#us-msg'), btn = form.querySelector('button[type=submit]');
   msg.style.color = 'var(--crit-text)'; btn.disabled = true;
   try {
-    if (id) { await adminCall('update', { id, name, role }); await loadUsers(true); closeSheet(); toast('Compte mis à jour.'); }
+    if (id) { const old = (USERS || []).find(x => x.id === id); await adminCall('update', { id, name, role }); if (role !== 'admin' && old && (old.plan || 'gratuit') !== plan) await adminCall('plan', { id, plan }); await loadUsers(true); closeSheet(); toast('Compte mis à jour.'); }
     else {
       const password = form.querySelector('#us-pwd').value;
       if (!email) throw new Error('E-mail requis.');
-      await adminCall('create', { email, name, role, password }); await loadUsers(true);
+      const cr = await adminCall('create', { email, name, role, password }); if (role !== 'admin' && plan === 'complet' && cr.data) await adminCall('plan', { id: cr.data, plan }); await loadUsers(true);
       msg.style.color = 'var(--good-text)'; msg.innerHTML = `Compte créé. Transmets à ${esc(name || email)} son e-mail et le mot de passe provisoire ci-dessus.`;
       btn.hidden = true;
     }
@@ -4614,6 +4637,7 @@ async function saveUser(form) {
 Object.assign(A, {
   logout: async () => { flushAll(); await sb.auth.signOut(); },
   'pwd-change': () => openPwdSheet(false),
+  'plan-info': () => openSheet(planSheetHtml()),
   'pwd-forgot': async () => {
     const email = ($('#lg-email')?.value || '').trim(), msg = $('#lg-msg'); if (!email) { if (msg) msg.textContent = 'Indique ton e-mail d’abord.'; return; }
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
