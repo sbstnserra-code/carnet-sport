@@ -1,4 +1,4 @@
-// Carnet Sport : estimations (repas, sommeil) via l'API Anthropic. La clé reste côté serveur (secret ANTHROPIC_API_KEY). v7.2 : réservé aux admins et à la formule complète.
+// Carnet Sport : estimations (repas, sommeil) via l'API Anthropic. La clé reste côté serveur (secret ANTHROPIC_API_KEY). v7.3 : briques ia_repas et ia_sommeil (gratuites ou en option).
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const URL_ = Deno.env.get("SUPABASE_URL")!;
@@ -26,9 +26,10 @@ Deno.serve(async (req) => {
   const admin = createClient(URL_, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: { user }, error: uErr } = await admin.auth.getUser(token);
   if (uErr || !user) return json({ error: "Session invalide" }, 401);
-  // v7.2 : IA réservée aux admins et à la formule complète (la version gratuite ne coûte rien en appels IA)
-  const { data: prof } = await admin.from("profiles").select("role,plan").eq("user_id", user.id).maybeSingle();
-  if (!prof || (prof.role !== "admin" && prof.plan !== "complet")) return json({ error: "Réservé à la version complète", code: "plan" }, 403);
+  // v7.3 : chaque usage IA est une brique (ia_repas, ia_sommeil), gratuite ou en option selon le réglage de l'admin
+  const feature = body.feature === "ia_sommeil" ? "ia_sommeil" : "ia_repas";
+  const { data: allowed, error: fErr } = await admin.rpc("_feature_ok", { p_uid: user.id, p_key: feature });
+  if (fErr || allowed !== true) return json({ error: "Option non incluse dans ta formule", code: "plan", feature }, 403);
 
   const prompt = String(body.prompt || "").slice(0, 12000);
   if (!prompt) return json({ error: "prompt requis" }, 400);
