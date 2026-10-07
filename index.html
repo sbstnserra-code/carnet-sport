@@ -1538,9 +1538,9 @@ function bodyTargetHtml() {
 
 /* ================= v6.6 : objectif d'entraînement, choix par muscle, fiche exercice ================= */
 const TRAIN = {
-  hyper: { l: 'Hypertrophie', sub: 'prendre du muscle', sets: [3, 4], reps: [8, 12], iso: [12, 15], small: [15, 20], pct: '65 à 80 % du 1RM', rir: '1 à 2 reps en réserve', rest: '60 à 90 s', rs: '60–90 s', restSec: 90, tempo: '3 s de descente, montée contrôlée', week: [12, 20],
-    prog: 'Double progression : à charge fixe, monte de 8 à 12 reps sur toutes les séries, puis +2,5 kg et retour à 8.', result: 'Muscle plus volumineux : tours de bras et de cuisse, masse maigre.',
-    why: 'Charges moyennes, séries de 8 à 12 proches de l’échec, repos courts : c’est la tension et le volume accumulés qui font grossir le muscle. La force monte aussi, mais moins vite qu’en cycle force.' },
+  hyper: { l: 'Hypertrophie', sub: 'prendre du muscle', sets: [3, 4], reps: [6, 10], iso: [10, 15], small: [12, 20], pct: '65 à 85 % du 1RM', rir: '1 à 2 reps en réserve', rest: '60 à 90 s', rs: '60–90 s', restSec: 90, tempo: '3 s de descente, montée contrôlée', week: [10, 20],
+    prog: 'Double progression : à charge fixe, monte de 6 à 10 reps sur toutes les séries (10 à 15 en isolation), puis +2,5 kg et retour en bas de la fourchette.', result: 'Muscle plus volumineux : tours de bras et de cuisse, masse maigre.',
+    why: 'Charges moyennes et séries proches de l’échec : 6 à 10 reps sur les polyarticulaires, 10 à 15 en isolation. Assez de repos pour garder la charge (2 min 30 à 3 min sur les poly) : c’est le volume de séries dures qui fait grossir le muscle. La force monte aussi, mais moins vite qu’en cycle force.' },
   force: { l: 'Force', sub: 'soulever plus lourd', sets: [5, 5], reps: [3, 5], iso: [6, 8], small: [8, 10], pct: '85 à 90 % du 1RM', rir: '1 rep en réserve, jamais l’échec', rest: '3 à 5 min', rs: '3–5 min', restSec: 210, tempo: 'descente 1 à 2 s, montée explosive', week: [8, 12],
     prog: '+2,5 kg (haut du corps) ou +5 kg (bas du corps) dès que les 5 séries passent. Échauffement obligatoire : 50 % × 5, 70 % × 3, 80 % × 1.', result: '1RM qui monte : le chiffre sur la barre. Le volume musculaire suit peu.',
     why: 'Charges lourdes, 3 à 5 reps, repos longs : le système nerveux apprend à recruter plus de fibres en même temps. Réservé à 1 ou 2 mouvements de base par séance (squat, presse, développés, tirages, soulevé de terre), le reste en 6 à 8 reps.' },
@@ -1558,7 +1558,7 @@ function presc(id, gk = trainKey()) {
   const G = TRAIN[gk], ex = exOf(id), n = norm(ex.name), g = ex.group;
   if (ex.kind === 'cardio') return { txt: '', sets: '', reps: '' };
   if (/gainage|planche|plank/.test(n)) { const r = gk === 'endur' ? '60–90 s' : '30–60 s'; return { sets: '3', reps: r, txt: `3 × ${r}` }; }
-  let reps = PK_ISO.test(n) || PK_ISO.test(id) ? G.iso : G.reps; if (g === 'mollets' || g === 'abdos' || g === 'avantbras') reps = G.small;
+  let reps = catOf(id) === 'iso' ? G.iso : G.reps; if (g === 'mollets' || g === 'abdos' || g === 'avantbras') reps = G.small;
   const sets = rngTxt(G.sets), r = rngTxt(reps);
   return { sets, reps: r, txt: `${sets} × ${r}`, bw: ex.kind === 'bw' ? 'ajoute du lest quand tu dépasses le haut de la fourchette' : '' };
 }
@@ -1641,14 +1641,14 @@ function trainGuideHtml() {
   const rows = TRAIN_KEYS.map(k => { const G = TRAIN[k]; return `<tr class="${cur === k ? 'on' : ''}"><td>${G.l}</td><td><b>${rngTxt(G.sets)}</b></td><td><b>${rngTxt(G.reps)}</b><br><span class="muted">${rngTxt(G.iso)} isolation</span></td><td>${esc(G.rs)}</td><td><b>${rngTxt(G.week)}</b></td></tr>`; }).join('');
   const cards = TRAIN_KEYS.map(k => { const G = TRAIN[k]; return `<div class="gcard"><h3>${G.l}<small>${G.sub}</small></h3><div class="kv"><span>Séries<b>${rngTxt(G.sets)}</b></span><span>Reps<b>${rngTxt(G.reps)}</b></span><span>Isolation<b>${rngTxt(G.iso)}</b></span><span>Repos<b>${esc(G.rs)}</b></span><span>Par muscle et par semaine<b>${rngTxt(G.week)}</b></span></div><p>${esc(G.why)}</p>${cur === k ? '<span class="pill good" style="align-self:flex-start;margin-top:4px">Objectif actuel</span>' : `<button class="btn ghost sm" style="align-self:flex-start;margin-top:4px" data-a="cfg-train" data-v="${k}">Choisir ${G.l}</button>`}</div>`; }).join('');
   const you = c.goal === 'seche' ? 'Reste en hypertrophie et garde tes charges : c’est ce qui protège le muscle pendant le déficit. Si la récupération décroche, retire une série par exercice plutôt que de baisser l’intensité. Pas d’endurance en sèche, ça n’apporte rien de plus au muscle.'
-    : c.goal === 'masse' ? 'En prise de masse, l’hypertrophie est la base ; un bloc force de 4 à 6 semaines de temps en temps fait monter les charges que tu utiliseras ensuite en 8 à 12 reps.' : 'En maintien, alterne des blocs de 6 à 8 semaines : hypertrophie la plupart du temps, force quand tu stagnes.';
+    : c.goal === 'masse' ? 'En prise de masse, l’hypertrophie est la base ; un bloc force de 4 à 6 semaines de temps en temps fait monter les charges que tu utiliseras ensuite en 6 à 10 reps.' : 'En maintien, alterne des blocs de 6 à 8 semaines : hypertrophie la plupart du temps, force quand tu stagnes.';
   return `<div class="stack ef"><div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Combien de séries, combien de reps</div><h2 style="margin:2px 0 0">Selon ton objectif</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
     <div class="gyou"><b>Pour toi${c.goal === 'seche' ? ', en sèche' : c.goal === 'masse' ? ', en prise de masse' : ''}</b>${you}</div>
     <div><div class="ef-sec">Force ou hypertrophie : ce qui change</div><table class="gtab cmp"><thead><tr><th></th><th>Force</th><th>Hypertrophie</th></tr></thead><tbody>
-      <tr><td>Charge</td><td>85 à 90 % du 1RM</td><td>65 à 80 % du 1RM</td></tr><tr><td>Reps</td><td><b>3 à 5</b></td><td><b>8 à 12</b> (12 à 15 en isolation)</td></tr>
-      <tr><td>Séries</td><td><b>5</b> par exercice, 2 exercices lourds max</td><td><b>3 à 4</b> par exercice, 5 à 6 exercices</td></tr><tr><td>Repos</td><td>3 à 5 min</td><td>60 à 90 s</td></tr>
-      <tr><td>Échec</td><td>Jamais, 1 rep en réserve</td><td>1 à 2 reps en réserve, dernière série proche de l’échec</td></tr><tr><td>Progression</td><td>+2,5 / +5 kg quand les 5 séries passent</td><td>Reps de 8 à 12, puis +2,5 kg</td></tr>
-      <tr><td>Résultat en 8 semaines</td><td>1RM qui monte, peu de volume</td><td>Volume musculaire, force qui suit doucement</td></tr><tr><td>Par muscle et par semaine</td><td>8 à 12 séries lourdes</td><td>12 à 20 séries</td></tr></tbody></table></div>
+      <tr><td>Charge</td><td>85 à 90 % du 1RM</td><td>65 à 85 % du 1RM</td></tr><tr><td>Reps</td><td><b>3 à 5</b> (6 à 8 en isolation)</td><td><b>6 à 10</b> en polyarticulaire, 10 à 15 en isolation</td></tr>
+      <tr><td>Séries</td><td><b>5</b> par exercice, 2 exercices lourds max</td><td><b>3 à 4</b> par exercice, 5 à 6 exercices</td></tr><tr><td>Repos</td><td>${esc(TRAIN.force.rest)}</td><td>${esc(TRAIN.hyper.rest)}</td></tr>
+      <tr><td>Échec</td><td>Jamais, 1 rep en réserve</td><td>1 à 2 reps en réserve, dernière série proche de l’échec</td></tr><tr><td>Progression</td><td>+2,5 / +5 kg quand les 5 séries passent</td><td>Reps de 6 à 10 (10 à 15 en isolation), puis +2,5 kg</td></tr>
+      <tr><td>Résultat en 8 semaines</td><td>1RM qui monte, peu de volume</td><td>Volume musculaire, force qui suit doucement</td></tr><tr><td>Par muscle et par semaine</td><td>8 à 12 séries lourdes</td><td>10 à 20 séries</td></tr></tbody></table></div>
     <div style="overflow-x:auto"><div class="ef-sec">Les quatre objectifs</div><table class="gtab"><thead><tr><th>Objectif</th><th>Séries</th><th>Reps</th><th>Repos</th><th>Séries / muscle / semaine</th></tr></thead><tbody>${rows}</tbody></table></div>
     <div>${cards}</div>
     <div class="gcard"><h3>Règles qui valent pour tout</h3><p>Une série ne compte que si elle finit à 1 à 3 reps de l’échec. Au-delà de 20 séries par muscle et par semaine, le rendement chute. Répartis le volume sur 2 séances par muscle plutôt qu’une. Change de fourchette toutes les 6 à 8 semaines, ou dès que tu stagnes 3 séances de suite.</p></div>
@@ -3567,7 +3567,7 @@ function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
   const allOk = (e.sets || []).length > 0 && e.sets.every(z => z.ok), fold = allOk && exFold(d, i);
   return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''}" data-i="${i}">
-    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${(() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
+    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}"><span class="chk">${ICON.check}</span><span>${esc(notation(ds, kind, e.ex))}</span>${lp ? cmpLast(e, lp) : ''}</button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
@@ -3977,13 +3977,13 @@ VIEWS.reglages = {
     return `<h1 class="h1">Réglages</h1>
     <section class="card stack"><h2 class="sec-t">Objectifs</h2>
       <div class="stack" style="gap:6px"><span class="field" style="margin:0">Objectif nutrition</span>${segHtml('cfg-goal', [...Object.entries(MACRO_GOALS).map(([k, g]) => ({ k, l: g.l })), { k: 'manuel', l: 'Manuel' }], MACRO_GOALS[c.goal] ? c.goal : 'manuel').replace('class="seg"', 'class="seg goal-seg"')}</div>
-      <div class="stack" style="gap:6px"><span class="field" style="margin:0">Objectif d'entraînement</span>${segHtml('cfg-train', TRAIN_KEYS.map(k => ({ k, l: TRAIN[k].l })), trainKey()).replace('class="seg"', 'class="seg goal-seg"')}<p class="tiny muted" style="margin:0">${esc(TRAIN[trainKey()].sub)} : ${rngTxt(TRAIN[trainKey()].sets)} séries × ${rngTxt(TRAIN[trainKey()].reps)} reps, repos ${esc(TRAIN[trainKey()].rs)}. <button class="lnk" data-a="train-guide">Conseils séries et reps</button></p></div>
+      <div class="stack" style="gap:6px"><span class="field" style="margin:0">Objectif d'entraînement</span>${segHtml('cfg-train', TRAIN_KEYS.map(k => ({ k, l: TRAIN[k].l })), trainKey()).replace('class="seg"', 'class="seg goal-seg"')}<p class="tiny muted" style="margin:0">${esc(TRAIN[trainKey()].sub)} : ${rngTxt(TRAIN[trainKey()].sets)} séries × ${rngTxt(TRAIN[trainKey()].reps)} reps en polyarticulaire, ${rngTxt(TRAIN[trainKey()].iso)} en isolation ; repos ${esc(TRAIN[trainKey()].rest)}. <button class="lnk" data-a="train-guide">Conseils séries et reps</button></p></div>
       ${c.goal === 'seche' ? `<div class="stack" style="gap:6px"><span class="field" style="margin:0">Intensité de la sèche</span>${segHtml('cfg-pace', Object.entries(PACES).map(([k, x]) => ({ k, l: `${x.l} −${Math.round(-x.d * 100)} %` })), PACES[c.pace] ? c.pace : 'normale').replace('class="seg"', 'class="seg goal-seg"')}</div>` : ''}
       ${c.goal === 'seche' && c.pace === 'agressive' ? '<div class="banner" style="margin:0">Sèche agressive : 4 à 6 semaines au plus, puis 1 à 2 semaines au maintien. Garde des charges lourdes et vise tes protéines chaque jour, sinon tu perds du muscle en même temps que du gras.</div>' : ''}
       <div class="grid2">${MACRO_GOALS[c.goal] && c.kcalMode !== 'fixe' && kcalAuto(c) ? `<label class="field">Calories / jour · auto<input class="inp auto" id="cfg-kcal" value="${v(c.kcal)}" readonly tabindex="-1" aria-readonly="true"></label>` : num('kcal', 'Calories / jour', 'kcal')}${['p', 'c', 'f'].map(k => { const l = { p: 'Protéines', c: 'Glucides', f: 'Lipides' }[k]; return MACRO_GOALS[c.goal] ? `<label class="field">${l} (g) · auto<input class="inp auto" id="cfg-${k}" value="${v(c[k])}" readonly tabindex="-1" aria-readonly="true"></label>` : num(k, l, 'g'); }).join('')}</div>
       <p class="small muted" id="macro-exp" style="margin:0">${macroExpHtml(c)}</p>
       ${MACRO_GOALS[c.goal] && kcalAuto(c) ? `<div class="row wrap" style="gap:4px 12px">${c.kcalMode === 'fixe' ? '<button class="lnk" data-a="cfg-kmode" data-v="auto">Calculer les calories selon ma dépense</button>' : '<button class="lnk" data-a="cfg-kmode" data-v="fixe">Fixer les calories moi-même</button><button class="lnk" data-a="cfg-recalc">Recalculer avec mes dernières données</button>'}</div>` : ''}
-      <div class="grid2">${num('bmr', 'Métabolisme de base', 'kcal')}${num('tol', 'Marge « dans la cible »', '%')}${num('steps', 'Pas / jour')}<label class="field">Repos entre séries · auto<input class="inp auto" id="cfg-rest-auto" value="Poly 2:30 à 3:00 · Iso 1:00 à 1:30" readonly tabindex="-1" aria-readonly="true"></label>${num('muscu', 'Séances muscu / semaine')}${num('cardio', 'Séances cardio / semaine')}</div>
+      <div class="grid2">${num('bmr', 'Métabolisme de base', 'kcal')}${num('tol', 'Marge « dans la cible »', '%')}${num('steps', 'Pas / jour')}<label class="field">Repos entre séries · auto<input class="inp auto" id="cfg-rest-auto" value="Poly ${restCatTxt('poly', trainKey(), mClk)} · Iso ${restCatTxt('iso', trainKey(), mClk)}" readonly tabindex="-1" aria-readonly="true"></label>${num('muscu', 'Séances muscu / semaine')}${num('cardio', 'Séances cardio / semaine')}</div>
       <p class="tiny muted" style="margin:0">Calories, glucides et lipides sont des plafonds : vert dans la marge, orange jusqu’à 3 fois la marge au-dessus (4 fois en dessous), rouge au-delà. Les protéines sont un minimum : vert dès que la marge est atteinte, pas de pénalité au-dessus. Pendant la journée, être en dessous n’est jamais signalé.</p>
       <label class="field">Repas non renseignés
         <select class="inp" id="cfg-impute" data-ch="cfg-impute"><option value="moyenne" ${c.impute === 'moyenne' ? 'selected' : ''}>Remplacés par ma moyenne des 28 derniers jours</option><option value="objectif" ${c.impute === 'objectif' ? 'selected' : ''}>Remplacés par une part de mon objectif</option></select></label>
@@ -4057,7 +4057,7 @@ function exFormHtml(id, name = '') {
     <label class="field">Nom<input class="inp" id="exf-name" value="${esc(e.name)}" data-autofocus autocomplete="off"></label>
     <div class="grid2"><label class="field">Groupe<select class="inp" id="exf-group">${GROUPS.map(g => `<option value="${g.k}" ${g.k === e.group ? 'selected' : ''}>${g.l}</option>`).join('')}</select></label>
     <label class="field">Type<select class="inp" id="exf-kind">${KINDS.map(k => `<option value="${k.k}" ${k.k === (e.kind || 'w') ? 'selected' : ''}>${k.l}</option>`).join('')}</select></label></div>
-    <label class="field">Mouvement<select class="inp" id="exf-cat"><option value="">Auto${id && catOf(id, true) ? ' · ' + (catOf(id, true) === 'poly' ? 'polyarticulaire' : 'isolation') : ''}</option><option value="poly" ${e.cat === 'poly' ? 'selected' : ''}>Polyarticulaire · repos 2 min 30 à 3 min</option><option value="iso" ${e.cat === 'iso' ? 'selected' : ''}>Isolation · repos 1 min à 1 min 30</option></select></label>
+    <label class="field">Mouvement<select class="inp" id="exf-cat"><option value="">Auto${id && catOf(id, true) ? ' · ' + (catOf(id, true) === 'poly' ? 'polyarticulaire' : 'isolation') : ''}</option><option value="poly" ${e.cat === 'poly' ? 'selected' : ''}>Polyarticulaire · repos ${restCatTxt('poly')}</option><option value="iso" ${e.cat === 'iso' ? 'selected' : ''}>Isolation · repos ${restCatTxt('iso')}</option></select></label>
     <div class="grid2"><label class="field">Note (réglage machine, prise…)<input class="inp" id="exf-note" value="${esc(e.note || '')}" placeholder="ex. siège cran 4"></label>
     <label class="field">Pas des boutons −/+ (kg)<input class="inp" id="exf-step" inputmode="decimal" value="${v(e.step)}" placeholder="auto"></label></div>
     <div class="row between wrap">${id ? `<button class="btn ghost danger" data-a="ex-delete" data-id="${id}">${u ? 'Masquer' : 'Supprimer'}</button>` : '<span></span>'}
@@ -4095,7 +4095,15 @@ async function bulkImport(data) {
 
 /* ================= v8.1 : repos automatique selon le type de mouvement ================= */
 // Poly : 2 min 30, 3 min si la série fait 6 reps ou moins. Iso : 1 min 30. Petits groupes (abdos, mollets, avant-bras, gainage) : 1 min.
-const REST_RULES = { poly: { lourd: 180, normal: 150, label: 'Poly', reps: '6 à 10' }, iso: { normal: 90, label: 'Iso', reps: '10 à 15' }, isoPetit: { normal: 60 } };
+// v8.2 : repos par objectif. poly = [normal, série de 6 reps ou moins], petit = abdos, mollets, avant-bras, gainage.
+const REST_BY = { hyper: { poly: [150, 180], iso: 90, petit: 60 }, force: { poly: [180, 240], iso: 120, petit: 90 }, endur: { poly: [60, 90], iso: 45, petit: 30 }, puiss: { poly: [150, 180], iso: 90, petit: 60 } };
+const CAT_L = { poly: 'Poly', iso: 'Iso' };
+const restRule = () => REST_BY[trainKey()] || REST_BY.hyper;
+const mTxt = sec => sec < 60 ? `${sec} s` : sec % 60 ? `${Math.floor(sec / 60)} min ${pad(sec % 60)}` : `${sec / 60} min`;
+const mClk = sec => `${Math.floor(sec / 60)}:${pad(sec % 60)}`;
+const spanTxt = (a, b, f = mTxt) => a === b ? f(a) : a % 60 || b % 60 || f !== mTxt ? `${f(a)} à ${f(b)}` : `${a / 60} à ${b / 60} min`;
+function isPetit(id) { const ex = exOf(id); return PETITS_GROUPES.includes(ex.group) || /gainage|planche|plank/i.test(ex.name || ''); }
+function restCatTxt(cat, k = trainKey(), f = mTxt) { const R = REST_BY[k] || REST_BY.hyper; return cat === 'poly' ? spanTxt(R.poly[0], R.poly[1], f) : spanTxt(Math.min(R.petit, R.iso), R.iso, f); }
 const LOURD_MAX_REPS = 6;
 const PETITS_GROUPES = ['abdos', 'mollets', 'avantbras'];
 const POLY_IDS = new Set(['couche-banc', 'developpe-couche-guide-17xm', 'developpe-incline-barre', 'developpe-incline-guide-zswl', 'inc-halteres', 'vertical-chest-press', 'squeeze-press', 'dips', 'pompes', 'developpe-assis', 'developpe-militaire', 'tractions', 'tirage-nuque', 'tirage-buste-haut', 'tirage-buste-neutre', 'tirage-vertical-large', 'tirage-horizontal', 'rowing-barre', 'rowing-haltere', 'souleve-de-terre', 'squat', 'hack-squat', 'presse-cuisses', 'presse-inversee', 'fentes-bulgares', 'fentes-marchees', 'sdt-jambes-tendues', 'hip-thrust', 'good-morning', 'dips-banc']);
@@ -4114,19 +4122,23 @@ function catOf(exId, auto) {
   return GROUPES_ISO_DEFAUT.includes(ex.group) ? 'iso' : 'poly';
 }
 function restFor(exId, set) {
-  const cat = catOf(exId), ex = exOf(exId);
+  const cat = catOf(exId), R = restRule();
   if (!cat) return CFG().rest;
-  if (cat === 'poly') { const reps = +(set && set.r) || 0; return reps && reps <= LOURD_MAX_REPS ? REST_RULES.poly.lourd : REST_RULES.poly.normal; }
-  if (PETITS_GROUPES.includes(ex.group) || /gainage/i.test(ex.name || '')) return REST_RULES.isoPetit.normal;
-  return REST_RULES.iso.normal;
+  if (cat === 'poly') { const reps = +(set && set.r) || 0; return reps && reps <= LOURD_MAX_REPS ? R.poly[1] : R.poly[0]; }
+  return isPetit(exId) ? R.petit : R.iso;
 }
-function catTag(exId) { const cat = catOf(exId); if (!cat) return ''; const r = REST_RULES[cat]; return `<span class="tag tag-${cat}">${r.label} · ${r.reps}</span>`; }
+// Tag du mode salle : type de mouvement + fourchette de reps de l'objectif (« Poly · 6 à 10 »)
+function catTag(exId) { const cat = catOf(exId); if (!cat) return ''; const p = presc(exId); return `<span class="tag tag-${cat}">${CAT_L[cat]} · ${esc((p.reps || '').replace('–', ' à '))}</span>`; }
+// Tag de la carte : type + prescription complète, ouvre la fiche (« Poly · 3–4 × 6–10 »)
+function catBtn(exId) { const cat = catOf(exId), p = presc(exId); if (!cat || !p.txt) return ''; return `<button class="tag tag-${cat}" data-a="ex-fiche" data-id="${exId}" title="Fiche de l’exercice">${CAT_L[cat]} · ${p.txt}</button>`; }
 function restTxt(exId) {
-  const cat = catOf(exId), ex = exOf(exId), m = sec => sec % 60 ? `${Math.floor(sec / 60)} min ${pad(sec % 60)}` : `${sec / 60} min`;
+  const cat = catOf(exId), R = restRule();
   if (!cat) return '';
-  if (cat === 'poly') return `${m(REST_RULES.poly.normal)}, ${m(REST_RULES.poly.lourd)} si ${LOURD_MAX_REPS} reps ou moins`;
-  return m(PETITS_GROUPES.includes(ex.group) || /gainage/i.test(ex.name || '') ? REST_RULES.isoPetit.normal : REST_RULES.iso.normal);
+  if (cat === 'poly') return R.poly[0] === R.poly[1] ? mTxt(R.poly[0]) : `${mTxt(R.poly[0])}, ${mTxt(R.poly[1])} si ${LOURD_MAX_REPS} reps ou moins`;
+  return mTxt(isPetit(exId) ? R.petit : R.iso);
 }
+// Les textes de repos des objectifs (guide, réglages, sélecteur par muscle) viennent de la même table que le minuteur
+for (const k of TRAIN_KEYS) { const R = REST_BY[k]; TRAIN[k].rs = `${restCatTxt('poly', k)} · iso ${mTxt(R.iso)}`; TRAIN[k].rest = `${restCatTxt('poly', k)} en polyarticulaire, ${restCatTxt('iso', k)} en isolation`; TRAIN[k].restSec = R.poly[0]; }
 
 /* ================= Minuteur de repos ================= */
 const REST = { end: 0, dur: 90, t: null, hide: null, on: false };
@@ -5271,6 +5283,7 @@ const bDays = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:0
 const bAvg = arr => arr.length ? arr.reduce((x, y) => x + y, 0) / arr.length : null;
 const bPct = (a, b) => a ? (b - a) / a * 100 : 0;
 const bCat = id => catOf(id);
+const bRng = c => (TRAIN[trainKey()] || TRAIN.hyper)[c === 'poly' ? 'reps' : 'iso'];
 function bPeriode() {
   const t = today(), c = CFG();
   if (BILAN_UI.per === 0 && c.planStart && c.planStart <= t) return { from: c.planStart, to: t, label: c.planName || 'Plan en cours' };
@@ -5305,8 +5318,8 @@ function bilanCalc() {
       if (cat === 'poly') poly += ws.length; else iso += ws.length;
       for (const st of ws) {
         const r = +st.r || 0; if (!r) continue;
-        if (cat === 'poly') { totP++; if (r > BILAN.repsPoly[1] + 2) horsPlageP++; }
-        else { totI++; if (r < BILAN.repsIso[0]) horsPlageI++; }
+        if (cat === 'poly') { totP++; if (r > bRng('poly')[1] + 2) horsPlageP++; }
+        else if (!isPetit(e.ex)) { totI++; if (r < bRng('iso')[0] - 2) horsPlageI++; }
       }
       if (ws.length >= 3 && k === 'w') {
         const kg = ws.map(x => +x.kg || 0), rp = ws.map(x => +x.r || 0);
@@ -5376,8 +5389,8 @@ function bilanConseils(B) {
     if (pp < 45) add('warn', 'Trop d’isolation', `${nf(pp)} % de séries polyarticulaires.`, 'Les polyarticulaires construisent la base. Commence chaque séance par 2 mouvements lourds, l’isolation ensuite.');
     else add('good', 'Bon équilibre poly / iso', `${nf(pp)} % de séries polyarticulaires.`, 'Garde les polyarticulaires en début de séance, quand tu es frais.');
   }
-  if (B.totP >= 6 && B.horsPlageP / B.totP > 0.4) add('warn', 'Polyarticulaires trop légers', `${nf(B.horsPlageP / B.totP * 100)} % des séries poly au-delà de 12 reps.`, 'Sur les mouvements de base, charge pour tenir 6 à 10 reps. Au-dessus, c’est de l’endurance.');
-  if (B.totI >= 6 && B.horsPlageI / B.totI > 0.4) add('warn', 'Isolation trop lourde', `${nf(B.horsPlageI / B.totI * 100)} % des séries iso sous 8 reps.`, 'L’isolation se travaille entre 10 et 15 reps, mouvement contrôlé. Baisse la charge.');
+  if (B.totP >= 6 && B.horsPlageP / B.totP > 0.4) add('warn', 'Polyarticulaires trop légers', `${nf(B.horsPlageP / B.totP * 100)} % des séries poly au-delà de ${bRng('poly')[1] + 2} reps.`, `Sur les mouvements de base, charge pour tenir ${bRng('poly')[0]} à ${bRng('poly')[1]} reps. Au-dessus, c’est de l’endurance.`);
+  if (B.totI >= 6 && B.horsPlageI / B.totI > 0.4) add('warn', 'Isolation trop lourde', `${nf(B.horsPlageI / B.totI * 100)} % des séries iso sous ${bRng('iso')[0] - 2} reps.`, `L’isolation se travaille entre ${bRng('iso')[0]} et ${bRng('iso')[1]} reps, mouvement contrôlé. Baisse la charge.`);
   if (B.identiques.length) {
     const ex = [...new Set(B.identiques.map(x => exOf(x.ex).name))].slice(0, 3).join(', ');
     add('crit', 'Séries trop faciles', `${B.identiques.length} fois toutes les séries identiques, même charge et mêmes reps (${ex}).`, 'Si la dernière série sort aussi bien que la première, tu étais loin de l’échec. Monte la charge jusqu’à ce que la dernière série finisse à 1 ou 2 reps de l’échec.');
