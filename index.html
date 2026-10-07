@@ -654,6 +654,114 @@ button.pill{border:0;cursor:pointer}
 .auth #view{padding-top:8px}
 .pwd-box{font:600 17px var(--f-d);letter-spacing:.6px;user-select:all;-webkit-user-select:all}
 .lock-ico{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px;margin-right:2px;flex:none}.lock-li{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--surface-2);color:var(--muted);flex:none}.lock-li .lock-ico,.lock-li svg{margin:0;width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.4}.lock-li.ok{color:var(--good-text,#1f7a3d)}.lock-li.big{width:52px;height:52px;border-radius:14px}.lock-li.big .lock-ico{width:24px;height:24px}.lock-page{align-items:flex-start}.is-locked{position:relative;opacity:.55}.is-locked::after{content:'';position:absolute;top:3px;right:3px;width:11px;height:11px;background:currentColor;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'%3E%3Crect x='5' y='11' width='14' height='10' rx='2'/%3E%3Cpath d='M8 11V8a4 4 0 0 1 8 0v3'/%3E%3C/svg%3E") center/contain no-repeat}.brick-row{align-items:center;gap:10px}.brick-row .seg{flex:none}.opt-chk{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14.5px}.opt-chk input{width:18px;height:18px}
+
+/* ===== v8.0 : refonte ergonomique ===== */
+:root{--muted:#5B6166}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--muted:#8E9498}}
+:root[data-theme="dark"]{--muted:#8E9498}
+.tiny{font-size:12.5px}.small{font-size:13.5px}
+.tag,.msplit,.mlegend,.tbl th,.checks h5,.tq .l,.bdg span,.xrow .xl,.pk-leg,.ef-illu .cap,.bm-leg em,.f small,.streak small,.gb-st small,.pk-kind,.bodymap .bm-lab,.pkmap .bm-lab,.ef-pg .l,.ef-tile .l,.gtab th,.tg-v .l,.tg-chart .lab{font-size:12px}
+/* barre d'onglets */
+.tabs button{font-size:12px}
+.tabs .tab-main{color:var(--ink);font-weight:700}
+.tabs .tab-main .tm-c{width:58px;height:58px;margin-top:-26px;border-radius:50%;background:var(--accent);display:grid;place-items:center;box-shadow:0 0 0 5px var(--surface),0 6px 16px rgba(20,23,26,.18)}
+.tabs .tab-main .tm-c svg{width:28px;height:28px;stroke:var(--on-accent);stroke-width:2.2}
+.tabs .tab-main[aria-current="page"]::before{display:none}
+/* accueil */
+.hero{background:#14171A;color:#EDEFEB;border:0;display:flex;flex-direction:column;gap:10px;padding:16px}
+.hero-eb span{font:700 13px/1 var(--f-d);letter-spacing:.1em;color:var(--accent);display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.hero-eb small{font:500 13px var(--f-b);letter-spacing:0;color:#A9AEB0;text-transform:none}
+.hero h2{margin:0;font:800 32px/1 var(--f-d);color:#F3F4F1}
+.hero-m{margin:0;font-size:14px;color:#B3B8B9}
+.hero-beat{display:flex;align-items:center;gap:8px;background:#22262A;border-radius:10px;padding:9px 12px;font-size:14px;color:#EDEFEB}
+.hero-beat .ico{width:18px;height:18px;stroke:var(--accent);flex:none}
+.hero-beat b{color:#FFFFFF}
+.hero-b{display:flex;gap:8px}
+.hero-b .btn{min-height:52px;border-radius:14px;font:700 19px/1 var(--f-d)}
+.hero-b .btn.accent{flex:1}
+.hero .ghost-d{background:transparent;border:1px solid #3A4045;color:#EDEFEB;font:600 15px var(--f-b)!important;padding:0 14px}
+.hero-b .ghost-d:only-child{flex:1}
+.hn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:12px 14px}
+.hn-k{display:flex;flex-direction:column;gap:2px;min-width:118px}
+.hn-k b{font:700 24px/1.1 var(--f-d);color:var(--ink)} .hn-k small{font:600 14px var(--f-b);color:var(--muted)}
+.hn-r{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hn-m{display:flex;align-items:center;gap:6px}.hn-l{font-size:12px;font-weight:700;width:12px;color:var(--ink-2)}
+.hn-m .bar{flex:1;height:6px}
+.hn>svg{width:18px;height:18px;stroke:var(--muted);fill:none;stroke-width:2;flex:none}
+.wk-in{display:flex;flex-direction:column;gap:10px;flex:1;min-width:0}.wk-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.wpills{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wp{display:flex;flex-direction:column;align-items:center;gap:4px}.wp small{font-size:12px;color:var(--muted)}
+.wp i{width:34px;height:34px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center}
+.wp i svg{width:16px;height:16px;stroke:var(--on-accent);fill:none;stroke-width:3}
+.wp.mu i{background:var(--accent)}.wp.ca i{background:var(--s1)}.wp.ca i svg{stroke:#fff}
+.wp.td i{box-shadow:inset 0 0 0 2px var(--ink)}.wp.td small{color:var(--ink);font-weight:700}
+.next-btn:not(.ghost){background:var(--btn);color:var(--on-btn)}
+/* séance */
+.grp-sum{display:flex;align-items:center;gap:8px}.grp-sum .chips{flex:1;min-width:0}
+.grp-sum .chip.on{background:var(--btn);color:var(--on-btn);border-color:var(--btn)}
+.grp-sum .lnk{min-height:44px;font-weight:600}
+.ex .last{background:var(--accent-soft);color:var(--ink-2);border-radius:10px;padding:8px 10px;font-size:13.5px}
+.ex .last .beat{display:block;color:var(--ink);font-size:15px;margin-bottom:2px}
+.ex.fold .last,.ex.fold .sugg,.ex.fold .exnote,.ex.fold .sets,.ex.fold .ex-actions{display:none}
+.ex-fold{display:flex;align-items:center;gap:8px;width:100%;text-align:left;min-height:40px;font-size:14px;color:var(--ink-2)}
+.ex-fold .chk{width:26px;height:26px;border-radius:50%;background:var(--good-text);display:grid;place-items:center;flex:none}
+.ex-fold .chk svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:3}
+.set{grid-template-columns:26px minmax(0,1fr) 12px minmax(0,1fr) 48px 28px;min-height:56px;padding:4px 2px;gap:6px}
+.set .num{height:48px;font-size:23px}
+.set .ok-btn{width:48px;height:48px;border-radius:12px}
+.set .del{opacity:.55}
+.set.cur{background:var(--surface);box-shadow:inset 0 0 0 2px var(--accent)}
+.set.cur .n{color:var(--ink)}
+.rest{padding:8px 8px 8px 18px;gap:12px}.rest b{font-size:26px}.rest button{min-height:40px;padding:0 14px;font-size:14px}
+.rest button[data-a="rest-stop"]{background:var(--accent);color:var(--on-accent)}
+/* mode salle : sombre, tout se joue sous le pouce */
+.focus{--ground:#0E1012;--surface:#171A1D;--surface-2:#1F2327;--ink:#EDEFEB;--ink-2:#B3B8B9;--muted:#8E9498;--line:#2A2F33;--line-2:#3A4045;--btn:#EDEFEB;--on-btn:#14171A;--accent-soft:#3A3114;--shadow:none;color-scheme:dark;color:var(--ink)}
+.fx-in>.fx-set-l{margin-top:auto}
+.fx-bot{margin-top:10px}
+.fx-ex h2{font:800 40px/0.98 var(--f-d)}
+.fx-ref{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:6px}
+.fx-ref>div{background:var(--surface);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.fx-ref span{font-size:13px;color:var(--muted)}.fx-ref b{font:700 22px/1.1 var(--f-d)}.fx-ref b.rec{color:var(--accent)}
+.st-btn{height:64px;min-width:64px}
+.fx-num{font-size:56px!important}
+.fx-go{min-height:72px;font:800 25px/1 var(--f-d);border-radius:20px}
+body.focus-on .xp-pop{top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 190px)}
+/* progrès */
+select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding:0 34px 0 14px;border-radius:22px;font-weight:600}
+.pg-modes .seg{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.pg-agg{margin-top:-4px}
+.pg-back{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;min-height:44px;font-weight:600}
+.pg-back svg{width:18px;height:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pg-sum .tile{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.pg-sum .tile b{font:800 24px/1.1 var(--f-d)}.pg-sum .tile span{font-size:13px;color:var(--ink-2)}
+.pg-list{display:flex;flex-direction:column}
+.pg-row{display:grid;grid-template-columns:minmax(0,1fr) 84px 62px;align-items:center;gap:10px;min-height:64px;width:100%;text-align:left;border-top:1px solid var(--line)}
+.pg-list .row+.pg-row{border-top:0}
+.pg-n{display:flex;flex-direction:column;gap:2px;min-width:0}.pg-n b{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pg-n small{font-size:13px;color:var(--ink-2)}
+.pg-row .spark{width:84px;height:28px}
+.pg-ev{justify-self:end;font:700 16px/1 var(--f-d);padding:4px 7px;border-radius:8px;background:var(--surface-2);color:var(--ink-2);white-space:nowrap}
+.pg-ev.up{background:color-mix(in srgb,var(--good-text) 14%,transparent);color:var(--good-text)}
+.pg-ev.down{background:color-mix(in srgb,var(--s2) 16%,transparent);color:var(--crit-text)}
+/* nutrition */
+.nut-top{display:flex;align-items:center;gap:14px}.nut-top .big{font-size:32px;white-space:normal!important}.nut-top .big small{font-size:15px}.nut-top-r{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.nring{position:relative;width:104px;height:104px;flex:none}.nring svg{width:104px;height:104px}
+.nring circle{fill:none;stroke-width:11}.nr-bg{stroke:var(--surface-2)}.nr-fg{stroke:var(--ink);stroke-linecap:round}.nr-est{stroke:var(--line-2)}
+.nring>span{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.nring b{font:800 22px/1 var(--f-d)}.nring small{font-size:12px;color:var(--muted)}
+.xrow{flex-wrap:wrap;overflow:visible}.xrow .xl{flex-basis:100%;margin:0}
+.xrow .qc{flex:1 1 0;min-width:0;min-height:52px;border-radius:12px;flex-direction:column;justify-content:center;gap:2px;padding:4px;font-weight:700}
+.xrow .qc small{font-weight:500;color:var(--ink-2)}
+/* corps */
+.corps-hero{display:flex;flex-direction:column;gap:6px}
+.ch-v{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}.ch-v b{font:800 44px/1 var(--f-d)}.ch-v b small{font-size:22px}
+.ch-d{font:700 17px var(--f-d);color:var(--ink-2)}.ch-d.dn{color:var(--good-text)}.ch-d.up{color:var(--crit-text)}
+.ch-s{font-size:13.5px;color:var(--ink-2)}
+.ch-sp .spark{width:100%;height:56px}
+.hand-in>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px}
+.hand-in>summary::-webkit-details-marker{display:none}
+.hand-in[open]>summary{margin-bottom:10px}
+.hand-in .card{box-shadow:none;border:0;padding:8px 0 0;background:transparent}
 </style>
 </head>
 <body>
@@ -667,12 +775,12 @@ button.pill{border:0;cursor:pointer}
   </header>
   <main id="view"><div class="skel"></div><div class="skel"></div></main>
 </div>
-<div id="rest" class="rest" hidden><span id="rest-label">Repos</span><b id="rest-time">1:30</b><button data-a="rest-plus">+15 s</button><button data-a="rest-stop" aria-label="Arrêter le minuteur">Stop</button></div>
+<div id="rest" class="rest" hidden><span id="rest-label">Repos</span><b id="rest-time">1:30</b><button data-a="rest-plus">+15 s</button><button data-a="rest-stop" aria-label="Passer le repos">Passer</button></div>
 <nav class="tabs" aria-label="Navigation"><div class="in">
   <button data-a="go" data-tab="accueil"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>Accueil</button>
-  <button data-a="go" data-tab="seance"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>Séance</button>
-  <button data-a="go" data-tab="progres"><svg viewBox="0 0 24 24"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M7 15l4-4 3 3 5-6"/></svg>Progrès</button>
   <button data-a="go" data-tab="nutrition"><svg viewBox="0 0 24 24"><path d="M12 8c-2-3-7-2-7 3 0 4 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-5 5-9 0-5-5-6-7-3z"/><path d="M12 8c0-2 1-4 3-5"/></svg>Nutrition</button>
+  <button data-a="go" data-tab="seance" class="tab-main"><span class="tm-c" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg></span>Séance</button>
+  <button data-a="go" data-tab="progres"><svg viewBox="0 0 24 24"><path d="M4 20V4"/><path d="M4 20h16"/><path d="M7 15l4-4 3 3 5-6"/></svg>Progrès</button>
   <button data-a="go" data-tab="corps"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8.5 10a4.5 4.5 0 0 1 7 0"/><path d="M12 10.5l1.5-2"/></svg>Corps</button>
 </div></nav>
 <div id="sheet-wrap" class="sheet-wrap" hidden><div class="sheet-bg" data-a="sheet-close"></div><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
@@ -1799,6 +1907,7 @@ function renderFocus() {
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
   const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
     <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
+    ${fxRefHtml(e, lp, kind, d)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
     ${sg && FOCUS.phase === 'set' ? `<button class="sugg" data-a="ex-sugg" data-i="${FOCUS.i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''}</div>`;
   let cnt = 0;
@@ -2091,7 +2200,7 @@ function todayCard(t) {
   const qs = quests(t).filter(q => !A2B[q.a] || canUse(A2B[q.a])), na = (x => x && (!A2B[x.a] || canUse(A2B[x.a])) ? x : null)(nextAction(t)), nDone = qs.filter(q => q.done).length, tpl = templateFor(t);
   return `<section class="card today-card"><div class="row between"><div><div class="eyebrow">Aujourd'hui</div><h1 class="h1" style="font-size:24px">${fmtDayLong(t)}</h1></div><span class="pill ${nDone === qs.length ? 'good' : ''}">${nDone}/${qs.length} quêtes</span></div>
     <div class="quests">${qs.map(q => `<button class="qst ${q.done ? 'done' : ''}" data-a="${q.a}" ${q.attrs}>${q.done ? `<span class="chk">${ICON.check}</span>` : `<span class="ring" style="--p:${Math.max(0, Math.min(100, Math.round(q.p)))}"></span>`}<span class="main"><span class="t">${esc(q.l)}${q.v ? ` <b class="num-t">${esc(q.v)}</b>` : ''}</span><span class="s">${esc(q.s)}</span></span>${q.done ? '' : `<span class="xp-h">+${q.xp} XP</span>`}</button>`).join('')}</div>
-    ${na ? `<button class="btn ${na.ghost ? 'ghost' : 'accent'} block next-btn" data-a="${na.a}" ${na.attrs}><span>${esc(na.l)}</span><small>${na.sub}</small></button>` : `<div class="banner" style="justify-content:center">${ICON.check.replace('<svg', '<svg class="ico" style="width:18px;height:18px"')} Journée bouclée. À demain !</div>`}
+    ${na && na.a === 'gym-go' ? '' : na ? `<button class="btn ${na.ghost ? 'ghost' : ''} block next-btn" data-a="${na.a}" ${na.attrs}><span>${esc(na.l)}</span><small>${na.sub}</small></button>` : `<div class="banner" style="justify-content:center">${ICON.check.replace('<svg', '<svg class="ico" style="width:18px;height:18px"')} Journée bouclée. À demain !</div>`}
     <div class="qa" role="group" aria-label="Actions rapides">
       <button data-a="meal-now" data-s="auto"><svg viewBox="0 0 24 24" class="ico"><path d="M12 8c-2-3-7-2-7 3 0 4 3 9 5 9 1 0 1.3-.5 2-.5s1 .5 2 .5c2 0 5-5 5-9 0-5-5-6-7-3z"/><path d="M12 8c0-2 1-4 3-5"/></svg>Repas</button>
       <button data-a="act-new"><svg viewBox="0 0 24 24" class="ico"><circle cx="13" cy="4" r="2"/><path d="M8 21l3-6 3 3v5M10 11l2-3 3 2 3 1M7 13l3-5"/></svg>Activité</button>
@@ -3393,8 +3502,8 @@ function weekBodyHtml() {
 VIEWS.accueil = {
   html() {
     const t = today();
-    return `${reqHomeHtml()}${gameBar()}${coachCard(t)}${recapCard(t)}${todayCard(t)}
-    <details class="wk" id="week-det" ${UI.weekOpen ? 'open' : ''}><summary><span><span class="sec-t">Ma semaine</span><span class="wk-sum">${weekSummary()}</span></span></summary>
+    return `${reqHomeHtml()}${homeHero(t)}${gameBar()}${coachCard(t)}${recapCard(t)}${todayCard(t)}${homeNutri(t)}
+    <details class="wk" id="week-det" ${UI.weekOpen ? 'open' : ''}><summary><span class="wk-in"><span class="wk-row"><span class="sec-t">Ma semaine</span><span class="wk-sum">${weekSummary()}</span></span>${weekPills()}</span></summary>
       <div class="stack wk-body">${weekBodyHtml()}</div></details>`;
   }
 };
@@ -3412,8 +3521,8 @@ VIEWS.seance = {
     ${!musE && tpls.length ? `<section class="stack"><h2 class="sec-t">Séances types</h2><div class="tpls">${tpls.map(([id, t]) => `<button class="tpl ${tplSug && tplSug[0] === id ? 'sug' : ''}" data-a="tpl-apply" data-id="${id}"><b>${esc(t.name)}</b><span>${t.day ? cap(JOURS[t.day - 1]) + ' · ' : ''}${(t.ex || []).length} exercices</span></button>`).join('')}</div></section>` : ''}
     ${!musE ? recentSessHtml(d) : ''}
     ${!musE ? `<button class="btn ghost block" data-a="act-new" data-d="${d}">+ Activité : marche, run, vélo…</button>` : ''}
-    <section class="stack"><h2 class="sec-t">Groupes travaillés ${groups.length ? `<span class="tiny muted">${groups.length}</span>` : ''}</h2>
-      <div class="chips">${GROUPS.map(g => `<button class="chip ${groups.includes(g.k) ? 'on' : ''}" data-a="grp" data-g="${g.k}">${g.l}</button>`).join('')}</div></section>
+    ${grpFold(d, entries, groups) ? `<section class="grp-sum"><div class="chips">${groups.map(k => `<span class="chip on">${esc(GL[k] || k)}</span>`).join('')}</div><button class="lnk" data-a="grp-open">Modifier</button></section>` : `<section class="stack"><h2 class="sec-t">Groupes travaillés ${groups.length ? `<span class="tiny muted">${groups.length}</span>` : ''}</h2>
+      <div class="chips">${GROUPS.map(g => `<button class="chip ${groups.includes(g.k) ? 'on' : ''}" data-a="grp" data-g="${g.k}">${g.l}</button>`).join('')}</div></section>`}
     ${entries.length ? `<section class="stack" id="cards">${entries.map((e, i) => exCard(e, i, d)).join('')}</section>` : ''}
     <section class="card"><h2 class="sec-t">Ajouter un exercice</h2>
       <div class="row" style="margin:10px 0 6px"><input class="inp" id="add-q" data-in="addq" placeholder="Chercher ou créer un exercice…" value="${esc(UI.addQ)}" autocomplete="off" style="flex:1;min-width:0"><button class="btn ghost" data-a="pk-open" style="white-space:nowrap">Par muscle</button></div>
@@ -3438,10 +3547,12 @@ function sessSummary(d) {
 }
 function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
-  return `<article class="ex ${ds.length ? '' : 'todo'}" data-i="${i}">
+  const allOk = (e.sets || []).length > 0 && e.sets.every(z => z.ok), fold = allOk && exFold(d, i);
+  return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''}" data-i="${i}">
     <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${(() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
-    <p class="last">${lp ? `Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
+    ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}"><span class="chk">${ICON.check}</span><span>${esc(notation(ds, kind, e.ex))}</span>${lp ? cmpLast(e, lp) : ''}</button>` : ''}
+    <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
     ${(() => { const sg = overload(e, d); return sg ? `<button class="sugg" data-a="ex-sugg" data-i="${i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''; })()}
     ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}
     <div class="sets">${(e.sets || []).map((s, j) => setRow(e, i, j, d, kind)).join('')}</div>
@@ -3458,7 +3569,7 @@ function setRow(e, i, j, d, kind) {
   const inp = (k, unit, mode = 'decimal') => `<label class="f"><input class="num" id="${idp}-${k}" inputmode="${mode}" data-in="set" data-i="${i}" data-j="${j}" data-k="${k}" value="${v(s[k])}" placeholder="${v(p[k])}" aria-label="${unit}"><small>${unit}</small></label>`;
   const inpPdc = () => `<label class="f"><input class="num" id="${idp}-kg" inputmode="decimal" data-in="set" data-i="${i}" data-j="${j}" data-k="kg" value="${s.kg ? v(s.kg) : ''}" placeholder="${p.kg ? '+' + v(p.kg) : 'PDC'}" aria-label="Lest en kg, vide pour le poids du corps"><small>lest</small></label>`;
   if (kind === 'cardio') return `<div class="set cardio ${s.ok ? 'ok' : ''}" data-i="${i}" data-j="${j}"><span class="n">${n}</span>${inp('min', 'min', 'numeric')}${inp('km', 'km')}${inp('bpm', 'bpm', 'numeric')}${ok}${del}</div>`;
-  return `<div class="set ${s.ok ? 'ok' : ''} ${s.d ? 'drop' : ''}" data-i="${i}" data-j="${j}"><span class="n" title="${s.d ? 'Dégressive' : 'Série ' + n}">${s.d ? '↳' : n}</span>${isPdc(kind, e.ex) ? inpPdc() : inp('kg', 'kg')}<span class="x">×</span>${inp('r', 'reps', 'numeric')}${ok}${del}</div>`;
+  return `<div class="set ${s.ok ? 'ok' : ''} ${s.d ? 'drop' : ''} ${isCurSet(d, i, j) ? 'cur' : ''}" data-i="${i}" data-j="${j}"><span class="n" title="${s.d ? 'Dégressive' : 'Série ' + n}">${s.d ? '↳' : n}</span>${isPdc(kind, e.ex) ? inpPdc() : inp('kg', 'kg')}<span class="x">×</span>${inp('r', 'reps', 'numeric')}${ok}${del}</div>`;
 }
 function pgFocus(d) { const sg = S.sessions[d]?.groups || []; return sg.includes(UI.pgF) ? UI.pgF : sg[sg.length - 1] || null; }
 function proposals(d) {
@@ -3493,6 +3604,7 @@ function rerenderCard(i) {
   const d = UI.date, e = S.sessions[d]?.entries?.[i], el = $(`#cards article[data-i="${i}"]`);
   if (!e || !el) { render(); return; }
   el.outerHTML = exCard(e, i, d);
+  { const n2 = S.sessions[d]?.entries?.[i + 1], el2 = $(`#cards article[data-i="${i + 1}"]`); if (n2 && el2) el2.outerHTML = exCard(n2, i + 1, d); }
   const sum = $('#sess-sum'); if (sum) sum.innerHTML = sessSummary(d);
   const mw = $('#sess-mw'); if (mw) mw.innerHTML = mwDayHtml(d);
 }
@@ -3520,16 +3632,17 @@ VIEWS.progres = {
   html() {
     const P = UI.prog;
     const head = `<section class="stack">
-      <div class="row between wrap"><h1 class="h1">Progrès</h1>${segHtml('prog-mode', [{ k: 'exo', l: 'Exercice' }, { k: 'groupe', l: 'Groupe' }, { k: 'global', l: 'Global' }, { k: 'muscles', l: 'Muscles' }], P.mode)}</div>
-      <div class="row wrap between"><div class="chips">${RANGES.map(r => `<button class="chip ${r.k === P.range ? 'on' : ''}" data-a="prog-range" data-v="${r.k}">${r.l}</button>`).join('')}</div>
-      ${P.mode === 'exo' ? segHtml('prog-agg', [{ k: 'seance', l: 'Séance' }, { k: 'semaine', l: 'Semaine' }, { k: 'mois', l: 'Mois' }], P.agg) : segHtml('prog-agg', [{ k: 'semaine', l: 'Semaine' }, { k: 'mois', l: 'Mois' }], P.agg === 'mois' ? 'mois' : 'semaine')}</div></section>`;
-    if (P.mode === 'muscles') return `<section class="stack"><div class="row between wrap"><h1 class="h1">Progrès</h1>${segHtml('prog-mode', [{ k: 'exo', l: 'Exercice' }, { k: 'groupe', l: 'Groupe' }, { k: 'global', l: 'Global' }, { k: 'muscles', l: 'Muscles' }], P.mode)}</div></section>` + progMuscles();
+      <div class="row between"><h1 class="h1">Progrès</h1>${progRangeSel()}</div>
+      <div class="pg-modes">${segHtml('prog-mode', [{ k: 'exo', l: 'Exercices' }, { k: 'groupe', l: 'Groupes' }, { k: 'muscles', l: 'Muscles' }, { k: 'global', l: 'Global' }], P.mode)}</div></section>`;
+    const aggRow = P.mode === 'exo' ? '' : `<div class="row end pg-agg">${segHtml('prog-agg', [{ k: 'semaine', l: 'Semaine' }, { k: 'mois', l: 'Mois' }], P.agg === 'mois' ? 'mois' : 'semaine')}</div>`;
+    if (P.mode === 'muscles') return head + progMuscles();
     if (!idx().days.length) return head + `<div class="card empty"><b>Pas encore de séance</b>Tes courbes apparaîtront après ta première séance validée.</div>`;
-    if (P.mode === 'groupe') return head + progGroup();
-    if (P.mode === 'global') return head + progGlobal();
+    if (P.mode === 'groupe') return head + aggRow + progGroup();
+    if (P.mode === 'global') return head + aggRow + progGlobal();
+    if (P.view !== 'detail') return head + progExoList();
     return head + progExo();
   },
-  after() { const P = UI.prog; if (P.mode === 'muscles') return; if (P.mode === 'groupe') progGroupCharts(); else if (P.mode === 'global') progGlobalCharts(); else progExoCharts(); }
+  after() { const P = UI.prog; if (P.mode === 'muscles') return; if (P.mode === 'groupe') progGroupCharts(); else if (P.mode === 'global') progGlobalCharts(); else if (P.view === 'detail') progExoCharts(); }
 };
 function exoSeries() {
   const P = UI.prog, start = effStart(P.range), end = today(), h = (idx().byEx[P.ex] || []).filter(x => x.date >= start && x.date <= end), kind = kindOf(P.ex);
@@ -3564,8 +3677,8 @@ function progExo() {
   }
   const tA = kind === 'cardio' ? 'Durée et distance' : pdc ? 'Répétitions max et poids du corps' : kind === 'bw' ? 'Répétitions max par série' : 'Charge max et 1RM estimé', tV = kind === 'cardio' ? 'Minutes' : pdc ? 'Tonnage (poids du corps × reps)' : kind === 'bw' ? 'Répétitions totales' : 'Tonnage (kg × reps)';
   const rows = X.h.slice().reverse().map(x => `<tr><td>${fmtDay(x.date)}</td><td class="w">${esc(notation(x.sets, kind, UI.prog.ex))}</td><td>${kind === 'cardio' ? nf(sumMin(x.sets)) + ' min' : kind === 'bw' ? nf(sumReps(x.sets)) : nf(tonnage(x.sets))}</td>${kind === 'w' ? `<td>${nf(best1rm(x.sets), 1)}</td>` : pdc ? `<td>${nf(pdcW(x.date), 1)} kg</td>` : ''}</tr>`).join('');
-  return `<section class="card stack">${sel}<div class="grid2">${k1}${k2}${k3}${k4}</div></section>
-    <section class="card"><div class="chart-t">${tA}</div><div class="chart-s">${kind === 'cardio' ? 'Minutes et km' : kind === 'bw' ? 'Par ' + (UI.prog.agg === 'seance' ? 'séance' : UI.prog.agg) : 'En kg, par ' + (UI.prog.agg === 'seance' ? 'séance' : UI.prog.agg)}</div>
+  return `<button class="lnk pg-back" data-a="prog-list">${ICON.left} Tous les exercices</button><section class="card stack">${sel}<div class="grid2">${k1}${k2}${k3}${k4}</div></section>
+    <section class="card"><div class="row between wrap"><div class="chart-t">${tA}</div>${segHtml('prog-agg', [{ k: 'seance', l: 'Séance' }, { k: 'semaine', l: 'Semaine' }, { k: 'mois', l: 'Mois' }], P.agg)}</div><div class="chart-s">${kind === 'cardio' ? 'Minutes et km' : kind === 'bw' ? 'Par ' + (UI.prog.agg === 'seance' ? 'séance' : UI.prog.agg) : 'En kg, par ' + (UI.prog.agg === 'seance' ? 'séance' : UI.prog.agg)}</div>
       ${X.h.length ? `<div class="chart"><canvas id="c-exA" role="img" aria-label="${tA}"></canvas></div>` : noChart('Aucune séance sur cette période.')}</section>
     ${X.h.length && kind !== 'cardio' ? `<section class="card"><div class="chart-t">${tV}</div><div class="chart"><canvas id="c-exV" role="img" aria-label="${tV}"></canvas></div></section>` : ''}
     <section class="card"><h2 class="sec-t">Historique</h2><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Date</th><th>Séries</th><th>${kind === 'cardio' ? 'Durée' : kind === 'bw' ? 'Reps' : 'Tonnage'}</th>${kind === 'w' ? '<th>1RM est.</th>' : pdc ? '<th>Poids du corps</th>' : ''}</tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">Rien sur la période.</td></tr>'}</tbody></table></div></section>`;
@@ -3662,11 +3775,10 @@ VIEWS.nutrition = {
     return `
     ${dayBar(d, 'nday')}
     <section class="card stack">
-      <div><div class="row between"><div class="eyebrow">Apports du jour</div>${n.tot.kcal ? fiabPill(fiabDay(n)) : ''}</div><div class="big num-t" style="white-space:nowrap">${nf(n.tot.kcal)} <small>/ ${nf(cfg.kcal)} kcal</small></div>
+      <div class="nut-top">${nutRing(n, cfg)}<div class="nut-top-r"><div class="row between"><div class="eyebrow">Apports du jour</div>${n.tot.kcal ? fiabPill(fiabDay(n)) : ''}</div><div class="big num-t" style="white-space:nowrap">${nf(n.tot.kcal)} <small>/ ${nf(cfg.kcal)} kcal</small></div>
         ${n.est.kcal ? `<div class="tiny muted" style="margin-top:4px">dont ~${nf(n.est.kcal)} kcal estimées pour les repas non renseignés</div>` : ''}
-        ${d === today() && !n.counted && trackStart() && SLOTS.some(s => s.main && !(nd?.meals?.[s.k] || []).length && !nd?.skip?.[s.k]) ? '<div class="tiny muted" style="margin-top:4px">Les repas pas encore notés ne sont pas estimés : ils le seront seulement à la clôture de la journée, ou le lendemain.</div>' : ''}</div>
-      ${n.tot.kcal ? `<div class="nut-st">${nutPill(stK)}</div>` : ''}
-      <div class="bar" style="height:10px"><span class="${stK.cls}" style="width:${pctW(n.real.kcal)}%"></span>${n.est.kcal ? `<span class="est" style="width:${Math.min(100 - pctW(n.real.kcal), pctW(n.est.kcal))}%"></span>` : ''}</div>
+        ${d === today() && !n.counted && trackStart() && SLOTS.some(s => s.main && !(nd?.meals?.[s.k] || []).length && !nd?.skip?.[s.k]) ? '<div class="tiny muted" style="margin-top:4px">Les repas pas encore notés ne sont pas estimés : ils le seront seulement à la clôture de la journée, ou le lendemain.</div>' : ''}
+      ${n.tot.kcal ? `<div class="nut-st">${nutPill(stK)}</div>` : ''}</div></div>
       ${macro('Protéines', 'p', cfg.p)}${macro('Glucides', 'c', cfg.c)}${macro('Lipides', 'f', cfg.f)}
       ${n.tot.kcal ? (() => { const o = macroKcal(cfg); return `<div class="msplit-w">${mstackHtml(n.tot, 'lg')}${msplitHtml(n.tot)}<div class="mlegend"><span>Part des calories de chaque macro · objectif ${Math.round(o.p / o.s * 100)} / ${Math.round(o.c / o.s * 100)} / ${Math.round(o.f / o.s * 100)} %</span></div></div>`; })() : ''}
       ${stP.pace ? `<div class="tiny muted" style="margin-top:-4px">Protéines ${esc(stP.l.toLowerCase())} : ${nf(n.tot.p)} g pour ${nf(stP.pace)} g attendus après ${SLOTS.filter(s => s.main && ((nd?.meals?.[s.k] || []).length || nd?.skip?.[s.k])).map(s => s.l.toLowerCase()).join(', ')}.</div>` : ''}
@@ -3784,15 +3896,18 @@ VIEWS.corps = {
     const d = UI.hdate, h = S.health[d] || {};
     const grp = (g, title, sub, extra = '') => `<section class="card stack"><div class="row between"><h2 class="sec-t">${title}</h2><span class="tiny muted">${sub}</span></div><div class="grid2">${HFIELDS.filter(f => f.grp === g).map(f => `<label class="field">${f.l}${f.u ? ` (${f.u})` : ''}<input class="inp" id="h-${f.k}" data-in="h" data-k="${f.k}" inputmode="decimal" value="${v(h[f.k])}" placeholder="–"></label>`).join('')}</div>${extra}</section>`;
     const R = UI.body.range;
-    return `${dayBar(d, 'hday', h.src === 'raccourci' ? ' · importé de l’iPhone' : '')}
-    <details class="card" ${Object.keys(S.health).length ? '' : 'open'}><summary><h2 class="sec-t">Synchroniser depuis l'iPhone</h2></summary>
+    const sync = `<details class="card" ${Object.keys(S.health).length ? '' : 'open'}><summary><h2 class="sec-t">Synchroniser depuis l'iPhone</h2></summary>
       <div class="stack"><p class="small" style="margin:0">Lance ton Raccourci « Carnet Santé » : il copie les données Apple Watch et Withings. Colle-les ci-dessous.</p>
       <textarea class="inp" id="hi-text" rows="4" placeholder="date=2026-09-18&#10;pas=8543&#10;kcal_actives=512&#10;poids=82,4&#10;masse_grasse=18,5"></textarea>
-      <div class="row wrap"><button class="btn" data-a="h-import">Importer</button><button class="btn ghost" data-a="h-paste">Coller et importer</button><button class="lnk" data-a="guide">Créer le Raccourci</button></div></div></details>
+      <div class="row wrap"><button class="btn" data-a="h-import">Importer</button><button class="btn ghost" data-a="h-paste">Coller et importer</button><button class="lnk" data-a="guide">Créer le Raccourci</button></div></div></details>`;
+    return `${corpsHero()}
     ${bodyTargetHtml()}
-    ${grp('watch', 'Activité', 'Apple Watch')}${grp('scale', 'Balance', 'Withings')}${grp('recup', 'Récupération', 'sommeil', sleepExtra(d))}
+    <details class="card hand-in" id="hand-in" ${UI.handIn || !Object.keys(S.health).length ? 'open' : ''}><summary><h2 class="sec-t">Saisir à la main · ${esc(fmtDay(d))}</h2><span class="tiny muted">${hSyncTxt(d)}</span></summary>
+    ${dayBar(d, 'hday', h.src === 'raccourci' ? ' · importé de l’iPhone' : '')}
+    ${grp('watch', 'Activité', 'Apple Watch')}${grp('scale', 'Balance', 'Withings')}${grp('recup', 'Récupération', 'sommeil', sleepExtra(d))}</details>
     <section class="stack"><div class="row between wrap"><h2 class="h1" style="font-size:24px">Tendances</h2><div class="chips">${RANGES.filter(r => r.k !== 'tout').map(r => `<button class="chip ${r.k === R ? 'on' : ''}" data-a="body-range" data-v="${r.k}">${r.l}</button>`).join('')}</div></div>
-    ${bodyTrendHtml()}</section>`;
+    ${bodyTrendHtml()}</section>
+    ${sync}`;
   },
   after() { bodyCharts(); }
 };
@@ -4985,6 +5100,101 @@ async function lgBoardLoad() {
 
 UI._t = today();
 boot();
+
+/* ================= v8.0 : refonte ergonomique ================= */
+function grpFold(d, entries, groups) { return !UI.grpOpen && groups.length > 0 && entries.some(e => kindOf(e.ex) !== 'cardio' && doneSets(e).length); }
+function curExIdx(d) { return (S.sessions[d]?.entries || []).findIndex(x => (x.sets || []).some(z => !z.ok)); }
+function exFold(d, i) { if (UI.exOpen && UI.exOpen[d + ':' + i]) return false; const c = curExIdx(d); return c > i; }
+function isCurSet(d, i, j) { if (curExIdx(d) !== i) return false; const e = S.sessions[d]?.entries?.[i]; return !!e && e.sets.findIndex(z => !z.ok) === j; }
+function beatHtml(lp, kind) { if (kind !== 'w' || !lp) return ''; const b = bestSet(lp.sets || []); return b && b.kg ? `<span class="beat">À battre <b>${nf(b.kg, 2)} kg × ${b.r}</b></span>` : ''; }
+function fxRefHtml(e, lp, kind, d) {
+  if (kind !== 'w' || !lp) return '';
+  const lb = bestSet(lp.sets || []), all = (idx().byEx[e.ex] || []).filter(x => x.date < d).flatMap(x => x.sets || []), rb = all.length ? bestSet(all) : null;
+  if (!lb) return '';
+  return `<div class="fx-ref"><div><span>Dernière fois</span><b>${nf(lb.kg || 0, 2)} kg × ${lb.r ?? '?'}</b></div>${rb ? `<div><span>Record</span><b class="rec">${nf(rb.kg || 0, 2)} kg × ${rb.r ?? '?'}</b></div>` : ''}</div>`;
+}
+function homeSug(t) {
+  const tpl = templateFor(t), last = {};
+  for (const d of idx().days) { if (d >= t || diffDays(d, t) > 35 || !isMuscuDay(d)) continue; const gs = dayGroups(d).filter(musG); if (gs.length) last[gs.slice().sort().join('+')] = d; }
+  if (tpl) {
+    const gs = uniq((tpl[1].ex || []).map(id => S.exercises[id]?.group).filter(musG)), key = gs.slice().sort().join('+');
+    return { tpl: tpl[0], label: tpl[1].name || gs.map(k => GL[k]).join(' + '), why: 'séance type du jour', from: last[key] || null };
+  }
+  const combos = Object.entries(last).sort((a, b) => b[1].localeCompare(a[1])).slice(0, 4);
+  if (!combos.length) return null;
+  const pick = combos.length === 1 ? combos[0] : combos.reduce((a, b) => (b[1] < a[1] ? b : a));
+  return { from: pick[1], label: dayGroups(pick[1]).filter(musG).map(k => GL[k]).join(' + '), why: 'd’après ta rotation' };
+}
+function homeHero(t) {
+  const es = (S.sessions[t]?.entries || []).filter(e => kindOf(e.ex) !== 'cardio');
+  const done = es.reduce((a, e) => a + doneSets(e).length, 0), todo = es.reduce((a, e) => a + (e.sets || []).filter(x => !x.ok).length, 0);
+  const gl = (S.sessions[t]?.groups || []).filter(musG).map(k => GL[k]).join(' + ') || dayGroups(t).filter(musG).map(k => GL[k]).join(' + ') || 'Séance';
+  const card = (eb, title, meta, beat, btns) => `<section class="card hero"><div class="hero-eb"><span>${eb}</span></div><h2>${esc(title)}</h2>${meta ? `<p class="hero-m">${meta}</p>` : ''}${beat}<div class="hero-b">${btns}</div></section>`;
+  if (es.length && done && !todo) return card('SÉANCE FAITE', gl, `${done} séries · ${nf(dayTonnage(t))} kg soulevés`, '', `<button class="btn ghost-d" data-a="go-seance" data-d="${t}">Voir la séance</button>`);
+  if (es.length) return card(done ? 'SÉANCE EN COURS' : 'SÉANCE PRÊTE', gl, `${done} / ${done + todo} séries validées`, '', `<button class="btn accent" data-a="gym-go">${done ? 'Reprendre la séance' : 'Démarrer la séance'}</button>`);
+  const sg = homeSug(t);
+  if (!sg) return card('TA PREMIÈRE SÉANCE', 'Choisis tes groupes', 'Les exercices proposés s’affichent avec tes charges au fil des séances.', '', `<button class="btn accent" data-a="go-seance" data-d="${t}">Commencer</button>`);
+  let beat = '';
+  if (sg.from) { const e = (S.sessions[sg.from]?.entries || []).find(x => kindOf(x.ex) === 'w' && doneSets(x).length); const b = e ? bestSet(doneSets(e)) : null; if (b && b.kg) beat = `<div class="hero-beat">${ICON.up.replace('<svg', '<svg class="ico"')}<span>À battre : <b>${esc(exOf(e.ex).name)} ${nf(b.kg, 2)} kg × ${b.r}</b></span></div>`; }
+  const meta = sg.from ? `Dernière fois ${relDay(sg.from)} · ${lsMeta(sg.from)}` : 'Première fois avec cette séance';
+  return card(`TA SÉANCE DU JOUR <small>${sg.why}</small>`, sg.label, meta, beat, `<button class="btn accent" data-a="home-go" ${sg.tpl ? `data-tpl="${sg.tpl}"` : ''} ${sg.from ? `data-from="${sg.from}"` : ''}>Démarrer la séance</button><button class="btn ghost-d" data-a="go-seance" data-d="${t}">Autre</button>`);
+}
+function homeNutri(t) {
+  if (typeof canUse === 'function' && !canUse('nutrition')) return '';
+  const cfg = CFG(), r = dayNutri(t).real;
+  const bar = (k, l, tg) => `<span class="hn-m">${mkDot(k)}<span class="hn-l">${l}</span><span class="bar"><span class="m-${k}" style="width:${Math.min(100, (r[k] || 0) / (tg || 1) * 100)}%"></span></span></span>`;
+  return `<button class="card hn" data-a="go-today" data-tab="nutrition"><span class="hn-k"><span class="sec-t">Nutrition</span><b class="num-t">${nf(r.kcal || 0)} <small>/ ${nf(cfg.kcal)} kcal</small></b></span><span class="hn-r">${bar('p', 'P', cfg.p)}${bar('c', 'G', cfg.c)}${bar('f', 'L', cfg.f)}</span>${ICON.right}</button>`;
+}
+function weekPills() {
+  const t = today(), w = weekStart(t), L = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+  return `<span class="wpills" aria-hidden="true">${L.map((l, i) => { const d = addDays(w, i), mu = isMuscuDay(d), ca = !mu && isCardioDay(d); return `<span class="wp ${mu ? 'mu' : ca ? 'ca' : ''} ${d === t ? 'td' : ''}"><small>${l}</small><i>${mu || ca ? ICON.check : ''}</i></span>`; }).join('')}</span>`;
+}
+function progRangeSel() { return `<select class="inp pg-range" data-ch="prog-range-sel" aria-label="Période">${RANGES.map(r => `<option value="${r.k}" ${r.k === UI.prog.range ? 'selected' : ''}>${r.l}</option>`).join('')}</select>`; }
+function progExoList() {
+  const P = UI.prog, byEx = idx().byEx, start = effStart(P.range), end = today();
+  const days = idx().days.filter(d => d >= start && d <= end);
+  const ton = days.reduce((a, d) => a + dayTonnage(d), 0);
+  const rows = Object.keys(byEx).filter(id => S.exercises[id]).map(id => {
+    const all = byEx[id], h = all.filter(x => x.date >= start && x.date <= end), kind = kindOf(id); if (!h.length) return null;
+    const met = x => kind === 'cardio' ? sumMin(x.sets) : kind === 'bw' ? maxReps(x.sets) : best1rm(x.sets);
+    const f = h[0], l = h[h.length - 1], ev = h.length > 1 && met(f) ? pct(met(l), met(f)) : null;
+    let sub;
+    if (kind === 'cardio') sub = `${h.length} séance${h.length > 1 ? 's' : ''} · ${nf(h.reduce((a, x) => a + sumMin(x.sets), 0))} min`;
+    else if (kind === 'bw') sub = `Record ${nf(maxReps(all.flatMap(x => x.sets)))} reps`;
+    else { const b = bestSet(all.flatMap(x => x.sets)); sub = `Record ${nf(b.kg, 2)} × ${b.r} · 1RM ${nf(Math.max(0, ...all.map(x => best1rm(x.sets))))} kg`; }
+    return { id, last: l.date, html: `<button class="pg-row" data-a="prog-pick" data-id="${id}"><span class="pg-n"><b>${esc(S.exercises[id].name)}</b><small>${sub}</small></span>${sparkSvg(h.map(met))}<span class="pg-ev ${ev == null ? '' : ev > 0.5 ? 'up' : ev < -0.5 ? 'down' : ''}">${ev == null ? '–' : (ev > 0 ? '+' : ev < 0 ? '−' : '') + nf(Math.abs(ev)) + ' %'}</span></button>` };
+  }).filter(Boolean).sort((a, b) => b.last.localeCompare(a.last));
+  return `<div class="grid3 pg-sum"><div class="tile"><b>${nf(days.length)}</b><span>séance${days.length > 1 ? 's' : ''}</span></div><div class="tile"><b>${nf(ton / 1000, 1)} t</b><span>soulevées</span></div><div class="tile"><b>${nf(rows.length)}</b><span>exercice${rows.length > 1 ? 's' : ''}</span></div></div>
+    <section class="card pg-list"><div class="row between"><h2 class="sec-t">Tes exercices</h2><span class="tiny muted">évolution sur la période</span></div>${rows.length ? rows.map(r => r.html).join('') : '<div class="empty small">Aucun exercice sur cette période.</div>'}</section>`;
+}
+function nutRing(n, cfg) {
+  const R = 44, C = 2 * Math.PI * R, real = Math.min(1, (n.real.kcal || 0) / (cfg.kcal || 1)), est = Math.min(1 - real, (n.est.kcal || 0) / (cfg.kcal || 1)), p = Math.round((n.tot.kcal || 0) / (cfg.kcal || 1) * 100);
+  return `<div class="nring" role="img" aria-label="${p} % de l’objectif calorique"><svg viewBox="0 0 104 104"><circle cx="52" cy="52" r="${R}" class="nr-bg"/>${est > 0 ? `<circle cx="52" cy="52" r="${R}" class="nr-est" stroke-dasharray="${(est * C).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-real * C).toFixed(1)}" transform="rotate(-90 52 52)"/>` : ''}${real > 0 ? `<circle cx="52" cy="52" r="${R}" class="nr-fg" stroke-dasharray="${(real * C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 52 52)"/>` : ''}</svg><span><b>${p} %</b><small>objectif</small></span></div>`;
+}
+function hSyncTxt(d) { const h = S.health[d] || {}; return h.src === 'raccourci' || h.src === 'hae' ? 'importé de l’iPhone' : h.src === 'withings' ? 'Withings' : ''; }
+function corpsHero() {
+  const t = today(), lw = lastHealth('weight');
+  const ws = Object.keys(S.health).filter(d => d >= addDays(t, -34) && S.health[d].weight != null).sort();
+  const first = ws.length ? +S.health[ws[0]].weight : null, dl = lw && first != null && ws[0] !== lw.date ? +lw.v - first : null;
+  const lf = lastHealth('fat');
+  return `<section class="card corps-hero"><div class="row between"><span class="sec-t">Poids</span><button class="btn accent sm" data-a="weigh">${ICON.plus.replace('<svg', '<svg class="ico"')} Pesée</button></div>
+    ${lw ? `<div class="ch-v"><b class="num-t">${nf(+lw.v, 1)} <small>kg</small></b>${dl != null ? `<span class="ch-d ${dl < 0 ? 'dn' : dl > 0 ? 'up' : ''}">${dl > 0 ? '+' : dl < 0 ? '−' : ''}${nf(Math.abs(dl), 1)} kg en ${Math.max(1, Math.round(diffDays(ws[0], lw.date) / 7))} sem.</span>` : ''}</div>
+    <div class="ch-s">${relDay(lw.date)}${lf ? ` · masse grasse ${nf(+lf.v, 1)} %` : ''}</div>${ws.length > 1 ? `<div class="ch-sp">${sparkSvg(ws.map(d => +S.health[d].weight))}</div>` : ''}` : '<p class="small muted" style="margin:0">Aucune pesée pour l’instant : une par semaine suffit, le matin à jeun.</p>'}</section>`;
+}
+Object.assign(A, {
+  'grp-open': () => { UI.grpOpen = true; render(); },
+  'ex-unfold': el => { (UI.exOpen ||= {})[UI.date + ':' + el.dataset.i] = true; rerenderCard(+el.dataset.i); },
+  'home-go': el => {
+    const t = today(); UI.date = t; UI.addQ = '';
+    if (el.dataset.tpl && S.templates[el.dataset.tpl]) applyTemplate(el.dataset.tpl);
+    else if (el.dataset.from && S.sessions[el.dataset.from]) A['sess-redo']({ dataset: { from: el.dataset.from } });
+    UI.tab = 'seance'; saveUI(); render(); window.scrollTo({ top: 0 });
+  },
+  'prog-pick': el => { UI.prog.ex = el.dataset.id; UI.prog.view = 'detail'; saveUI(); render(); window.scrollTo({ top: 0 }); },
+  'prog-list': () => { UI.prog.view = 'list'; render(); window.scrollTo({ top: 0 }); },
+});
+CH['prog-range-sel'] = el => { UI.prog.range = el.value; saveUI(); render(); };
+document.addEventListener('toggle', ev => { if (ev.target && ev.target.id === 'hand-in') UI.handIn = ev.target.open; }, true);
 </script>
 </body>
 </html>
