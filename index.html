@@ -762,6 +762,24 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .hand-in>summary::-webkit-details-marker{display:none}
 .hand-in[open]>summary{margin-bottom:10px}
 .hand-in .card{box-shadow:none;border:0;padding:8px 0 0;background:transparent}
+
+/* ===== v8.1 : tags Poly / Iso ===== */
+.tag-poly{background:var(--ink);color:var(--surface);border-color:var(--ink)}
+.tag-iso{background:var(--accent-soft);border-color:transparent;color:var(--ink)}
+
+/* ===== v8.1 : Bilan ===== */
+.pg-modes .seg{display:flex}
+.pg-modes .seg button{flex:1 1 auto;padding:0 4px;font-size:13.5px}
+.b-score .eyebrow{display:block;margin-bottom:4px}
+.b-item{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.card>.b-item:nth-child(2),.b-ia>p+.b-item{border-top:0}
+.b-item p{margin:2px 0 0}
+.b-ico{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 14px/1 var(--f-d)}
+.b-crit .b-ico{background:var(--crit);color:#fff}.b-warn .b-ico{background:var(--warn);color:#14171a}.b-good .b-ico{background:var(--good);color:#fff}
+.b-vol{display:grid;grid-template-columns:86px minmax(0,1fr) 34px;align-items:center;gap:10px;font-size:13.5px}
+.b-vol b{font:700 16px var(--f-d);text-align:right;font-variant-numeric:tabular-nums}.b-vol .bar{grid-column:auto}
+.bar>span.b-good-bar{background:var(--good)}.bar>span.b-warn-bar{background:var(--warn)}
+.b-r{font:700 15px var(--f-d);font-variant-numeric:tabular-nums;white-space:nowrap}.b-up{color:var(--good-text)}.b-down{color:var(--crit-text)}
 </style>
 </head>
 <body>
@@ -1609,7 +1627,7 @@ function exFicheHtml(id, d = UI.date) {
     <div class="row between" style="align-items:flex-start"><div><div class="eyebrow">${esc(GL[ex.group] || '')} · ${ex.kind === 'bw' ? 'poids du corps' : ex.kind === 'cardio' ? 'cardio' : 'charge'}</div><h2 style="margin:2px 0 0">${esc(ex.name)}</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
     ${illu}
     ${pr.txt ? `<div class="ef-presc"><div class="ph"><b>Prescription · ${esc(G.l)}</b><button class="lnk" data-a="train-guide">Changer d’objectif</button></div>
-      <div class="ef-pg"><div><span class="l">Séries × reps</span><span class="v">${pr.txt}</span></div><div><span class="l">Repos</span><span class="v">${esc(G.rs)}</span></div><div><span class="l">Intensité</span><span class="v sm">${esc(G.pct)}<br>${esc(G.rir)}</span></div><div><span class="l">Tempo</span><span class="v sm">${esc(G.tempo)}</span></div></div>
+      <div class="ef-pg"><div><span class="l">Séries × reps</span><span class="v">${pr.txt}</span></div><div><span class="l">Repos</span><span class="v${restTxt(id).length > 8 ? ' sm' : ''}">${esc(restTxt(id) || G.rs)}</span></div><div><span class="l">Intensité</span><span class="v sm">${esc(G.pct)}<br>${esc(G.rir)}</span></div><div><span class="l">Tempo</span><span class="v sm">${esc(G.tempo)}</span></div></div>
       ${wk != null && main && MUSL[main] ? `<p>Volume de la semaine sur ${esc(MUSL[main].l.toLowerCase())} : <b>${n1(wk)} série${wk >= 2 ? 's' : ''}</b> sur ${rngTxt(G.week)} conseillées${wk < G.week[0] ? ', tu as de la marge.' : wk > G.week[1] ? ', tu es au-dessus.' : ', tu es dans la zone.'}</p>` : ''}
       <p><b>Progression :</b> ${esc(G.prog)}</p><p><b>Résultat visé :</b> ${esc(G.result)}</p>${pr.bw ? `<p>Poids du corps : ${pr.bw}.</p>` : ''}</div>` : ''}
     ${map.length ? `<div><div class="ef-sec">Muscles travaillés</div><div class="ef-mus">${pkBig(id)}<div>${mrows}</div></div></div>` : ''}
@@ -1905,7 +1923,7 @@ function renderFocus() {
   const top = `<header class="fx-top"><button class="icon-btn" data-a="focus-close" aria-label="Quitter le mode salle">${ICON.xl}</button>
     <div class="fx-meta"><b>Exercice ${FOCUS.i + 1} / ${es.length}</b><span id="fx-clock">${fmtDur(Date.now() - sessStart())}</span></div>
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
-  const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
+  const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
     <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
     ${fxRefHtml(e, lp, kind, d)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
@@ -3549,7 +3567,7 @@ function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
   const allOk = (e.sets || []).length > 0 && e.sets.every(z => z.ok), fold = allOk && exFold(d, i);
   return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''}" data-i="${i}">
-    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${(() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
+    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${(() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}"><span class="chk">${ICON.check}</span><span>${esc(notation(ds, kind, e.ex))}</span>${lp ? cmpLast(e, lp) : ''}</button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
@@ -3632,17 +3650,18 @@ VIEWS.progres = {
   html() {
     const P = UI.prog;
     const head = `<section class="stack">
-      <div class="row between"><h1 class="h1">Progrès</h1>${progRangeSel()}</div>
-      <div class="pg-modes">${segHtml('prog-mode', [{ k: 'exo', l: 'Exercices' }, { k: 'groupe', l: 'Groupes' }, { k: 'muscles', l: 'Muscles' }, { k: 'global', l: 'Global' }], P.mode)}</div></section>`;
+      <div class="row between"><h1 class="h1">Progrès</h1>${P.mode === 'bilan' ? bilanPerSel() : progRangeSel()}</div>
+      <div class="pg-modes">${segHtml('prog-mode', [{ k: 'exo', l: 'Exercices' }, { k: 'groupe', l: 'Groupes' }, { k: 'muscles', l: 'Muscles' }, { k: 'global', l: 'Global' }, { k: 'bilan', l: 'Bilan' }], P.mode)}</div></section>`;
     const aggRow = P.mode === 'exo' ? '' : `<div class="row end pg-agg">${segHtml('prog-agg', [{ k: 'semaine', l: 'Semaine' }, { k: 'mois', l: 'Mois' }], P.agg === 'mois' ? 'mois' : 'semaine')}</div>`;
     if (P.mode === 'muscles') return head + progMuscles();
+    if (P.mode === 'bilan') return head + bilanView();
     if (!idx().days.length) return head + `<div class="card empty"><b>Pas encore de séance</b>Tes courbes apparaîtront après ta première séance validée.</div>`;
     if (P.mode === 'groupe') return head + aggRow + progGroup();
     if (P.mode === 'global') return head + aggRow + progGlobal();
     if (P.view !== 'detail') return head + progExoList();
     return head + progExo();
   },
-  after() { const P = UI.prog; if (P.mode === 'muscles') return; if (P.mode === 'groupe') progGroupCharts(); else if (P.mode === 'global') progGlobalCharts(); else if (P.view === 'detail') progExoCharts(); }
+  after() { const P = UI.prog; if (P.mode === 'muscles' || P.mode === 'bilan') return; if (P.mode === 'groupe') progGroupCharts(); else if (P.mode === 'global') progGlobalCharts(); else if (P.view === 'detail') progExoCharts(); }
 };
 function exoSeries() {
   const P = UI.prog, start = effStart(P.range), end = today(), h = (idx().byEx[P.ex] || []).filter(x => x.date >= start && x.date <= end), kind = kindOf(P.ex);
@@ -3964,7 +3983,7 @@ VIEWS.reglages = {
       <div class="grid2">${MACRO_GOALS[c.goal] && c.kcalMode !== 'fixe' && kcalAuto(c) ? `<label class="field">Calories / jour · auto<input class="inp auto" id="cfg-kcal" value="${v(c.kcal)}" readonly tabindex="-1" aria-readonly="true"></label>` : num('kcal', 'Calories / jour', 'kcal')}${['p', 'c', 'f'].map(k => { const l = { p: 'Protéines', c: 'Glucides', f: 'Lipides' }[k]; return MACRO_GOALS[c.goal] ? `<label class="field">${l} (g) · auto<input class="inp auto" id="cfg-${k}" value="${v(c[k])}" readonly tabindex="-1" aria-readonly="true"></label>` : num(k, l, 'g'); }).join('')}</div>
       <p class="small muted" id="macro-exp" style="margin:0">${macroExpHtml(c)}</p>
       ${MACRO_GOALS[c.goal] && kcalAuto(c) ? `<div class="row wrap" style="gap:4px 12px">${c.kcalMode === 'fixe' ? '<button class="lnk" data-a="cfg-kmode" data-v="auto">Calculer les calories selon ma dépense</button>' : '<button class="lnk" data-a="cfg-kmode" data-v="fixe">Fixer les calories moi-même</button><button class="lnk" data-a="cfg-recalc">Recalculer avec mes dernières données</button>'}</div>` : ''}
-      <div class="grid2">${num('bmr', 'Métabolisme de base', 'kcal')}${num('tol', 'Marge « dans la cible »', '%')}${num('steps', 'Pas / jour')}${num('rest', 'Repos entre séries', 's')}${num('muscu', 'Séances muscu / semaine')}${num('cardio', 'Séances cardio / semaine')}</div>
+      <div class="grid2">${num('bmr', 'Métabolisme de base', 'kcal')}${num('tol', 'Marge « dans la cible »', '%')}${num('steps', 'Pas / jour')}<label class="field">Repos entre séries · auto<input class="inp auto" id="cfg-rest-auto" value="Poly 2:30 à 3:00 · Iso 1:00 à 1:30" readonly tabindex="-1" aria-readonly="true"></label>${num('muscu', 'Séances muscu / semaine')}${num('cardio', 'Séances cardio / semaine')}</div>
       <p class="tiny muted" style="margin:0">Calories, glucides et lipides sont des plafonds : vert dans la marge, orange jusqu’à 3 fois la marge au-dessus (4 fois en dessous), rouge au-delà. Les protéines sont un minimum : vert dès que la marge est atteinte, pas de pénalité au-dessus. Pendant la journée, être en dessous n’est jamais signalé.</p>
       <label class="field">Repas non renseignés
         <select class="inp" id="cfg-impute" data-ch="cfg-impute"><option value="moyenne" ${c.impute === 'moyenne' ? 'selected' : ''}>Remplacés par ma moyenne des 28 derniers jours</option><option value="objectif" ${c.impute === 'objectif' ? 'selected' : ''}>Remplacés par une part de mon objectif</option></select></label>
@@ -4038,6 +4057,7 @@ function exFormHtml(id, name = '') {
     <label class="field">Nom<input class="inp" id="exf-name" value="${esc(e.name)}" data-autofocus autocomplete="off"></label>
     <div class="grid2"><label class="field">Groupe<select class="inp" id="exf-group">${GROUPS.map(g => `<option value="${g.k}" ${g.k === e.group ? 'selected' : ''}>${g.l}</option>`).join('')}</select></label>
     <label class="field">Type<select class="inp" id="exf-kind">${KINDS.map(k => `<option value="${k.k}" ${k.k === (e.kind || 'w') ? 'selected' : ''}>${k.l}</option>`).join('')}</select></label></div>
+    <label class="field">Mouvement<select class="inp" id="exf-cat"><option value="">Auto${id && catOf(id, true) ? ' · ' + (catOf(id, true) === 'poly' ? 'polyarticulaire' : 'isolation') : ''}</option><option value="poly" ${e.cat === 'poly' ? 'selected' : ''}>Polyarticulaire · repos 2 min 30 à 3 min</option><option value="iso" ${e.cat === 'iso' ? 'selected' : ''}>Isolation · repos 1 min à 1 min 30</option></select></label>
     <div class="grid2"><label class="field">Note (réglage machine, prise…)<input class="inp" id="exf-note" value="${esc(e.note || '')}" placeholder="ex. siège cran 4"></label>
     <label class="field">Pas des boutons −/+ (kg)<input class="inp" id="exf-step" inputmode="decimal" value="${v(e.step)}" placeholder="auto"></label></div>
     <div class="row between wrap">${id ? `<button class="btn ghost danger" data-a="ex-delete" data-id="${id}">${u ? 'Masquer' : 'Supprimer'}</button>` : '<span></span>'}
@@ -4071,6 +4091,41 @@ async function bulkImport(data) {
     else n++;
   }
   lsSave(); render(); toast(`${n} éléments restaurés.`);
+}
+
+/* ================= v8.1 : repos automatique selon le type de mouvement ================= */
+// Poly : 2 min 30, 3 min si la série fait 6 reps ou moins. Iso : 1 min 30. Petits groupes (abdos, mollets, avant-bras, gainage) : 1 min.
+const REST_RULES = { poly: { lourd: 180, normal: 150, label: 'Poly', reps: '6 à 10' }, iso: { normal: 90, label: 'Iso', reps: '10 à 15' }, isoPetit: { normal: 60 } };
+const LOURD_MAX_REPS = 6;
+const PETITS_GROUPES = ['abdos', 'mollets', 'avantbras'];
+const POLY_IDS = new Set(['couche-banc', 'developpe-couche-guide-17xm', 'developpe-incline-barre', 'developpe-incline-guide-zswl', 'inc-halteres', 'vertical-chest-press', 'squeeze-press', 'dips', 'pompes', 'developpe-assis', 'developpe-militaire', 'tractions', 'tirage-nuque', 'tirage-buste-haut', 'tirage-buste-neutre', 'tirage-vertical-large', 'tirage-horizontal', 'rowing-barre', 'rowing-haltere', 'souleve-de-terre', 'squat', 'hack-squat', 'presse-cuisses', 'presse-inversee', 'fentes-bulgares', 'fentes-marchees', 'sdt-jambes-tendues', 'hip-thrust', 'good-morning', 'dips-banc']);
+const ISO_MOTS = /curl|extension|[eé]cart[eé]|[eé]l[eé]vation|pec.?deck|kickback|oiseau|face.?pull|crunch|mollet|shrug|pull.?over|abdo|gainage|relev[eé]|abduct|adduct|fly|lat[eé]rale/i;
+const POLY_MOTS = /d[eé]velopp[eé]|couch[eé]|squat|presse|press\b|fente|soulev[eé]|rowing|tirage|traction|dips|pompe|thrust|good.?morning|chest|row\b/i;
+const GROUPES_ISO_DEFAUT = ['biceps', 'triceps', 'avantbras', 'mollets', 'abdos', 'epaules'];
+// auto = true : ignore le choix manuel (pour afficher « Auto · Poly » dans le formulaire)
+function catOf(exId, auto) {
+  const ex = exOf(exId);
+  if (ex.kind === 'cardio' || ex.group === 'cardio') return null;
+  if (!auto && (ex.cat === 'poly' || ex.cat === 'iso')) return ex.cat;
+  if (POLY_IDS.has(exId)) return 'poly';
+  const nom = (ex.name || '').toLowerCase();
+  if (ISO_MOTS.test(nom)) return 'iso';
+  if (POLY_MOTS.test(nom)) return 'poly';
+  return GROUPES_ISO_DEFAUT.includes(ex.group) ? 'iso' : 'poly';
+}
+function restFor(exId, set) {
+  const cat = catOf(exId), ex = exOf(exId);
+  if (!cat) return CFG().rest;
+  if (cat === 'poly') { const reps = +(set && set.r) || 0; return reps && reps <= LOURD_MAX_REPS ? REST_RULES.poly.lourd : REST_RULES.poly.normal; }
+  if (PETITS_GROUPES.includes(ex.group) || /gainage/i.test(ex.name || '')) return REST_RULES.isoPetit.normal;
+  return REST_RULES.iso.normal;
+}
+function catTag(exId) { const cat = catOf(exId); if (!cat) return ''; const r = REST_RULES[cat]; return `<span class="tag tag-${cat}">${r.label} · ${r.reps}</span>`; }
+function restTxt(exId) {
+  const cat = catOf(exId), ex = exOf(exId), m = sec => sec % 60 ? `${Math.floor(sec / 60)} min ${pad(sec % 60)}` : `${sec / 60} min`;
+  if (!cat) return '';
+  if (cat === 'poly') return `${m(REST_RULES.poly.normal)}, ${m(REST_RULES.poly.lourd)} si ${LOURD_MAX_REPS} reps ou moins`;
+  return m(PETITS_GROUPES.includes(ex.group) || /gainage/i.test(ex.name || '') ? REST_RULES.isoPetit.normal : REST_RULES.iso.normal);
 }
 
 /* ================= Minuteur de repos ================= */
@@ -4171,7 +4226,7 @@ const A = {
     const { i, e } = curEntry(el); if (!e) return; const j = +el.dataset.j, s = e.sets[j], kind = kindOf(e.ex);
     if (!s.ok) {
       const res = validateSet(e, j, UI.date); if (!res) return;
-      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(CFG().rest);
+      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(restFor(e.ex, s));
       rerenderCard(i); afterValidate(e, s, res);
       return;
     } else { s.ok = false; delete s.t; touch('sessions', UI.date, 400); }
@@ -4186,6 +4241,7 @@ const A = {
     const name = $('#exf-name').value.trim(); if (!name) { toast('Donne un nom à l’exercice.'); return; }
     const data = { name, group: $('#exf-group').value, kind: $('#exf-kind').value, note: $('#exf-note').value.trim() };
     const st = toNum($('#exf-step')?.value); if (st && st > 0) data.step = st; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].step;
+    const cat = $('#exf-cat')?.value; if (cat === 'poly' || cat === 'iso') data.cat = cat; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].cat;
     const ctx = SHEET.ctx || {};
     if (ctx.id) { Object.assign(S.exercises[ctx.id], data); touch('exercises', ctx.id); closeSheet(); render(); toast('Exercice modifié.'); return; }
     const id = norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + Math.random().toString(36).slice(2, 6);
@@ -4253,7 +4309,7 @@ const A = {
     const noRest = wasOk || kindOf(e.ex) === 'cardio' || (nx.i === FOCUS.i && e.sets[nx.j]?.d);
     FOCUS.next = nx;
     if (noRest) { fxGoNext(); return; }
-    FOCUS.phase = 'rest'; startRest(CFG().rest); renderFocus();
+    FOCUS.phase = 'rest'; startRest(restFor(e.ex, s)); renderFocus();
   },
   'fx-skip': () => { stopRest(); fxGoNext(); },
   'fx-unok': () => { const e = focusEntries()[FOCUS.i], s = e?.sets?.[FOCUS.j]; if (!s) return; s.ok = false; delete s.t; touch('sessions', UI.date, 400); renderFocus(); },
@@ -4501,6 +4557,7 @@ const BRICKS = [
   ['salle', 'Entraînement', 'Mode salle plein écran', 'Séance guidée série par série, minuteur de repos'],
   ['guide_exos', 'Entraînement', 'Guide des exercices', 'Choix par muscle, fiches exercices, conseils séries et reps'],
   ['coach', 'Entraînement', 'Coach de progression', 'Suggestions de charge et bilan du coach'],
+  ['ia_bilan', 'Entraînement', 'Analyse IA du bilan', 'Synthèse, priorités et semaine type par l’IA dans Progrès, Bilan', 1],
   ['progres', 'Entraînement', 'Progrès et records', 'Onglet Progrès : courbes, records, analyse par groupe et par muscle'],
   ['muscles', 'Entraînement', 'Part du travail par muscle', 'Muscles touchés en séance et travail de la semaine par muscle'],
   ['nutrition', 'Nutrition', 'Nutrition', 'Onglet Nutrition : repas, favoris, calories et macros'],
@@ -4516,7 +4573,7 @@ const BRICKS = [
   ['partage', 'Motivation', 'Images à partager', 'Cartes Séance et Semaine à publier'],
   ['export', 'Données', 'Export et sauvegarde', 'Export CSV des séries, sauvegarde et restauration']];
 const BRICK = Object.fromEntries(BRICKS.map(([k, g, l, d, srv]) => [k, { k, g, l, d, srv: !!srv }]));
-const BRICK_DEF = { ia_repas: 'option', ia_sommeil: 'option' }; // si la base ne répond pas
+const BRICK_DEF = { ia_repas: 'option', ia_sommeil: 'option', ia_bilan: 'option' }; // si la base ne répond pas
 let BTIERS = {}; const BRICK_DENY = new Set();
 const brickTier = k => BTIERS[k] || BRICK_DEF[k] || 'gratuit';
 const amAdmin = () => AUTH.profile?.role === 'admin';
@@ -4525,7 +4582,7 @@ function canUse(k) { if (!BRICK[k]) return true; if (BRICK_DENY.has(k)) return f
 const iaSleep = () => canUse('sommeil') && canUse('ia_sommeil');
 const ACT_BRICK = {
   seances_types: 'tpl-apply tpl-edit tpl-save tpl-del tpl-from-session tpl-swap sess-redo', salle: 'focus-open', guide_exos: 'pk-open ex-fiche train-guide',
-  coach: 'ex-sugg coach-toggle', progres: 'see-prog', muscles: 'mus-sel mus-src mus-all mus-add mus-add-to',
+  coach: 'ex-sugg coach-toggle', ia_bilan: 'bilan-ia', progres: 'see-prog', muscles: 'mus-sel mus-src mus-all mus-add mus-add-to',
   nutrition: 'meal-now nf-add hq-add q-add nf-copyday dt-open nutri-off nutri-period fav-new', corps: 'weigh', sommeil: 'sl-open',
   import_sante: 'h-import h-paste guide hae-token hae-guide', withings: 'wt-connect wt-sync', ligue: 'lg-open', rituel: 'rit-open',
   recap: 'wk-recap', partage: 'rc-open rc-week', export: 'export-csv export-json', ia_repas: 'nf-estimate' };
@@ -5195,6 +5252,228 @@ Object.assign(A, {
 });
 CH['prog-range-sel'] = el => { UI.prog.range = el.value; saveUI(); render(); };
 document.addEventListener('toggle', ev => { if (ev.target && ev.target.id === 'hand-in') UI.handIn = ev.target.open; }, true);
+
+/* ================= v8.1 : Bilan de progression, cohérence et conseils ================= */
+const BILAN = {
+  periodes: [{ k: 28, l: '4 sem.' }, { k: 56, l: '8 sem.' }, { k: 0, l: 'Plan' }],
+  seriesCible: { min: 10, max: 20 },          // séries dures / semaine / grand groupe
+  seriesPetit: { min: 6, max: 14 },           // mollets, abdos, avant-bras, lombaires
+  grandsGroupes: ['pecs', 'dos', 'epaules', 'jambes'],
+  petitsGroupes: ['mollets', 'abdos', 'avantbras', 'lombaires'],
+  seuilEchauffement: 0.85,                    // série < 85 % de la charge max du jour = échauffement
+  repsPoly: [5, 10], repsIso: [8, 15],
+  progresMin: 2.5,                            // % de 1RM estimé pour parler de progrès
+  sommeilCible: 7, alerteSansSaisie: 7        // heures ; jours
+};
+const BILAN_UI = { per: 28, ia: null, iaBusy: false, iaErr: '' };
+
+const bDays = (a, b) => Math.round((new Date(b + 'T12:00') - new Date(a + 'T12:00')) / 864e5);
+const bAvg = arr => arr.length ? arr.reduce((x, y) => x + y, 0) / arr.length : null;
+const bPct = (a, b) => a ? (b - a) / a * 100 : 0;
+const bCat = id => catOf(id);
+function bPeriode() {
+  const t = today(), c = CFG();
+  if (BILAN_UI.per === 0 && c.planStart && c.planStart <= t) return { from: c.planStart, to: t, label: c.planName || 'Plan en cours' };
+  const n = BILAN_UI.per || 28;
+  const premiere = Object.keys(S.sessions).filter(d => (S.sessions[d].entries || []).some(e => (e.sets || []).some(s => s.ok))).sort()[0];
+  let from = addDays(t, -(n - 1)); if (premiere && premiere > from) from = premiere;   // pas de dilution avant la 1re séance
+  return { from, to: t, label: from === addDays(t, -(n - 1)) ? `${n / 7} dernières semaines` : `depuis le ${fmtDay(from)}` };
+}
+/* Séries de travail d'une entrée (sans échauffement ni dégressives). */
+function bWorkSets(entry) {
+  const sets = (entry.sets || []).filter(s => s.ok && (s.r || s.min) && !s.d);
+  if (kindOf(entry.ex) !== 'w') return sets;
+  const max = Math.max(0, ...sets.map(s => +s.kg || 0));
+  return sets.filter(s => (+s.kg || 0) >= max * BILAN.seuilEchauffement);
+}
+function bilanCalc() {
+  const P = bPeriode(), c = CFG(), t = today();
+  const sem = Math.max(1, bDays(P.from, P.to) + 1) / 7;
+  const jours = Object.keys(S.sessions).filter(d => d >= P.from && d <= P.to).sort();
+  const muscuJours = jours.filter(d => (S.sessions[d].entries || []).some(e => kindOf(e.ex) !== 'cardio' && bWorkSets(e).length));
+  const cardioJours = jours.filter(d => (S.sessions[d].entries || []).some(e => kindOf(e.ex) === 'cardio' && (e.sets || []).some(s => s.ok)));
+  const toutes = Object.keys(S.sessions).filter(d => (S.sessions[d].entries || []).some(e => (e.sets || []).some(s => s.ok))).sort();
+  const derniere = toutes[toutes.length - 1] || null;
+  const grp = {}, histo = {};
+  let poly = 0, iso = 0, horsPlageP = 0, totP = 0, horsPlageI = 0, totI = 0; const identiques = [], reserve = [];
+  for (const d of muscuJours) {
+    for (const e of S.sessions[d].entries || []) {
+      const k = kindOf(e.ex); if (k === 'cardio') continue;
+      const ws = bWorkSets(e); if (!ws.length) continue;
+      const g = exOf(e.ex).group || 'autre', cat = bCat(e.ex);
+      grp[g] = grp[g] || { series: 0, jours: new Set() }; grp[g].series += ws.length; grp[g].jours.add(d);
+      if (cat === 'poly') poly += ws.length; else iso += ws.length;
+      for (const st of ws) {
+        const r = +st.r || 0; if (!r) continue;
+        if (cat === 'poly') { totP++; if (r > BILAN.repsPoly[1] + 2) horsPlageP++; }
+        else { totI++; if (r < BILAN.repsIso[0]) horsPlageI++; }
+      }
+      if (ws.length >= 3 && k === 'w') {
+        const kg = ws.map(x => +x.kg || 0), rp = ws.map(x => +x.r || 0);
+        if (kg.every(x => x === kg[0]) && rp.every(x => x === rp[0])) identiques.push({ d, ex: e.ex, n: ws.length, kg: kg[0], r: rp[0] });
+        const last = ws[ws.length - 1], first = ws[0];
+        if ((+last.kg || 0) >= (+first.kg || 0) && (+last.r || 0) >= (+first.r || 0) + 3) reserve.push({ d, ex: e.ex, kg: +last.kg, r1: +first.r, r2: +last.r });
+      }
+      if (k === 'w') {
+        const best = Math.max(0, ...ws.map(x => e1rm({ kg: +x.kg, r: +x.r })));
+        if (best) (histo[e.ex] = histo[e.ex] || []).push({ d, v: best });
+      }
+    }
+  }
+  const groupes = Object.entries(grp).map(([g, o]) => ({ g, l: GL[g] || g, parSem: o.series / sem, freq: o.jours.size / sem })).sort((a, b) => b.parSem - a.parSem);
+  for (const g of BILAN.grandsGroupes) if (!grp[g]) groupes.push({ g, l: GL[g] || g, parSem: 0, freq: 0 });
+  const exos = Object.entries(histo).filter(([, h]) => h.length >= 2).map(([id, h]) => {
+    const deb = h[0].v, fin = h[h.length - 1].v, pct = bPct(deb, fin), max = Math.max(...h.map(x => x.v));
+    const etat = pct >= BILAN.progresMin ? 'progres' : pct <= -BILAN.progresMin ? 'baisse' : h.length >= 3 ? 'stagne' : 'tot';
+    return { id, nom: exOf(id).name, n: h.length, deb, fin, pct, max, etat, cat: bCat(id) };
+  }).sort((a, b) => b.pct - a.pct);
+  /* Corps. La balance donne la masse musculaire en % du poids : convertie en kg avec la pesée du même jour. */
+  const hd = Object.keys(S.health).filter(d => d >= P.from && d <= P.to).sort();
+  const serie = f => hd.map(d => ({ d, v: f(S.health[d]) })).filter(x => x.v != null && isFinite(x.v));
+  const evol = f => { const sr = serie(f); if (sr.length < 2) return null; const a = sr[0], b = sr[sr.length - 1]; const w = Math.max(1, bDays(a.d, b.d)) / 7; return { deb: a.v, fin: b.v, diff: b.v - a.v, parSem: (b.v - a.v) / w, du: a.d, au: b.d }; };
+  const poids = evol(h => h.weight != null ? +h.weight : null), gras = evol(h => h.fat != null ? +h.fat : null);
+  const muscle = evol(h => h.muscle != null && h.weight != null ? +h.muscle * +h.weight / 100 : null);
+  const sommeil = bAvg(hd.map(d => S.health[d].sleep).filter(x => x != null).map(Number));
+  const pas = bAvg(hd.map(d => S.health[d].steps).filter(x => x != null).map(Number));
+  /* Nutrition : jours réellement saisis seulement, journée en cours exclue */
+  const nj = Object.keys(S.nutrition).filter(d => d >= P.from && d <= P.to && d < t);
+  const nutri = nj.map(d => { try { return dayNutri(d); } catch { return null; } }).filter(n => n && n.real && n.real.kcal > 0);
+  const prot = bAvg(nutri.map(n => n.real.p)), kcal = bAvg(nutri.map(n => n.real.kcal));
+  return { P, c, sem, muscuJours, cardioJours, derniere, sansSaisie: derniere ? bDays(derniere, t) : null,
+    groupes, poly, iso, totP, horsPlageP, totI, horsPlageI, identiques, reserve, exos,
+    poids, gras, muscle, sommeil, pas, prot, kcal, nutriJours: nutri.length };
+}
+function bilanConseils(B) {
+  const out = [], add = (niv, titre, constat, conseil) => out.push({ niv, titre, constat, conseil });
+  const c = B.c, but = c.goal;
+  if (B.sansSaisie == null) add('crit', 'Pas de données', 'Aucune séance enregistrée.', 'Saisis tes séances pour activer le bilan.');
+  else if (B.sansSaisie >= BILAN.alerteSansSaisie) add('crit', 'Saisie interrompue', `Dernière séance enregistrée il y a ${B.sansSaisie} jours.`, 'Sans saisie, impossible de vérifier la surcharge progressive. Note chaque série, même rapidement.');
+  const parSem = B.muscuJours.length / B.sem;
+  if (B.muscuJours.length) {
+    if (parSem < c.muscu - 0.5) add('warn', 'Fréquence sous l’objectif', `${nf(parSem, 1)} séance(s) de muscu par semaine pour un objectif de ${c.muscu}.`, 'La régularité compte plus que l’intensité d’une séance isolée. Bloque des créneaux fixes.');
+    else add('good', 'Fréquence tenue', `${nf(parSem, 1)} séance(s) de muscu par semaine.`, 'Garde ce rythme, c’est la base de tout le reste.');
+  }
+  const cardioSem = B.cardioJours.length / B.sem;
+  if (c.cardio && cardioSem < c.cardio - 0.5) add('warn', 'Cardio en retrait', `${nf(cardioSem, 1)} séance(s) cardio par semaine pour ${c.cardio} prévues.`, 'Le cardio en zone 2 accélère la perte de gras sans gêner la récupération. Une marche rapide de 35 min compte.');
+  for (const g of B.groupes) {
+    const petit = BILAN.petitsGroupes.includes(g.g), cible = petit ? BILAN.seriesPetit : BILAN.seriesCible;
+    if (g.g === 'cardio') continue;
+    if (BILAN.grandsGroupes.includes(g.g) && g.parSem < cible.min)
+      add(g.parSem < cible.min / 2 ? 'crit' : 'warn', `${g.l} : volume trop faible`, `${nf(g.parSem, 1)} série(s) dure(s) par semaine (repère : ${cible.min} à ${cible.max}).`, 'Ajoute 1 ou 2 exercices pour ce groupe, sur une deuxième séance de la semaine.');
+    else if (g.parSem > cible.max + 2)
+      add('warn', `${g.l} : volume excessif`, `${nf(g.parSem, 1)} séries par semaine (repère max : ${cible.max}).`, 'Au-delà, la récupération plafonne. Retire les séries les plus faciles et reporte ce temps sur un groupe en retard.');
+    if (BILAN.grandsGroupes.includes(g.g) && g.parSem >= cible.min && g.freq < 1.5)
+      add('warn', `${g.l} : une seule fois par semaine`, `Fréquence ${nf(g.freq, 1)} fois par semaine.`, 'Le même volume réparti sur 2 séances donne plus de muscle. Coupe la séance en deux.');
+  }
+  const pecs = B.groupes.find(g => g.g === 'pecs')?.parSem || 0, dos = B.groupes.find(g => g.g === 'dos')?.parSem || 0;
+  if (pecs && dos && pecs > dos * 1.4) add('warn', 'Déséquilibre poussée / tirage', `Pecs ${nf(pecs, 1)} séries par semaine contre ${nf(dos, 1)} pour le dos.`, 'Vise au moins autant de tirage que de poussée : posture et épaules en dépendent. Ajoute du rowing.');
+  const haut = B.groupes.filter(g => ['pecs', 'dos', 'epaules', 'biceps', 'triceps'].includes(g.g)).reduce((a, g) => a + g.parSem, 0);
+  const bas = B.groupes.filter(g => ['jambes', 'fessiers', 'mollets'].includes(g.g)).reduce((a, g) => a + g.parSem, 0);
+  if (haut && bas < haut * 0.35 && !out.some(x => x.titre.startsWith(GL.jambes))) add('warn', 'Jambes négligées', `${nf(bas, 1)} séries de bas du corps par semaine contre ${nf(haut, 1)} pour le haut.`, 'Les jambes sont la plus grosse masse musculaire : c’est le meilleur levier de dépense et de prise de muscle. Une vraie séance jambes, squat ou presse en tête.');
+  const tot = B.poly + B.iso;
+  if (tot) {
+    const pp = B.poly / tot * 100;
+    if (pp < 45) add('warn', 'Trop d’isolation', `${nf(pp)} % de séries polyarticulaires.`, 'Les polyarticulaires construisent la base. Commence chaque séance par 2 mouvements lourds, l’isolation ensuite.');
+    else add('good', 'Bon équilibre poly / iso', `${nf(pp)} % de séries polyarticulaires.`, 'Garde les polyarticulaires en début de séance, quand tu es frais.');
+  }
+  if (B.totP >= 6 && B.horsPlageP / B.totP > 0.4) add('warn', 'Polyarticulaires trop légers', `${nf(B.horsPlageP / B.totP * 100)} % des séries poly au-delà de 12 reps.`, 'Sur les mouvements de base, charge pour tenir 6 à 10 reps. Au-dessus, c’est de l’endurance.');
+  if (B.totI >= 6 && B.horsPlageI / B.totI > 0.4) add('warn', 'Isolation trop lourde', `${nf(B.horsPlageI / B.totI * 100)} % des séries iso sous 8 reps.`, 'L’isolation se travaille entre 10 et 15 reps, mouvement contrôlé. Baisse la charge.');
+  if (B.identiques.length) {
+    const ex = [...new Set(B.identiques.map(x => exOf(x.ex).name))].slice(0, 3).join(', ');
+    add('crit', 'Séries trop faciles', `${B.identiques.length} fois toutes les séries identiques, même charge et mêmes reps (${ex}).`, 'Si la dernière série sort aussi bien que la première, tu étais loin de l’échec. Monte la charge jusqu’à ce que la dernière série finisse à 1 ou 2 reps de l’échec.');
+  }
+  if (B.reserve.length) {
+    const x = B.reserve[0];
+    add('warn', 'Réserve sur les premières séries', `${B.reserve.length} cas où la dernière série fait 3 reps de plus que la première (ex. ${exOf(x.ex).name} : ${x.r1} puis ${x.r2} reps).`, 'Tes premières séries étaient trop légères. Pars directement sur la charge de travail après l’échauffement.');
+  }
+  const prog = B.exos.filter(e => e.etat === 'progres'), stag = B.exos.filter(e => e.etat === 'stagne'), baisse = B.exos.filter(e => e.etat === 'baisse');
+  if (prog.length) add('good', 'Force en hausse', prog.slice(0, 3).map(e => `${e.nom} +${nf(e.pct, 1)} %`).join(' · '), 'Continue la double progression : charge plus haute dès que tu tiens le haut de la fourchette de reps sur toutes les séries.');
+  if (stag.length) add('warn', 'Exercices qui stagnent', stag.slice(0, 3).map(e => `${e.nom} (${e.n} séances)`).join(' · '), 'Sur ces exercices : change de fourchette de reps pendant 3 semaines, ou ajoute une série. Si tout stagne en même temps, le problème est le sommeil ou les protéines.');
+  if (baisse.length) add(but === 'seche' ? 'warn' : 'crit', 'Force en baisse', baisse.slice(0, 3).map(e => `${e.nom} ${nf(e.pct, 1)} %`).join(' · '), but === 'seche' ? 'Une légère baisse en sèche peut arriver, mais au-delà de 5 % ton déficit est trop agressif. Remonte de 150 kcal.' : 'Vérifie la récupération : sommeil, protéines, et une semaine allégée (−40 % de volume) si la fatigue s’accumule.');
+  if (B.poids) {
+    const ps = B.poids.parSem, pctS = ps / B.poids.deb * 100;
+    if (but === 'seche') {
+      if (pctS > -0.2) add('warn', 'Poids qui ne baisse pas', `${nf(ps, 2)} kg par semaine en sèche.`, 'Le déficit n’est pas réel. Vérifie la saisie des repas du week-end et augmente les pas avant de couper des calories.');
+      else if (pctS < -1) add('warn', 'Perte trop rapide', `${nf(ps, 2)} kg par semaine.`, 'Au-delà de 1 % du poids par semaine, tu perds du muscle. Remonte légèrement les calories.');
+      else add('good', 'Rythme de perte correct', `${nf(ps, 2)} kg par semaine.`, 'C’est la bonne vitesse pour garder le muscle.');
+    } else if (but === 'masse') {
+      if (pctS < 0.1) add('warn', 'Pas de prise de poids', `${nf(ps, 2)} kg par semaine en prise de masse.`, 'Sans surplus, pas de construction. Ajoute 150 à 200 kcal par jour.');
+      else if (pctS > 0.5) add('warn', 'Prise trop rapide', `+${nf(ps, 2)} kg par semaine.`, 'Au-delà de 0,5 % par semaine, c’est surtout du gras. Réduis le surplus.');
+    }
+  }
+  if (B.muscle && B.muscle.diff <= -0.5) add('crit', 'Masse musculaire en baisse', `${nf(B.muscle.diff, 1)} kg de muscle sur la période (balance).`, 'Priorités : protéines tous les jours, charges maintenues, déficit plus doux. À confirmer sur 2 pesées, l’impédancemètre varie avec l’hydratation.');
+  else if (B.muscle && B.muscle.diff >= 0.3) add('good', 'Masse musculaire en hausse', `+${nf(B.muscle.diff, 1)} kg de muscle.`, 'La recomposition fonctionne : ne change rien.');
+  if (B.gras && B.gras.diff <= -0.5) add('good', 'Masse grasse en baisse', `${nf(B.gras.diff, 1)} point(s) de masse grasse.`, 'C’est ce qui fait ressortir le dessin musculaire.');
+  if (B.prot != null && c.p) {
+    if (B.prot < c.p * 0.9) add('crit', 'Protéines insuffisantes', `${nf(B.prot)} g par jour en moyenne pour ${c.p} g visés (${B.nutriJours} jours saisis).`, 'Sans protéines, l’entraînement ne se transforme pas en muscle. Ajoute une source à chaque repas : skyr, œufs, viande, whey.');
+    else add('good', 'Protéines au niveau', `${nf(B.prot)} g par jour en moyenne.`, 'Répartis-les sur 3 à 4 repas pour un meilleur effet.');
+  }
+  if (B.sommeil != null && B.sommeil < BILAN.sommeilCible) add(B.sommeil < 6.5 ? 'crit' : 'warn', 'Sommeil court', `${nf(B.sommeil, 1)} h par nuit en moyenne.`, 'Moins de 7 h freine la récupération et la perte de gras. Couche-toi 30 min plus tôt, c’est le levier le moins cher.');
+  if (B.pas != null && c.steps && B.pas < c.steps * 0.85) add('warn', 'Pas sous l’objectif', `${nf(B.pas)} pas par jour pour ${nf(c.steps)} visés.`, 'Marche après le déjeuner et pendant les appels : 2 000 à 3 000 pas faciles.');
+  const ordre = { crit: 0, warn: 1, good: 2 };
+  return out.sort((a, b) => ordre[a.niv] - ordre[b.niv]);
+}
+/* Note globale sur 100, simple et lisible. */
+function bilanScore(cs) { return Math.max(5, Math.min(100, 100 - cs.filter(x => x.niv === 'crit').length * 12 - cs.filter(x => x.niv === 'warn').length * 5 + cs.filter(x => x.niv === 'good').length * 3)); }
+/* Analyse IA : même fonction serveur que les repas, brique dédiée ia_bilan (en option par défaut). */
+async function bilanIA() {
+  if (!SAMPLE || SAMPLE_OFF) { BILAN_UI.iaErr = 'Analyse IA indisponible ici.'; render(); return; }
+  const B = bilanCalc(), cs = bilanConseils(B), c = B.c;
+  const goalTxt = { seche: 'sèche', masse: 'prise de masse', maintien: 'maintien' }[c.goal] || 'non précisé';
+  const resume = {
+    periode: B.P, objectifNutrition: goalTxt, objectifEntrainement: TRAIN[trainKey()].l, objectifSeances: { muscu: c.muscu, cardio: c.cardio }, cibles: { kcal: c.kcal, proteines: c.p, pas: c.steps },
+    seancesMuscu: B.muscuJours.length, seancesCardio: B.cardioJours.length, joursSansSaisie: B.sansSaisie,
+    seriesParSemaine: B.groupes.map(g => ({ groupe: g.l, series: +g.parSem.toFixed(1), frequence: +g.freq.toFixed(1) })),
+    partPoly: B.poly + B.iso ? Math.round(B.poly / (B.poly + B.iso) * 100) : null,
+    exercices: B.exos.map(e => ({ nom: e.nom, type: e.cat, seances: e.n, rm1_debut: +e.deb.toFixed(1), rm1_fin: +e.fin.toFixed(1), evolution_pct: +e.pct.toFixed(1) })),
+    seriesIdentiques: B.identiques.length, corps: { poids: B.poids, masseGrasse_pct: B.gras, muscle_kg: B.muscle },
+    sommeil_h: B.sommeil, pas: B.pas, proteines_g: B.prot, kcal: B.kcal, constats: cs.map(x => `${x.niv}: ${x.titre} - ${x.constat}`)
+  };
+  const prompt = `Tu es coach en musculation et recomposition corporelle. Voici les données agrégées d'un pratiquant (objectif d'entraînement : ${TRAIN[trainKey()].l.toLowerCase()}, objectif nutrition : ${goalTxt}).
+Données : ${JSON.stringify(resume)}
+Analyse la cohérence entre entraînement, progression, corps et objectifs. Sois direct, concret, en français, tutoiement, sans tiret cadratin. N'invente aucun chiffre absent des données.
+Réponds uniquement en JSON : {"synthese":"3 phrases max","priorites":[{"titre":"...","action":"..."}],"semaineType":["Jour : séance"],"astuce":"1 phrase"}
+3 priorités maximum.`;
+  BILAN_UI.iaBusy = true; BILAN_UI.iaErr = ''; render();
+  try { const r = await SAMPLE.json(prompt, { modelTier: 'quick', feature: 'ia_bilan' }); if (!r || typeof r !== 'object') throw mkErr('invalid_json'); BILAN_UI.ia = r; }
+  catch (e) {
+    const code = e && e.code;
+    if (code === 'plan_locked') { BILAN_UI.iaBusy = false; render(); openSheet(lockSheetHtml('ia_bilan')); return; }
+    BILAN_UI.iaErr = { rate_limited: 'Trop de demandes, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance.', not_granted: 'Analyse IA non configurée.' }[code] || 'Analyse interrompue, réessaie.';
+  }
+  finally { BILAN_UI.iaBusy = false; if (UI.tab === 'progres') render(); }
+}
+function bilanPerSel() {
+  const ps = BILAN.periodes.filter(x => x.k || (CFG().planStart && CFG().planStart <= today()));
+  return `<select class="inp pg-range" data-ch="bilan-per-sel" aria-label="Période du bilan">${ps.map(x => `<option value="${x.k}" ${x.k === BILAN_UI.per ? 'selected' : ''}>${x.l}</option>`).join('')}</select>`;
+}
+function bilanView() {
+  const B = bilanCalc(), cs = bilanConseils(B), sc = bilanScore(cs);
+  const ico = { crit: '!', warn: '•', good: '✓' }, cls = { crit: 'b-crit', warn: 'b-warn', good: 'b-good' };
+  const bt = (l, val, sub = '') => `<div class="tile"><span class="l">${l}</span><span class="v">${val}</span>${sub ? `<span class="delta">${sub}</span>` : ''}</div>`;
+  const evo = (o, u, d = 1) => o ? `${o.diff > 0 ? '+' : o.diff < 0 ? '−' : ''}${nf(Math.abs(o.diff), d)} ${u}` : 'pas de mesure';
+  const vol = B.groupes.filter(g => g.g !== 'cardio').map(g => {
+    const petit = BILAN.petitsGroupes.includes(g.g), cb = petit ? BILAN.seriesPetit : BILAN.seriesCible;
+    const st = g.parSem < cb.min || g.parSem > cb.max + 2 ? 'b-warn' : 'b-good';
+    return `<div class="b-vol"><span>${esc(g.l)}</span><div class="bar"><span class="${st}-bar" style="width:${Math.min(100, g.parSem / 22 * 100)}%"></span></div><b>${nf(g.parSem, 1)}</b></div>`;
+  }).join('');
+  const exos = B.exos.length ? B.exos.map(e => `<div class="li"><div class="main"><div class="t">${esc(e.nom)}</div><div class="s">${e.cat === 'poly' ? 'Poly' : 'Iso'} · ${e.n} séances · 1RM ${nf(e.deb, 1)} → ${nf(e.fin, 1)} kg</div></div><div class="b-r ${e.pct >= BILAN.progresMin ? 'b-up' : e.pct <= -BILAN.progresMin ? 'b-down' : ''}">${e.pct > 0 ? '+' : e.pct < 0 ? '−' : ''}${nf(Math.abs(e.pct), 1)} %</div></div>`).join('') : '<p class="muted small">Il faut au moins 2 séances sur un même exercice.</p>';
+  const IA = BILAN_UI.ia;
+  const ia = IA ? `<section class="card stack b-ia"><h2 class="sec-t">Analyse du coach</h2>${IA.synthese ? `<p>${esc(IA.synthese)}</p>` : ''}
+      ${(IA.priorites || []).slice(0, 3).map((x, i) => `<div class="b-item b-warn"><span class="b-ico">${i + 1}</span><div><b>${esc(x.titre || '')}</b><p>${esc(x.action || '')}</p></div></div>`).join('')}
+      ${(IA.semaineType || []).length ? `<div class="bd">${IA.semaineType.map(x => `<div><span>${esc(x)}</span></div>`).join('')}</div>` : ''}
+      ${IA.astuce ? `<p class="small muted">Astuce : ${esc(IA.astuce)}</p>` : ''}</section>` : '';
+  return `<section class="card stack b-score"><div class="row between"><div><span class="eyebrow">Note de cohérence</span><div class="big num-t">${sc}<small> / 100</small></div><span class="tiny muted">${esc(B.P.label)}</span></div>
+      <button class="btn accent sm" data-a="bilan-ia" ${BILAN_UI.iaBusy ? 'disabled' : ''}>${BILAN_UI.iaBusy ? 'Analyse en cours…' : 'Analyse IA'}</button></div>
+      ${BILAN_UI.iaErr ? `<p class="small" style="color:var(--crit-text);margin:0">${esc(BILAN_UI.iaErr)}</p>` : ''}
+      <div class="grid4">${bt('Muscu / sem.', nf(B.muscuJours.length / B.sem, 1), `objectif ${B.c.muscu}`)}${bt('Poids', B.poids ? nf(B.poids.fin, 1) + '<small>kg</small>' : '–', evo(B.poids, 'kg'))}${bt('Masse grasse', B.gras ? nf(B.gras.fin, 1) + '<small>%</small>' : '–', evo(B.gras, 'pt'))}${bt('Muscle', B.muscle ? nf(B.muscle.fin, 1) + '<small>kg</small>' : '–', evo(B.muscle, 'kg'))}</div></section>
+    ${ia}
+    <section class="card stack"><h2 class="sec-t">Constats et conseils</h2>${cs.map(x => `<div class="b-item ${cls[x.niv]}"><span class="b-ico">${ico[x.niv]}</span><div><b>${esc(x.titre)}</b><p class="small muted">${esc(x.constat)}</p><p>${esc(x.conseil)}</p></div></div>`).join('') || '<p class="muted">Rien à signaler.</p>'}</section>
+    <section class="card stack"><div class="row between"><h2 class="sec-t">Séries dures par semaine</h2><span class="tiny muted">repère 10 à 20</span></div>${vol || '<p class="muted small">Pas de séance sur la période.</p>'}</section>
+    <section class="card"><h2 class="sec-t">Force par exercice (1RM estimé)</h2><div class="list">${exos}</div></section>`;
+}
+Object.assign(A, { 'bilan-ia': () => bilanIA() });
+CH['bilan-per-sel'] = el => { BILAN_UI.per = +el.value; BILAN_UI.ia = null; BILAN_UI.iaErr = ''; render(); };
 </script>
 </body>
 </html>
