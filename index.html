@@ -780,6 +780,15 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .b-vol b{font:700 16px var(--f-d);text-align:right;font-variant-numeric:tabular-nums}.b-vol .bar{grid-column:auto}
 .bar>span.b-good-bar{background:var(--good)}.bar>span.b-warn-bar{background:var(--warn)}
 .b-r{font:700 15px var(--f-d);font-variant-numeric:tabular-nums;white-space:nowrap}.b-up{color:var(--good-text)}.b-down{color:var(--crit-text)}
+
+/* ===== v8.3 : bandeau de repos du mode salle ===== */
+.fx-mini{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 5px 5px 16px;font-weight:600;font-size:14px}
+.fx-mini b{font:700 24px/1 var(--f-d);font-variant-numeric:tabular-nums;min-width:52px}
+.fx-mini span{flex:1}
+.fx-mini button{min-height:40px;padding:0 14px;border-radius:999px;background:var(--surface-2);color:var(--ink);font-weight:600;font-size:14px;white-space:nowrap}
+.fx-mini button[data-a="rest-stop"]{background:var(--accent);color:var(--on-accent)}
+.fx-mini.done{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.fx-mini.done button{background:rgba(0,0,0,.1);color:var(--on-accent)}
 </style>
 </head>
 <body>
@@ -1884,7 +1893,7 @@ function focusOpen() {
   const es = focusEntries();
   if (!es.length) { toast("Choisis d'abord une séance type ou ajoute des exercices."); return; }
   let p = null; for (let i = 0; i < es.length && !p; i++) { const f = firstTodo(es[i]); if (f >= 0) p = { i, j: f }; }
-  Object.assign(FOCUS, { open: true, i: p ? p.i : 0, j: p ? p.j : 0, phase: p ? 'set' : 'done', t0: Date.now(), next: null });
+  Object.assign(FOCUS, { open: true, i: p ? p.i : 0, j: p ? p.j : 0, phase: p ? (REST.on ? 'rest' : 'set') : 'done', t0: Date.now(), next: p && REST.on ? p : null });
   $('#focus').hidden = false; document.body.classList.add('noscroll', 'focus-on');
   wakeOn(); clearInterval(FOCUS.clock); FOCUS.clock = setInterval(tickClock, 1000);
   renderFocus(); $('#focus').scrollTop = 0;
@@ -1897,6 +1906,11 @@ function focusClose() {
   $('#focus').hidden = true; $('#focus').innerHTML = ''; document.body.classList.remove('focus-on');
   if ($('#sheet-wrap').hidden) document.body.classList.remove('noscroll');
   render();
+}
+function fxMiniHtml() {
+  if (FOCUS.phase === 'rest' || !REST.on) return '';
+  const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000));
+  return `<div class="fx-mini" id="fx-mini" role="timer" aria-live="off"><span id="fx-mini-l">Repos</span><b id="fx-mini-time">${Math.floor(left / 60)}:${pad(left % 60)}</b><button data-a="rest-plus">+15 s</button><button data-a="rest-stop">Passer</button></div>`;
 }
 function fxGoNext() {
   const nx = FOCUS.next || nextTodo(FOCUS.i, FOCUS.j); FOCUS.next = null;
@@ -1957,7 +1971,7 @@ function renderFocus() {
   const bot = `<footer class="fx-bot"><button class="btn ghost" data-a="fx-nav" data-d="-1" ${FOCUS.i === 0 ? 'disabled' : ''} aria-label="Exercice précédent">${ICON.left} Préc.</button>
     <button class="btn ghost" data-a="fx-finish">Terminer</button>
     <button class="btn ghost" data-a="fx-nav" data-d="1" ${FOCUS.i === es.length - 1 ? 'disabled' : ''} aria-label="Exercice suivant">Suiv. ${ICON.right}</button></footer>`;
-  box.innerHTML = `<div class="fx-in">${top}${head}${pips}${body}${bot}</div>`;
+  box.innerHTML = `<div class="fx-in">${top}${fxMiniHtml()}${head}${pips}${body}${bot}</div>`;
 }
 function fxListHtml(intro = false) {
   const es = focusEntries(), d = UI.date, r = refPick(d);
@@ -4150,16 +4164,18 @@ function startRest(sec) {
 function tickRest() {
   const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000)), txt = `${Math.floor(left / 60)}:${pad(left % 60)}`;
   $('#rest-time').textContent = txt;
+  const fm = $('#fx-mini-time'); if (fm) fm.textContent = txt;
   const fr = $('#fx-rest-time'); if (fr) { fr.textContent = txt; const ring = $('#fx-ring'); if (ring) ring.style.setProperty('--p', Math.max(0, Math.min(100, (REST.end - Date.now()) / (REST.dur * 1000) * 100))); }
   if (left <= 0) {
     clearInterval(REST.t); REST.on = false;
     try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch { }
     if (FOCUS.open && FOCUS.phase === 'rest') { $('#rest').hidden = true; fxGoNext(); return; }
     $('#rest').classList.add('done'); $('#rest-label').textContent = 'À toi';
+    const mini = $('#fx-mini'); if (mini) { mini.classList.add('done'); $('#fx-mini-l').textContent = 'À toi'; }
     clearTimeout(REST.hide); REST.hide = setTimeout(stopRest, 6000);
   }
 }
-function stopRest() { clearInterval(REST.t); clearTimeout(REST.hide); REST.on = false; $('#rest').hidden = true; }
+function stopRest() { clearInterval(REST.t); clearTimeout(REST.hide); REST.on = false; $('#rest').hidden = true; $('#fx-mini')?.remove(); }
 
 /* ================= Actions ================= */
 const curEntry = el => { const i = +el.dataset.i; return { i, e: S.sessions[UI.date]?.entries?.[i] }; };
@@ -4169,7 +4185,7 @@ const A = {
   'sheet-ok': () => { const f = SHEET.onOk; closeSheet(); f && f(); },
   'lg-open': () => { openSheet(lgSheetHtml()); try { lgBoardLoad(); } catch (e) { console.error(e); } },
   'lg-promo-close': () => { $('.lg-promo')?.remove(); },
-  'rest-plus': () => { if (!REST.on) { startRest(15); if (FOCUS.open && FOCUS.phase === 'rest') renderFocus(); return; } REST.end += 15000; REST.dur += 15; tickRest(); },
+  'rest-plus': () => { if (!REST.on) { startRest(15); if (FOCUS.open) renderFocus(); return; } REST.end += 15000; REST.dur += 15; tickRest(); },
   'rest-stop': stopRest,
   day: el => { const st = +el.dataset.step; UI.date = st === 0 ? today() : addDays(UI.date, st); UI.addQ = ''; render(); },
   nday: el => { const st = +el.dataset.step; UI.ndate = st === 0 ? today() : addDays(UI.ndate, st); render(); },
@@ -4325,11 +4341,11 @@ const A = {
   },
   'fx-skip': () => { stopRest(); fxGoNext(); },
   'fx-unok': () => { const e = focusEntries()[FOCUS.i], s = e?.sets?.[FOCUS.j]; if (!s) return; s.ok = false; delete s.t; touch('sessions', UI.date, 400); renderFocus(); },
-  'fx-pip': el => { stopRest(); FOCUS.j = +el.dataset.j; FOCUS.phase = 'set'; renderFocus(); },
-  'fx-nav': el => { stopRest(); const es = focusEntries(); FOCUS.i = Math.max(0, Math.min(es.length - 1, FOCUS.i + +el.dataset.d)); const f = firstTodo(es[FOCUS.i]); FOCUS.j = f >= 0 ? f : 0; FOCUS.phase = 'set'; renderFocus(); $('#focus').scrollTop = 0; },
-  'fx-addset': () => { const e = focusEntries()[FOCUS.i]; if (!e) return; stopRest(); e.sets.push({ ok: false }); FOCUS.j = e.sets.length - 1; FOCUS.phase = 'set'; touch('sessions', UI.date); renderFocus(); },
+  'fx-pip': el => { FOCUS.j = +el.dataset.j; FOCUS.phase = 'set'; renderFocus(); },
+  'fx-nav': el => { const es = focusEntries(); FOCUS.i = Math.max(0, Math.min(es.length - 1, FOCUS.i + +el.dataset.d)); const f = firstTodo(es[FOCUS.i]); FOCUS.j = f >= 0 ? f : 0; FOCUS.phase = 'set'; renderFocus(); $('#focus').scrollTop = 0; },
+  'fx-addset': () => { const e = focusEntries()[FOCUS.i]; if (!e) return; e.sets.push({ ok: false }); FOCUS.j = e.sets.length - 1; FOCUS.phase = 'set'; touch('sessions', UI.date); renderFocus(); },
   'fx-list': () => openSheet(fxListHtml()),
-  'fx-jump': el => { stopRest(); const es = focusEntries(); FOCUS.i = +el.dataset.i; const f = firstTodo(es[FOCUS.i]); FOCUS.j = f >= 0 ? f : 0; FOCUS.phase = 'set'; closeSheet(); renderFocus(); $('#focus').scrollTop = 0; },
+  'fx-jump': el => { const es = focusEntries(); FOCUS.i = +el.dataset.i; const f = firstTodo(es[FOCUS.i]); FOCUS.j = f >= 0 ? f : 0; FOCUS.phase = 'set'; closeSheet(); renderFocus(); $('#focus').scrollTop = 0; },
   'fx-addex': () => { closeSheet(); focusClose(); UI.tab = 'seance'; render(); setTimeout(() => { const q = $('#add-q'); if (q) { q.scrollIntoView({ block: 'center' }); q.focus(); } }, 50); },
   'fx-finish': () => { focusClose(); A['sess-finish'](); },
   'act-new': el => openAct(el.dataset.d || today(), el.dataset.k || 'marche'),
