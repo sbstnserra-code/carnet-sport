@@ -983,6 +983,7 @@ function lsSave() { clearTimeout(lsTimer); lsTimer = setTimeout(() => lsPut(LS_K
 const isBusy = key => Store.dirty.has(key) || Store.inflight.has(key) || Store.timers.has(key);
 
 function touch(col, id, delay = 700) {
+  if (col === 'sessions') bwFreeze(id);
   const key = col + '/' + id; VER++;
   if (S[col][id]) S[col][id].updatedAt = Date.now();
   Store.ts.set(key, Date.now());
@@ -1062,7 +1063,7 @@ function subscribe(col) {
   Store.db.collection(col).onSnapshot(snap => {
     let changed = false;
     if (first) {
-      first = false;
+      first = false; (Store.got ||= new Set()).add(col);
       const next = {}, redo = [];
       for (const d of snap.docs) next[d.id] = sanH(col, clone(d.data()));
       for (const [key, ts] of [...Store.restored]) {
@@ -1134,7 +1135,7 @@ function refUses(exId) { let n = 0; for (const s of Object.values(S.sessions)) i
 function isPR(exId, date, sets) {
   if (!sets.length || kindOf(exId) === 'cardio') return false;
   const h = (idx().byEx[exId] || []).filter(x => x.date < date); if (!h.length) return false;
-  if (kindOf(exId) === 'bw') { if (isTimedEx(exId)) { const prev = Math.max(...h.map(x => maxReps(x.sets))); return maxReps(sets) > prev; } const prev = Math.max(...h.map(x => bwScore(x.sets))); return bwScore(sets) > prev + 0.01; }
+  if (kindOf(exId) === 'bw') { if (isTimedEx(exId)) { const prev = Math.max(...h.map(x => maxReps(x.sets))); return maxReps(sets) > prev; } const prev = Math.max(...h.map(x => bwScore(x.sets, x.date))); return bwScore(sets, date) > prev + 0.01; }
   const prev = Math.max(...h.map(x => best1rm(x.sets))); return best1rm(sets) > prev + 0.01;
 }
 function isMuscuDay(d) { const s = S.sessions[d]; return !!s && (s.entries || []).some(e => kindOf(e.ex) !== 'cardio' && doneSets(e).length); }
@@ -1149,14 +1150,28 @@ let BW_C = {}, BW_V = -1;
 function bodyW(d) { if (BW_V !== VER) { BW_C = {}; BW_V = VER; } const k = d || today(); if (k in BW_C) return BW_C[k]; const w = lastHealth('weight', k) || lastHealth('weight', '9999-12-31'); return (BW_C[k] = w ? +w.v : null); }
 const bwRef = () => bodyW(today()) || 80;
 const pdcLab = kg => kg ? `PDC+${nf(kg, 2)}` : 'PDC';
-function bwScore(sets) { const B = bwRef(); return sets.reduce((m, s) => Math.max(m, e1rm({ kg: B + (s.kg || 0), r: s.r })), 0); }
+function bwScore(sets, d) { const B = d ? pdcW(d) : bwRef(); return sets.reduce((m, s) => Math.max(m, e1rm({ kg: B + (s.kg || 0), r: s.r })), 0); }
+/* v8.4 : poids du corps figé par séance (bw, bwd), jamais recalculé ensuite */
+function bwAt(d) {
+  const w = lastHealth('weight', d); if (w) return { v: +w.v, d: w.date };
+  const after = Object.keys(S.health).filter(x => x > d && S.health[x].weight != null).sort()[0]; // aucune pesée avant : la première qui suit
+  return after ? { v: +S.health[after].weight, d: after } : null;
+}
+function bwFreeze(d, force) {
+  const s = S.sessions[d]; if (!s || s.bw) return false;
+  if (!force && !(s.entries || []).some(e => isPdc(kindOf(e.ex), e.ex) && (e.sets || []).some(x => x.ok))) return false;
+  const w = bwAt(d); if (!w || !(w.v > 0)) return false;
+  s.bw = Math.round(w.v * 10) / 10; s.bwd = w.d; return true;
+}
+let BWM_V = -1;
+function bwMigrate() { if (BWM_V === VER || !Object.keys(S.health).length || Store.mode === 'loading' || (Store.mode === 'cloud' && !(Store.got && Store.got.has('sessions') && Store.got.has('health')))) return; BWM_V = VER; for (const d of Object.keys(S.sessions)) if (bwFreeze(d)) touch('sessions', d, 1500); }
 /* v5.5 : tonnage des exercices PDC = (poids du corps du jour + lest) × reps, 100 % du poids pour tous (hors gainage chronométré) */
-const pdcW = d => bodyW(d) || 80;
+const pdcW = d => (d && S.sessions[d]?.bw) || bodyW(d) || 80;
 function bwVol(sets, id, d) { const B = d ? pdcW(d) : bwRef(); return sets.reduce((a, s) => a + (B + (s.kg || 0)) * (s.r || 0), 0); }
 function exTon(id, sets, d) { return isPdc(kindOf(id), id) ? Math.round(bwVol(sets, id, d || today())) : tonnage(sets); }
 function bwNorm(s, d) {
   if (!s || !(s.kg >= 30)) return null;
-  const B = bodyW(d);
+  const B = S.sessions[d]?.bw || bodyW(d);
   if (B && s.kg >= B - 6) { const l = Math.max(0, Math.round((s.kg - B) * 2) / 2); s.kg = l < 2 ? 0 : l; return s.kg; }
   if (!B && s.kg >= 40) { s.kg = 0; return 0; }
   return null;
@@ -1877,7 +1892,8 @@ function validateSet(e, j, d) {
   const hist = (idx().byEx[e.ex] || []).filter(x => x.date < d).flatMap(x => x.sets), others = e.sets.filter((x, k) => k !== j && x.ok);
   let rec = false;
   if (hist.length && kind === 'w') rec = e1rm(s) > Math.max(best1rm(hist), best1rm(others)) + 0.01;
-  if (hist.length && kind === 'bw') rec = isTimedEx(e.ex) ? (s.r || 0) > Math.max(maxReps(hist), maxReps(others)) : bwScore([s]) > Math.max(bwScore(hist), bwScore(others)) + 0.01;
+  if (isPdc(kind, e.ex)) bwFreeze(d, true);
+  if (hist.length && kind === 'bw') rec = isTimedEx(e.ex) ? (s.r || 0) > Math.max(maxReps(hist), maxReps(others)) : bwScore([s], d) > Math.max(...(idx().byEx[e.ex] || []).filter(x => x.date < d).map(x => bwScore(x.sets, x.date)), bwScore(others, d)) + 0.01;
   s.ok = true; s.t = Date.now(); touch('sessions', d, 400);
   return { rec };
 }
@@ -1938,7 +1954,7 @@ function renderFocus() {
     <div class="fx-meta"><b>Exercice ${FOCUS.i + 1} / ${es.length}</b><span id="fx-clock">${fmtDur(Date.now() - sessStart())}</span></div>
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
   const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
-    <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
+    <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
     ${fxRefHtml(e, lp, kind, d)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
     ${sg && FOCUS.phase === 'set' ? `<button class="sugg" data-a="ex-sugg" data-i="${FOCUS.i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''}</div>`;
@@ -2744,12 +2760,12 @@ function propBtn(id, e, d, day) {
   const txt = lp ? `${day && lp.date === day ? '' : relDay(lp.date) + ' · '}${esc(notation(lp.sets, e.kind, id))}` : 'Jamais fait';
   return pkRow(id, d);
 }
-function cmpLast(e, lp) {
+function cmpLast(e, lp, d = UI.date) {
   if (!lp || kindOf(e.ex) === 'cardio') return '';
   const ds = doneSets(e); if (!ds.length) return '';
   const ref = lp.sets.slice(0, ds.length);
   let a = tonnage(ds), b = tonnage(ref);
-  if (isPdc(kindOf(e.ex), e.ex)) { a = bwVol(ds, e.ex); b = bwVol(ref, e.ex); }
+  if (isPdc(kindOf(e.ex), e.ex)) { a = bwVol(ds, e.ex, d); b = bwVol(ref, e.ex, lp.date); }
   if (!b) { a = ds.reduce((t, x) => t + (x.r || 0), 0); b = ref.reduce((t, x) => t + (x.r || 0), 0); }
   if (!b) return '';
   const pc = (a - b) / b * 100, n = ds.length;
@@ -3342,6 +3358,7 @@ function saveUI() { lsPut(LS_UI, { tab: UI.tab, pmode: UI.prog.mode, pex: UI.pro
 const CHARTS = [];
 function destroyCharts() { while (CHARTS.length) { try { CHARTS.pop().destroy(); } catch { } } }
 function render() {
+  try { bwMigrate(); } catch (e) { console.error(e); }
   if (!AUTH.ready) return;
   destroyCharts();
   if (UI.tab === 'progres' && UI.prog?.mode === 'muscles' && !canUse('muscles')) UI.prog.mode = 'exo';
@@ -3584,7 +3601,7 @@ function exCard(e, i, d) {
     <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}"><span class="chk">${ICON.check}</span><span>${esc(notation(ds, kind, e.ex))}</span>${lp ? cmpLast(e, lp) : ''}</button>` : ''}
-    <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
+    <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
     ${(() => { const sg = overload(e, d); return sg ? `<button class="sugg" data-a="ex-sugg" data-i="${i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''; })()}
     ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}
     <div class="sets">${(e.sets || []).map((s, j) => setRow(e, i, j, d, kind)).join('')}</div>
@@ -3702,7 +3719,7 @@ function progExo() {
     const rec = all.reduce((b, x) => { const s = bestSet(x.sets); return (!b || (s.kg || 0) > (b.s.kg || 0) || ((s.kg || 0) === (b.s.kg || 0) && s.r > b.s.r)) ? { s, d: x.date } : b; }, null);
     const f = X.h[0], l = X.h[X.h.length - 1];
     const ev = f && l && f !== l ? (kind === 'bw' ? pct(maxReps(l.sets), maxReps(f.sets)) : pct(best1rm(l.sets), best1rm(f.sets))) : null;
-    const bwBest = isPdc(kind, P.ex) ? all.reduce((b, x) => { for (const s of x.sets) { const sc = bwScore([s]); if (!b || sc > b.sc) b = { s, d: x.date, sc }; } return b; }, null) : null;
+    const bwBest = isPdc(kind, P.ex) ? all.reduce((b, x) => { for (const s of x.sets) { const sc = bwScore([s], x.date); if (!b || sc > b.sc) b = { s, d: x.date, sc }; } return b; }, null) : null;
     k1 = bwBest ? tile('Record', nf(bwBest.s.r), bwBest.s.kg ? `reps · +${nf(bwBest.s.kg, 2)} kg` : 'reps', `<span class="delta">${fmtDay(bwBest.d)} · à ${nf(pdcW(bwBest.d), 1)} kg</span>`) : tile('Record', kind === 'bw' ? nf(maxReps(all.flatMap(x => x.sets))) : nf(rec.s.kg, 2), kind === 'bw' ? 'reps' : `kg × ${rec.s.r}`, `<span class="delta">${fmtDay(kind === 'bw' ? all.find(x => maxReps(x.sets) === maxReps(all.flatMap(y => y.sets))).date : rec.d)}</span>`);
     k2 = kind === 'bw' ? tile('Total reps période', nf(X.h.reduce((a, x) => a + sumReps(x.sets), 0))) : tile('1RM estimé', nf(Math.max(0, ...all.map(x => best1rm(x.sets))), 1), 'kg', '<span class="delta">formule d\'Epley</span>');
     k3 = tile('Évolution', ev == null ? '–' : (ev > 0 ? '+' : '') + nf(ev, 1), ev == null ? '' : '%', `<span class="delta">${kind === 'bw' ? 'reps max' : '1RM est.'} sur la période</span>`);
