@@ -789,6 +789,23 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .fx-mini button[data-a="rest-stop"]{background:var(--accent);color:var(--on-accent)}
 .fx-mini.done{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
 .fx-mini.done button{background:rgba(0,0,0,.1);color:var(--on-accent)}
+
+/* ===== v8.5 : semaine nutrition ===== */
+.nw-avg{text-align:right}.nw-avg b{font:700 30px/1 var(--f-d)}.nw-avg small{font-size:12.5px;color:var(--muted)}.nw-avg .pill{margin-top:4px}
+.nw-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;align-items:end}
+.nw-d{display:flex;flex-direction:column;align-items:center;gap:4px;padding:0;min-width:0;background:none;border:0;color:var(--ink)}
+.nw-d:disabled{opacity:.45}
+.nw-d small{font-size:12px;font-weight:700;color:var(--muted)}
+.nw-d.sel small{color:var(--ink)}
+.nw-v{font-size:11px;font-weight:600;color:var(--ink-2);min-height:14px;white-space:nowrap}
+.nw-b{position:relative;width:100%;height:64px;border-radius:8px;background:var(--surface-2);overflow:hidden;display:flex;align-items:flex-end}
+.nw-d.sel .nw-b{outline:2px solid var(--ink);outline-offset:1px}
+.nw-b>span{display:block;width:100%;border-radius:6px 6px 0 0}
+.nw-b>span.good{background:var(--good)}.nw-b>span.warn{background:var(--warn)}.nw-b>span.crit{background:var(--crit)}
+.nw-b>span.cours{background:repeating-linear-gradient(135deg,var(--muted) 0 3px,transparent 3px 6px);opacity:.8}
+.nw-t{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--ink);opacity:.55;z-index:1}
+.nw-p{display:flex;align-items:flex-start;gap:8px;font-size:13.5px}.nw-p .mk{margin-top:6px;flex:none}
+.nw-avg>div{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -3834,6 +3851,7 @@ VIEWS.nutrition = {
       ${stP.pace ? `<div class="tiny muted" style="margin-top:-4px">Protéines ${esc(stP.l.toLowerCase())} : ${nf(n.tot.p)} g pour ${nf(stP.pace)} g attendus après ${SLOTS.filter(s => s.main && ((nd?.meals?.[s.k] || []).length || nd?.skip?.[s.k])).map(s => s.l.toLowerCase()).join(', ')}.</div>` : ''}
       ${!trackStart() ? `<p class="tiny muted" style="margin:0">Dès ton premier repas noté, les repas oubliés seront remplacés par ta moyenne pour garder des totaux fiables à la semaine et au mois.</p>` : ''}
     </section>
+    ${nutWeekHtml(d)}
     <section class="card stack">${dayTypeBanner(d) || copyBanner(d)}${slots}${dayFooter(d)}</section>
     <section class="stack">
       <div class="row between wrap"><div><div class="eyebrow">${esc(r.label)}</div><h2 class="h1" style="font-size:24px">${esc(r.title)}</h2></div>
@@ -5520,6 +5538,63 @@ function bilanView() {
 }
 Object.assign(A, { 'bilan-ia': () => bilanIA() });
 CH['bilan-per-sel'] = el => { BILAN_UI.per = +el.value; BILAN_UI.ia = null; BILAN_UI.iaErr = ''; render(); };
+
+/* ================= v8.5 : bilan nutrition de la semaine ================= */
+function nutWeek(d) {
+  const cfg = CFG(), T = cfg.kcal, t = today(), s0 = trackStart(), w = weekStart(d);
+  if (!T || !s0 || w > t) return null;
+  const days = [];
+  let F = 0, sum = 0, sumP = 0, okP = 0, R = 0, curReal = 0;
+  const tol = Math.max(1, +cfg.tol || 5) / 100;
+  for (let i = 0; i < 7; i++) {
+    const x = addDays(w, i), n = dayNutri(x);
+    let st = x < s0 ? 'avant' : x > t ? 'futur' : dayDone(x) ? 'fini' : 'cours';
+    if (st === 'fini') { F++; sum += n.tot.kcal; sumP += n.tot.p; if (n.tot.p >= cfg.p * (1 - tol)) okP++; }
+    if (st === 'cours' || st === 'futur') R++;
+    if (st === 'cours') curReal = n.real.kcal;
+    days.push({ d: x, st, kcal: st === 'fini' ? n.tot.kcal : st === 'cours' ? n.real.kcal : null, est: st === 'fini' ? n.est.kcal : 0, cls: st === 'fini' ? nutStatus(n.tot.kcal, T, 'kcal').cls : '' });
+  }
+  const gap = sum - F * T, avg = F ? sum / F : null;
+  const floor = Math.max(1500, cfg.bmr ? Math.round(cfg.bmr * 0.9) : 0), cap = Math.round(T * 0.2);
+  let adj = null;
+  if (R && F) {
+    const need = T - gap / R;
+    const lim = Math.max(T - cap, Math.min(floor, T));
+    adj = { need: Math.round(need / 10) * 10, sug: Math.round(Math.max(need, gap > 0 ? lim : need) / 10) * 10, R, cur: curReal, capped: gap > 0 && need < lim };
+    adj.left = Math.round(gap - (T - adj.sug) * R);
+  }
+  return { w, T, P: cfg.p, tol, days, F, R, sum, avg, gap, avgP: F ? sumP / F : null, okP, adj };
+}
+function nutWeekHtml(d) {
+  const W = nutWeek(d); if (!W || (!W.F && !W.days.some(x => x.st === 'cours'))) return '';
+  const end = addDays(W.w, 6), lab = `Du ${parseISO(W.w).getDate()}${parseISO(W.w).getMonth() !== parseISO(end).getMonth() ? ' ' + MC[parseISO(W.w).getMonth()] : ''} au ${parseISO(end).getDate()} ${MC[parseISO(end).getMonth()]}`;
+  const top = Math.max(W.T * 1.35, ...W.days.map(x => x.kcal || 0)), H = x => Math.max(4, Math.min(100, x / top * 100));
+  const bars = W.days.map((x, i) => {
+    const h = x.kcal ? H(x.kcal) : 0, cls = x.st === 'fini' ? (x.cls || 'good') : x.st;
+    return `<button class="nw-d ${x.d === d ? 'sel' : ''}" data-a="nw-day" data-d="${x.d}" ${x.st === 'futur' || x.st === 'avant' ? 'disabled' : ''} aria-label="${fmtDay(x.d)}${x.kcal ? ' : ' + nf(x.kcal) + ' kcal' : ''}"><span class="nw-v num-t">${x.st === 'fini' ? nf(x.kcal) : x.st === 'cours' && x.kcal ? nf(x.kcal) : ''}</span><span class="nw-b"><i class="nw-t" style="bottom:${H(W.T)}%"></i>${h ? `<span class="${cls}" style="height:${h}%"></span>` : ''}</span><small>${JC[i].slice(0, 1).toUpperCase()}</small></button>`;
+  }).join('');
+  const st = W.avg != null ? nutStatus(W.avg, W.T, 'kcal') : null;
+  let line = '';
+  if (W.F) {
+    const g = Math.round(W.gap), dz = Math.abs(g) <= W.F * W.T * W.tol;
+    line = dz ? `Dans l’objectif sur ${W.F} jour${W.F > 1 ? 's' : ''} (${g > 0 ? '+' : g < 0 ? '−' : ''}${nf(Math.abs(g))} kcal).`
+      : g > 0 ? `<b>+${nf(g)} kcal</b> au-dessus de l’objectif sur ${W.F} jour${W.F > 1 ? 's' : ''}.` : `<b>${nf(-g)} kcal</b> de marge sur ${W.F} jour${W.F > 1 ? 's' : ''}.`;
+    if (W.adj && !dz) {
+      const a = W.adj, j = `${a.R} jour${a.R > 1 ? 's' : ''} restant${a.R > 1 ? 's' : ''}${W.days.some(x => x.st === 'cours') ? ', aujourd’hui compris' : ''}`;
+      if (g > 0 && !a.capped) line += ` Pour finir la semaine dans l’objectif : <b>${nf(a.sug)} kcal/j</b> les ${j}.`;
+      else if (g > 0) line += ` Tout rattraper demanderait ${nf(a.need)} kcal/j : vise plutôt <b>${nf(a.sug)} kcal/j</b> les ${j}, sans descendre plus bas. Il restera environ ${nf(a.left)} kcal d’écart, sans gravité sur une semaine.`;
+      else line += ` Tu peux monter jusqu’à <b>${nf(a.sug)} kcal/j</b> les ${j} en restant dans l’objectif de la semaine.`;
+      const today_ = W.days.find(x => x.st === 'cours');
+      if (today_ && d === today_.d) line += ` Aujourd’hui : encore ${nf(Math.max(0, a.sug - a.cur))} kcal sur ${nf(a.sug)}.`;
+    }
+  } else line = 'Les moyennes partent de la première journée terminée ou clôturée de la semaine.';
+  const pr = W.avgP != null ? `<div class="nw-p">${mkDot('p')}<span>Protéines <b>${nf(W.avgP)} g/j</b> en moyenne · ${W.okP} jour${W.okP > 1 ? 's' : ''} sur ${W.F} à l’objectif (${nf(W.P)} g)</span></div>` : '';
+  return `<section class="card stack nw"><div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Ta semaine</div><div class="tiny muted">${esc(lab)}</div></div>
+    <div class="nw-avg">${W.avg != null ? `<span class="tiny muted">Moyenne</span><div><b class="num-t">${nf(W.avg)}</b> <small>kcal/j</small></div>${st && st.cls ? `<div>${nutPill(st)}</div>` : ''}` : '<small class="muted">pas encore de moyenne</small>'}</div></div>
+    <div class="nw-bars" role="group" aria-label="Calories de la semaine, jour par jour">${bars}</div>
+    <p class="small" style="margin:0">${line}</p>${pr}</section>`;
+}
+Object.assign(A, { 'nw-day': el => { UI.ndate = el.dataset.d; render(); window.scrollTo({ top: 0 }); } });
 </script>
 </body>
 </html>
