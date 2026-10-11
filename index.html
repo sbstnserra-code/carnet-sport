@@ -806,6 +806,15 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .nw-t{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--ink);opacity:.55;z-index:1}
 .nw-p{display:flex;align-items:flex-start;gap:8px;font-size:13.5px}.nw-p .mk{margin-top:6px;flex:none}
 .nw-avg>div{white-space:nowrap}
+
+/* ===== v8.6 : filtre Poly / Iso ===== */
+.pk-kind.pk-poly{background:var(--ink);color:var(--surface)}
+.pk-kind.pk-iso{background:var(--accent-soft);color:var(--ink)}
+.cat-seg{display:flex;width:100%;margin:2px 0 6px}
+.cat-seg button{flex:1;padding:0 6px}
+.cat-seg small{font-size:12px;color:var(--muted);margin-left:2px}
+.cat-seg button.on small{color:var(--ink-2)}
+.cf-poly .pk-row[data-cat="iso"],.cf-iso .pk-row[data-cat="poly"],.cf-poly .add-all,.cf-iso .add-all{display:none}
 </style>
 </head>
 <body>
@@ -1627,7 +1636,8 @@ function pkMusTxt(id) {
 function pkRow(id, d, opts = {}) {
   const e = exOf(id), lp = lastPerf(id, d), pr = presc(id), inS = opts.inSession;
   const last = lp ? `Dernière fois ${fmtDay(lp.date)} : <b>${esc(notation(lp.sets, e.kind, id))}</b>` : 'Jamais fait';
-  return `<div class="pk-row"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${e.kind === 'bw' ? '<span class="pk-kind">PDC</span>' : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
+  const cat = catOf(id);
+  return `<div class="pk-row" data-cat="${cat || ''}"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${cat ? `<span class="pk-kind pk-${cat}">${CAT_L[cat]}</span>` : ''}${e.kind === 'bw' ? '<span class="pk-kind">PDC</span>' : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
 }
 /* Sélection par muscle (feuille) */
 const pkState = () => (UI.pk ||= { sel: null, group: '', q: '' });
@@ -1638,7 +1648,7 @@ function pkList(d) {
   if (P.q) { const q = norm(P.q); ids = ids.filter(id => norm(S.exercises[id].name).includes(q) || norm(pkMusTxt(id)).includes(q)); }
   else if (P.sel) ids = ids.filter(id => (pkVals(id)[P.sel] || 0) > 0).sort((a, b) => pkVals(b)[P.sel] - pkVals(a)[P.sel]);
   else if (P.group) ids = ids.filter(id => S.exercises[id].group === P.group);
-  const uses = idx().uses; if (!P.sel) ids.sort((a, b) => (uses[b] || 0) - (uses[a] || 0) || S.exercises[a].name.localeCompare(S.exercises[b].name, 'fr'));
+  const uses = idx().uses; if (!P.sel) ids.sort((a, b) => catRank(a) - catRank(b) || (uses[b] || 0) - (uses[a] || 0) || S.exercises[a].name.localeCompare(S.exercises[b].name, 'fr'));
   return { ids, inS };
 }
 function pickerHtml(d = UI.date) {
@@ -1651,7 +1661,7 @@ function pickerHtml(d = UI.date) {
     ${P.sel ? `<div class="pk-picked"><span>Cible : <b>${esc(partLabel(P.sel))}</b></span><button class="lnk" data-a="pk-clear">Tout afficher</button></div>` : ''}
     <div class="pk-chips">${groups.map(g => `<button class="chip ${!P.sel && !P.q && P.group === g.k ? 'on' : ''}" data-a="pk-g" data-g="${g.k}">${g.l}</button>`).join('')}</div>
     <div><div class="pk-h"><h3>${P.q ? `« ${esc(P.q)} »` : P.sel ? esc(partLabel(P.sel)) : esc(GL[P.group] || 'Tous les exercices')}</h3><span>${ids.length} exercice${ids.length > 1 ? 's' : ''}</span></div>
-      <div class="pk-list">${ids.length ? ids.map(id => pkRow(id, d, { inSession: inS.has(id) })).join('') : `<p class="small muted" style="margin:6px 0">Aucun exercice ne cible cette zone.${P.q ? ` <button class="lnk" data-a="ex-new" data-name="${esc(P.q)}">Créer « ${esc(P.q)} »</button>` : ''}</p>`}</div></div></div>`;
+      ${catSeg(ids)}<div class="pk-list cf-host cf-${UI.catF || 'all'}">${ids.length ? ids.map(id => pkRow(id, d, { inSession: inS.has(id) })).join('') : `<p class="small muted" style="margin:6px 0">Aucun exercice ne cible cette zone.${P.q ? ` <button class="lnk" data-a="ex-new" data-name="${esc(P.q)}">Créer « ${esc(P.q)} »</button>` : ''}</p>`}</div></div></div>`;
 }
 function pkRefresh() { const sh = $('#sheet'); if (!sh || !$('#pk-q')) return; const q = $('#pk-q'), f = document.activeElement === q, pos = q && q.selectionStart; sh.innerHTML = pickerHtml(); if (f) { const nq = $('#pk-q'); nq.focus(); try { nq.setSelectionRange(pos, pos); } catch { } } }
 /* Fiche exercice */
@@ -3592,7 +3602,7 @@ VIEWS.seance = {
     ${entries.length ? `<section class="stack" id="cards">${entries.map((e, i) => exCard(e, i, d)).join('')}</section>` : ''}
     <section class="card"><h2 class="sec-t">Ajouter un exercice</h2>
       <div class="row" style="margin:10px 0 6px"><input class="inp" id="add-q" data-in="addq" placeholder="Chercher ou créer un exercice…" value="${esc(UI.addQ)}" autocomplete="off" style="flex:1;min-width:0"><button class="btn ghost" data-a="pk-open" style="white-space:nowrap">Par muscle</button></div>
-      <div id="props" class="props">${proposals(d)}</div></section>
+      <div id="props" class="props cf-host cf-${UI.catF || 'all'}">${proposals(d)}</div></section>
     ${s ? `<section class="card stack">
       <div id="sess-sum" class="small">${sessSummary(d)}</div>
       <div id="sess-mw">${mwDayHtml(d)}</div>
@@ -3645,15 +3655,18 @@ function proposals(d) {
   const groups = q ? GROUPS.map(g => g.k) : (foc ? [foc] : []);
   if (!groups.length) return `<p class="small muted" style="margin:0">Touche un groupe ci-dessus : ses exercices s'affichent ici, avec ta dernière performance. Rien n’est ajouté tant que tu ne choisis pas.</p>`;
   const uses = idx().uses; const out = [];
+  const shown = [];
   if (!q && sg.length > 1) out.push(`<div class="pg-tabs" role="tablist">${sg.map(g => `<button class="chip ${g === foc ? 'on' : ''}" data-a="pg-f" data-g="${g}" aria-selected="${g === foc}">${GL[g] || g}</button>`).join('')}</div>`);
   let exact = false;
   for (const g of groups) {
     const list = Object.entries(S.exercises).filter(([id, e]) => !e.archived && e.group === g && !inS.has(id) && (!q || norm(e.name).includes(q)))
-      .sort((a, b) => (uses[b[0]] || 0) - (uses[a[0]] || 0) || a[1].name.localeCompare(b[1].name, 'fr'));
+      .sort((a, b) => catRank(a[0]) - catRank(b[0]) || (uses[b[0]] || 0) - (uses[a[0]] || 0) || a[1].name.localeCompare(b[1].name, 'fr'));
     list.forEach(([, e]) => { if (norm(e.name) === q) exact = true; });
+    shown.push(...list.map(([id]) => id));
     const lx = q ? null : lastGroupDay(g, d);
     if (!lx) { if (list.length) out.push(`<div class="prop-g"><h4>${GL[g]}</h4>${list.map(([id, e]) => propBtn(id, e, d)).join('')}</div>`); continue; }
-    const lastIds = uniq((S.sessions[lx].entries || []).filter(e => doneSets(e).length && exOf(e.ex).group === g && S.exercises[e.ex] && !S.exercises[e.ex].archived).map(e => e.ex));
+    const lastIds = uniq((S.sessions[lx].entries || []).filter(e => doneSets(e).length && exOf(e.ex).group === g && S.exercises[e.ex] && !S.exercises[e.ex].archived).map(e => e.ex)).sort((a, b) => catRank(a) - catRank(b));
+    shown.push(...lastIds.filter(id => !inS.has(id)));
     const todo = lastIds.filter(id => !inS.has(id)), rest = list.filter(([id]) => !lastIds.includes(id));
     if (!todo.length && !rest.length) continue;
     const more = (UI.pmOpen?.[g] ?? !todo.length) ? 'open' : '';
@@ -3662,6 +3675,7 @@ function proposals(d) {
         : `<div class="prop-sub">Exercices de la dernière fois (${fmtDay(lx)}) déjà dans la séance.</div>`}
       ${rest.length ? `<details class="prop-more" id="pm-${g}" ${more}><summary>Autres exercices ${esc(GL[g])} (${rest.length})</summary>${rest.map(([id, e]) => propBtn(id, e, d)).join('')}</details>` : ''}</div>`);
   }
+  const seg = catSeg(uniq(shown)); if (seg) out.splice(!q && sg.length > 1 ? 1 : 0, 0, seg);
   if (q && !exact) out.push(`<button class="btn ghost block" data-a="ex-new" data-name="${esc(UI.addQ.trim())}">Créer « ${esc(UI.addQ.trim())} »</button>`);
   if (!q) out.push(`<button class="lnk" data-a="ex-new" data-name="">+ Créer un nouvel exercice</button>`);
   return out.join('') || `<p class="small muted" style="margin:0">Tous les exercices de ce groupe sont déjà dans la séance.</p>`;
@@ -5595,6 +5609,21 @@ function nutWeekHtml(d) {
     <p class="small" style="margin:0">${line}</p>${pr}</section>`;
 }
 Object.assign(A, { 'nw-day': el => { UI.ndate = el.dataset.d; render(); window.scrollTo({ top: 0 }); } });
+
+/* ================= v8.6 : tri et filtre Poly / Iso dans le choix des exercices ================= */
+const catRank = id => ({ poly: 0, iso: 1 })[catOf(id)] ?? 2;
+function catSeg(ids) {
+  const n = { poly: 0, iso: 0 }; for (const id of ids) { const c = catOf(id); if (c) n[c]++; }
+  if (!n.poly || !n.iso) return '';
+  const cur = UI.catF || 'all', b = (k, l, c) => `<button data-a="cat-f" data-v="${k}" class="${cur === k ? 'on' : ''}" aria-pressed="${cur === k}">${l}${c != null ? ` <small>${c}</small>` : ''}</button>`;
+  return `<div class="seg cat-seg" role="group" aria-label="Type de mouvement">${b('all', 'Tous', n.poly + n.iso)}${b('poly', 'Poly', n.poly)}${b('iso', 'Iso', n.iso)}</div>`;
+}
+A['cat-f'] = el => {
+  UI.catF = el.dataset.v === 'all' ? '' : el.dataset.v; const v = UI.catF || 'all';
+  for (const h of document.querySelectorAll('.cf-host')) h.classList.remove('cf-all', 'cf-poly', 'cf-iso'), h.classList.add('cf-' + v);
+  for (const x of document.querySelectorAll('.cat-seg button')) { const on = x.dataset.v === v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }
+  saveUI();
+};
 </script>
 </body>
 </html>
