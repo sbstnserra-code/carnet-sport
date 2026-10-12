@@ -815,6 +815,18 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .cat-seg small{font-size:12px;color:var(--muted);margin-left:2px}
 .cat-seg button.on small{color:var(--ink-2)}
 .cf-poly .pk-row[data-cat="iso"],.cf-iso .pk-row[data-cat="poly"],.cf-poly .add-all,.cf-iso .add-all{display:none}
+
+/* ===== v8.7 : échauffement ===== */
+.warm-l{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:4px 2px 0}
+.warm-l small{font-weight:500;letter-spacing:0;text-transform:none;margin-left:4px}
+.set.warm .n{font-size:13px}
+.set.warm .num{border-style:dashed}
+.set.warm.ok .num{background:var(--surface-2);border-color:transparent}
+.set.warm.ok .ok-btn{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.set.warm.skip{opacity:.5}
+.pip.warm{width:34px;height:34px;font-size:12px;border-style:dashed}
+.pip.warm.ok{background:var(--accent-soft);border-color:var(--accent);color:var(--ink);border-style:solid}
+.pip.warm.skip{opacity:.5}
 </style>
 </head>
 <body>
@@ -1134,7 +1146,8 @@ let SAMPLE = null, SAMPLE_IMG = false, SAMPLE_OFF = false, DL = null;
 /* ================= Logique entraînement ================= */
 const exOf = id => S.exercises[id] || { name: 'Exercice supprimé', group: '', kind: 'w' };
 const kindOf = id => exOf(id).kind || 'w';
-const doneSets = e => (e.sets || []).filter(s => s.ok);
+const doneSets = e => (e.sets || []).filter(s => s.ok && !s.w);
+const warmSets = e => (e.sets || []).filter(s => s.ok && s.w);
 const tonnage = sets => sets.reduce((a, s) => a + (s.kg || 0) * (s.r || 0), 0);
 const e1rm = s => (!s.kg || !s.r) ? 0 : (s.r === 1 ? s.kg : s.kg * (1 + s.r / 30));
 const best1rm = sets => sets.reduce((m, s) => Math.max(m, e1rm(s)), 0);
@@ -1150,7 +1163,7 @@ function idx() {
   const byEx = {}, days = [];
   for (const d of Object.keys(S.sessions).sort()) {
     const s = S.sessions[d]; let any = false;
-    for (const e of (s.entries || [])) { const ds = doneSets(e); if (!ds.length) continue; any = true; (byEx[e.ex] ||= []).push({ date: d, sets: ds }); }
+    for (const e of (s.entries || [])) { const ds = doneSets(e); if (!ds.length) continue; any = true; (byEx[e.ex] ||= []).push({ date: d, sets: ds, w: warmSets(e) }); }
     if (any) days.push(d);
   }
   const uses = {}; for (const k in byEx) uses[k] = byEx[k].length;
@@ -1272,9 +1285,10 @@ function ensureSession(d) { if (!S.sessions[d]) S.sessions[d] = { date: d, group
 function newEntry(exId, d) {
   const lp = lastPerf(exId, d), kind = kindOf(exId);
   const sets = lp ? lp.sets.map(s => s.d ? { ok: false, d: true } : { ok: false }) : Array.from({ length: kind === 'cardio' ? 1 : 3 }, () => ({ ok: false }));
+  if (lp && lp.w && lp.w.length && kind !== 'cardio') sets.unshift(...lp.w.map(() => ({ ok: false, w: true })));
   return { ex: exId, sets };
 }
-function placeholder(entry, j, d) {
+function phWork(entry, j, d) {
   const lp = lastPerf(entry.ex, d);
   if (lp && lp.sets[j]) {
     const base = lp.sets[j], prev = entry.sets[j - 1], lprev = lp.sets[j - 1];
@@ -1475,7 +1489,7 @@ function favFormHtml(id) {
 
 /* ================= Raccourcis séance ================= */
 function overload(entry, d) {
-  if (kindOf(entry.ex) !== 'w' || doneSets(entry).length || (entry.sets || []).some(s => s.kg != null)) return null;
+  if (kindOf(entry.ex) !== 'w' || doneSets(entry).length || (entry.sets || []).some(s => s.kg != null && !s.w)) return null;
   const lp = lastPerf(entry.ex, d); if (!lp) return null;
   const main = lp.sets.filter(s => !s.d); if (!main.length) return null;
   const r0 = main[0].r; if (!r0 || r0 < 5 || !main.every(s => (s.r || 0) >= r0)) return null;
@@ -1902,10 +1916,10 @@ let WAKE = null;
 async function wakeOn() { try { if (navigator.wakeLock && !WAKE) { WAKE = await navigator.wakeLock.request('screen'); WAKE.addEventListener?.('release', () => { WAKE = null; }); } } catch { WAKE = null; } }
 function wakeOff() { try { WAKE && WAKE.release(); } catch { } WAKE = null; }
 const focusEntries = () => S.sessions[UI.date]?.entries || [];
-const firstTodo = e => (e?.sets || []).findIndex(s => !s.ok);
+const firstTodo = e => (e?.sets || []).findIndex((s, k) => !s.ok && !skipW(e, k));
 function nextTodo(i, j) {
   const es = focusEntries(), e = es[i];
-  if (e) for (let k = j + 1; k < e.sets.length; k++) if (!e.sets[k].ok) return { i, j: k };
+  if (e) for (let k = j + 1; k < e.sets.length; k++) if (!e.sets[k].ok && !skipW(e, k)) return { i, j: k };
   for (let n = 1; n < es.length; n++) { const ii = (i + n) % es.length, f = firstTodo(es[ii]); if (f >= 0) return { i: ii, j: f }; }
   const f = firstTodo(e); return f >= 0 && f !== j ? { i, j: f } : null;
 }
@@ -1916,11 +1930,12 @@ function validateSet(e, j, d) {
   if (kind === 'cardio' ? s.min == null : s.r == null) { toast(kind === 'cardio' ? 'Indique la durée.' : 'Indique le nombre de répétitions.'); return null; }
   if (kind !== 'cardio' && s.kg == null) s.kg = 0;
   if (isPdc(kind, e.ex)) { const k0 = s.kg, nk = bwNorm(s, d); if (nk != null && nk !== k0) toast(`${nf(k0, 1)} kg compris comme ton poids du corps : noté ${pdcLab(nk)}.`); }
-  const hist = (idx().byEx[e.ex] || []).filter(x => x.date < d).flatMap(x => x.sets), others = e.sets.filter((x, k) => k !== j && x.ok);
+  const hist = (idx().byEx[e.ex] || []).filter(x => x.date < d).flatMap(x => x.sets), others = e.sets.filter((x, k) => k !== j && x.ok && !x.w);
   let rec = false;
   if (hist.length && kind === 'w') rec = e1rm(s) > Math.max(best1rm(hist), best1rm(others)) + 0.01;
   if (isPdc(kind, e.ex)) bwFreeze(d, true);
   if (hist.length && kind === 'bw') rec = isTimedEx(e.ex) ? (s.r || 0) > Math.max(maxReps(hist), maxReps(others)) : bwScore([s], d) > Math.max(...(idx().byEx[e.ex] || []).filter(x => x.date < d).map(x => bwScore(x.sets, x.date)), bwScore(others, d)) + 0.01;
+  if (s.w) rec = false;
   s.ok = true; s.t = Date.now(); touch('sessions', d, 400);
   return { rec };
 }
@@ -1975,7 +1990,7 @@ function renderFocus() {
   const e = es[FOCUS.i], ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d);
   FOCUS.j = Math.max(0, Math.min(FOCUS.j, e.sets.length - 1));
   const s = e.sets[FOCUS.j], p = s ? (placeholder(e, FOCUS.j, d) || {}) : {};
-  const mainN = e.sets.filter(x => !x.d).length; let n = 0; for (let k = 0; k <= FOCUS.j && k < e.sets.length; k++) if (!e.sets[k].d) n++;
+  const mainN = e.sets.filter(x => !x.d && !x.w).length, wN = e.sets.filter(x => x.w).length; let n = 0, wn = 0; for (let k = 0; k <= FOCUS.j && k < e.sets.length; k++) if (e.sets[k].w) wn++; else if (!e.sets[k].d) n++;
   const pr = isPR(e.ex, d, doneSets(e)), sg = overload(e, d);
   const top = `<header class="fx-top"><button class="icon-btn" data-a="focus-close" aria-label="Quitter le mode salle">${ICON.xl}</button>
     <div class="fx-meta"><b>Exercice ${FOCUS.i + 1} / ${es.length}</b><span id="fx-clock">${fmtDur(Date.now() - sessStart())}</span></div>
@@ -1985,8 +2000,8 @@ function renderFocus() {
     ${fxRefHtml(e, lp, kind, d)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
     ${sg && FOCUS.phase === 'set' ? `<button class="sugg" data-a="ex-sugg" data-i="${FOCUS.i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''}</div>`;
-  let cnt = 0;
-  const pips = `<div class="pips" role="group" aria-label="Séries">${e.sets.map((x, k) => { if (!x.d) cnt++; return `<button class="pip ${x.ok ? 'ok' : ''} ${k === FOCUS.j && FOCUS.phase === 'set' ? 'cur' : ''} ${x.d ? 'drop' : ''}" data-a="fx-pip" data-j="${k}" aria-label="${x.d ? 'Dégressive' : 'Série ' + cnt}${x.ok ? ', validée' : ''}">${x.ok ? ICON.check : (x.d ? '↳' : cnt)}</button>`; }).join('')}<button class="pip add" data-a="fx-addset" aria-label="Ajouter une série">${ICON.plus}</button></div>`;
+  let cnt = 0, wc = 0;
+  const pips = `<div class="pips" role="group" aria-label="Séries">${e.sets.map((x, k) => { if (x.w) wc++; else if (!x.d) cnt++; return `<button class="pip ${x.ok ? 'ok' : ''} ${k === FOCUS.j && FOCUS.phase === 'set' ? 'cur' : ''} ${x.d ? 'drop' : ''} ${x.w ? 'warm' : ''} ${skipW(e, k) ? 'skip' : ''}" data-a="fx-pip" data-j="${k}" aria-label="${x.w ? 'Échauffement ' + wc : x.d ? 'Dégressive' : 'Série ' + cnt}${x.ok ? ', validée' : ''}">${x.ok ? ICON.check : (x.w ? 'É' + wc : x.d ? '↳' : cnt)}</button>`; }).join('')}<button class="pip add" data-a="fx-addset" aria-label="Ajouter une série">${ICON.plus}</button></div>`;
   let body;
   if (FOCUS.phase === 'done') {
     const g = game();
@@ -2003,13 +2018,14 @@ function renderFocus() {
   } else if (!s) {
     body = `<div class="empty"><b>Aucune série</b>Ajoute une série avec le bouton + ci-dessus.</div>`;
   } else {
-    const lab = `${s.d ? 'Dégressive' : `Série ${n} sur ${mainN}`}${s.ok ? ' <span class="pill good">' + ICON.check + ' validée</span>' : ''}`;
+    const lab = `${s.w ? `Échauffement ${wn} sur ${wN}` : s.d ? 'Dégressive' : `Série ${n} sur ${mainN}`}${s.ok ? ' <span class="pill good">' + ICON.check + ' validée</span>' : ''}`;
     const fields = kind === 'cardio'
       ? fxStepper('min', 'Durée', 'min', s, p, 'numeric') + fxStepper('km', 'Distance', 'km', s, p) + fxStepper('bpm', 'FC moyenne', 'bpm', s, p, 'numeric')
       : (isPdc(kind, e.ex) ? fxStepper('kg', 'Lest · vide = poids du corps', 'kg', s, p, 'decimal', { blank0: true, ph: p.kg ? '+' + v(p.kg) : 'PDC' }) : fxStepper('kg', kind === 'bw' ? 'Lest' : 'Charge', 'kg', s, p)) + fxStepper('r', kind === 'bw' && /gainage/i.test(ex.name) ? 'Secondes' : 'Répétitions', kind === 'bw' && /gainage/i.test(ex.name) ? 's' : 'reps', s, p, 'numeric');
     body = `<div class="fx-set-l">${lab}</div>${fields}
-      <button class="btn accent fx-go" data-a="fx-ok">${s.ok ? 'Série suivante' : 'Valider la série'}</button>
-      ${s.ok ? '<button class="lnk" data-a="fx-unok" style="align-self:center">Annuler la validation</button>' : ''}`;
+      <button class="btn accent fx-go" data-a="fx-ok">${s.ok ? 'Série suivante' : s.w ? 'Valider l’échauffement' : 'Valider la série'}</button>
+      ${s.ok ? '<button class="lnk" data-a="fx-unok" style="align-self:center">Annuler la validation</button>' : ''}
+      ${kind !== 'cardio' && !doneSets(e).length ? '<button class="lnk" data-a="fx-warm" style="align-self:center">+ Échauffement</button>' : ''}`;
   }
   const bot = `<footer class="fx-bot"><button class="btn ghost" data-a="fx-nav" data-d="-1" ${FOCUS.i === 0 ? 'disabled' : ''} aria-label="Exercice précédent">${ICON.left} Préc.</button>
     <button class="btn ghost" data-a="fx-finish">Terminer</button>
@@ -2019,7 +2035,7 @@ function renderFocus() {
 function fxListHtml(intro = false) {
   const es = focusEntries(), d = UI.date, r = refPick(d);
   const ref = r ? `<p class="small muted" style="margin:0 0 4px">Dernière séance comparable : <b>${fmtDayLong(r.d)}</b> · ${esc(dayGroups(r.d).filter(musG).map(k => GL[k]).join(' + '))} · ${lsMeta(r.d)}</p>` : '';
-  return `<h2>${intro ? 'Ta séance du jour' : 'Exercices de la séance'}</h2>${ref}<div class="list fx-list">${es.map((e, i) => { const ds = doneSets(e).length, tot = e.sets.length, lp = lastPerf(e.ex, d); const lt = lp ? `dernière fois ${notation(lp.sets, kindOf(e.ex), e.ex)}` : 'première fois'; return `<button class="li" data-a="fx-jump" data-i="${i}"><div class="main"><div class="t">${!intro && i === FOCUS.i ? '▸ ' : ''}${esc(exOf(e.ex).name)}</div><div class="s">${intro ? `${tot} série${tot > 1 ? 's' : ''}` : `${ds}/${tot} séries validées`} · ${esc(lt)}</div></div>${ds === tot && tot ? `<span class="pill good">${ICON.check} Fait</span>` : ICON.right}</button>`; }).join('')}</div>
+  return `<h2>${intro ? 'Ta séance du jour' : 'Exercices de la séance'}</h2>${ref}<div class="list fx-list">${es.map((e, i) => { const ds = doneSets(e).length, tot = e.sets.filter(x => !x.w).length, lp = lastPerf(e.ex, d); const lt = lp ? `dernière fois ${notation(lp.sets, kindOf(e.ex), e.ex)}` : 'première fois'; return `<button class="li" data-a="fx-jump" data-i="${i}"><div class="main"><div class="t">${!intro && i === FOCUS.i ? '▸ ' : ''}${esc(exOf(e.ex).name)}</div><div class="s">${intro ? `${tot} série${tot > 1 ? 's' : ''}` : `${ds}/${tot} séries validées`} · ${esc(lt)}</div></div>${ds === tot && tot ? `<span class="pill good">${ICON.check} Fait</span>` : ICON.right}</button>`; }).join('')}</div>
     ${intro ? `<div class="row end"><button class="btn" data-a="sheet-close">C'est parti</button></div>` : `<div class="row between wrap"><button class="btn ghost" data-a="fx-addex">Ajouter un exercice</button><button class="btn" data-a="sheet-close">Fermer</button></div>`}`;
 }
 
@@ -2583,7 +2599,7 @@ function muscleLoad(src) {
   else {
     const t = today(), a = addDays(t, -27), ds = idx().days.filter(d => d >= a && d <= t);
     first = ds[0] || null; span = first ? diffDays(first, t) + 1 : 0; weeks = Math.max(1, Math.min(4, span / 7));
-    for (const d of ds) for (const e of S.sessions[d].entries || []) { const n = (e.sets || []).reduce((x, s) => x + (s.ok ? (s.d ? .5 : 1) : 0), 0); if (n) add(e.ex, n, d); }
+    for (const d of ds) for (const e of S.sessions[d].entries || []) { const n = (e.sets || []).reduce((x, s) => x + (s.ok && !s.w ? (s.d ? .5 : 1) : 0), 0); if (n) add(e.ex, n, d); }
   }
   const dv = o => { for (const k in o) o[k] = o[k] / weeks; };
   dv(mus); dv(parts); for (const m in exBy) dv(exBy[m]);
@@ -2853,7 +2869,7 @@ function recapData(d) {
   let dTon = null, prevDM = null, prevGs = [];
   if (prev) { prevGs = groups.filter(k => dayGroups(prev).includes(k)); const a = gTon(d, prevGs), b = gTon(prev, prevGs); if (a && b) { dTon = (a - b) / b * 100; prevDM = fmtDM(prev); } }
   const mus = {}, parts = {};
-  for (const e of s.entries || []) { const n = (e.sets || []).reduce((a, x) => a + (x.ok ? (x.d ? .5 : 1) : 0), 0); if (!n) continue; for (const [m, w, p] of exMap(e.ex)) { mus[m] = (mus[m] || 0) + n * w; for (const [k2, sh] of Object.entries(p)) parts[m + '.' + k2] = (parts[m + '.' + k2] || 0) + n * w * sh; } }
+  for (const e of s.entries || []) { const n = (e.sets || []).reduce((a, x) => a + (x.ok && !x.w ? (x.d ? .5 : 1) : 0), 0); if (!n) continue; for (const [m, w, p] of exMap(e.ex)) { mus[m] = (mus[m] || 0) + n * w; for (const [k2, sh] of Object.entries(p)) parts[m + '.' + k2] = (parts[m + '.' + k2] || 0) + n * w * sh; } }
   const g = game(), wk = weekStart(d), musW = idx().days.filter(x => x >= wk && x <= addDays(wk, 6) && isMuscuDay(x)).length;
   const cardioMin = es.filter(e => e.kind === 'cardio').reduce((a, e) => a + sumMin(e.sets), 0);
   const title = groups.length ? groups.map(k => GL[k]).join(' + ') : uniq(es.map(e => e.name)).join(' + ');
@@ -3135,7 +3151,7 @@ function scPseudo() {
 function scBy(d) { // séries effectives par muscle, réparties par groupe d'exercice
   const o = {};
   for (const e of S.sessions[d]?.entries || []) {
-    const n = (e.sets || []).reduce((a, x) => a + (x.ok ? (x.d ? .5 : 1) : 0), 0); if (!n || kindOf(e.ex) === 'cardio') continue; const g = scGroupId(e.ex);
+    const n = (e.sets || []).reduce((a, x) => a + (x.ok && !x.w ? (x.d ? .5 : 1) : 0), 0); if (!n || kindOf(e.ex) === 'cardio') continue; const g = scGroupId(e.ex);
     for (const [m, w, p] of exMap(e.ex)) { const ks = Object.keys(p || {}); for (const k2 of (ks.length ? ks : [''])) { const key = k2 ? m + '.' + k2 : m; (o[key] ||= {})[g] = (o[key][g] || 0) + n * w * (k2 ? p[k2] : 1); } }
   }
   return o;
@@ -3217,7 +3233,7 @@ function mwWork(days) { // séries effectives par muscle : dir = moteur principa
   const o = {}; let tot = 0;
   for (const d of days) for (const e of S.sessions[d]?.entries || []) {
     if (kindOf(e.ex) === 'cardio') continue;
-    const n = (e.sets || []).reduce((a, x) => a + (x.ok ? (x.d ? .5 : 1) : 0), 0); if (!n) continue;
+    const n = (e.sets || []).reduce((a, x) => a + (x.ok && !x.w ? (x.d ? .5 : 1) : 0), 0); if (!n) continue;
     for (const [m, w] of exMap(e.ex)) { if (!(w > 0)) continue; const r = (o[m] ||= { k: m, dir: 0, ind: 0, v: 0 }), q = n * w; r.v += q; r[w >= 1 ? 'dir' : 'ind'] += q; tot += q; }
   }
   const rows = Object.values(o).sort((a, b) => b.v - a.v); for (const r of rows) r.pct = tot ? r.v / tot * 100 : 0;
@@ -3619,11 +3635,11 @@ function sessSummary(d) {
   const es = (s.entries || []).filter(e => doneSets(e).length);
   const todo = (s.entries || []).length - es.length;
   const cardioMin = es.filter(e => kindOf(e.ex) === 'cardio').reduce((a, e) => a + sumMin(doneSets(e)), 0);
-  return `<b>${es.length}</b> exercice${es.length > 1 ? 's' : ''} fait${es.length > 1 ? 's' : ''}${todo ? ` · ${todo} à faire` : ''} · <b>${daySets(d)}</b> séries · <b>${nf(dayTonnage(d))}</b> kg soulevés${cardioMin ? ` · ${nf(cardioMin)} min de cardio` : ''}`;
+  return `<b>${es.length}</b> exercice${es.length > 1 ? 's' : ''} fait${es.length > 1 ? 's' : ''}${todo ? ` · ${todo} à faire` : ''} · <b>${daySets(d)}</b> séries${(() => { const w = (s.entries || []).reduce((a, e) => a + warmSets(e).length, 0); return w ? ` + ${w} d’échauffement` : ''; })()} · <b>${nf(dayTonnage(d))}</b> kg soulevés${cardioMin ? ` · ${nf(cardioMin)} min de cardio` : ''}`;
 }
 function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
-  const allOk = (e.sets || []).length > 0 && e.sets.every(z => z.ok), fold = allOk && exFold(d, i);
+  const allOk = (e.sets || []).length > 0 && e.sets.every((z, k) => z.ok || skipW(e, k)), fold = allOk && exFold(d, i);
   return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''}" data-i="${i}">
     <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
@@ -3631,21 +3647,21 @@ function exCard(e, i, d) {
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
     ${(() => { const sg = overload(e, d); return sg ? `<button class="sugg" data-a="ex-sugg" data-i="${i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''; })()}
     ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}
-    <div class="sets">${(e.sets || []).map((s, j) => setRow(e, i, j, d, kind)).join('')}</div>
-    <div class="ex-actions">${lp && (e.sets || []).some(x => !x.ok) ? `<button class="lnk" data-a="ex-fill" data-i="${i}">Comme la dernière fois</button>` : ''}<button class="lnk" data-a="set-add" data-i="${i}">+ Série</button>${kind !== 'cardio' ? `<button class="lnk" data-a="set-drop" data-i="${i}">+ Dégressive</button>` : ''}
+    <div class="sets">${(e.sets || []).map((s, j) => warmLab(e, j, kind) + setRow(e, i, j, d, kind)).join('')}</div>
+    <div class="ex-actions">${lp && (e.sets || []).some(x => !x.ok) ? `<button class="lnk" data-a="ex-fill" data-i="${i}">Comme la dernière fois</button>` : ''}<button class="lnk" data-a="set-add" data-i="${i}">+ Série</button>${kind !== 'cardio' ? `<button class="lnk" data-a="set-drop" data-i="${i}">+ Dégressive</button><button class="lnk" data-a="set-warm" data-i="${i}">+ Échauffement</button>` : ''}
       <form class="quick" data-submit="quick" data-i="${i}"><input id="q-${i}" placeholder="${kind === 'cardio' ? 'min/km/bpm ex. 35/5,2/128' : kind === 'bw' ? (isPdc(kind, e.ex) ? 'ex. 3x12 ou 15/15/10 · +10 = lest' : 'ex. 3x45') : 'ex. 4x10x59 ou 22/26/30 x10'}" autocomplete="off" enterkeyhint="done" aria-label="Saisie rapide"><button class="btn sm ghost" type="submit">OK</button></form></div>
   </article>`;
 }
 function setRow(e, i, j, d, kind) {
   const s = e.sets[j], p = placeholder(e, j, d) || {};
-  let n = 0; for (let k = 0; k <= j; k++) if (!e.sets[k].d) n++;
+  let n = 0, wn = 0; for (let k = 0; k <= j; k++) if (e.sets[k].w) wn++; else if (!e.sets[k].d) n++;
   const idp = `s-${i}-${j}`;
-  const ok = `<button class="ok-btn" data-a="set-ok" data-i="${i}" data-j="${j}" aria-label="Valider la série" aria-pressed="${!!s.ok}">${ICON.check}</button>`;
+  const ok = `<button class="ok-btn" data-a="set-ok" data-i="${i}" data-j="${j}" aria-label="${s.w ? 'Valider l’échauffement' : 'Valider la série'}" aria-pressed="${!!s.ok}">${ICON.check}</button>`;
   const del = `<button class="del" data-a="set-del" data-i="${i}" data-j="${j}" aria-label="Supprimer la série">${ICON.x}</button>`;
   const inp = (k, unit, mode = 'decimal') => `<label class="f"><input class="num" id="${idp}-${k}" inputmode="${mode}" data-in="set" data-i="${i}" data-j="${j}" data-k="${k}" value="${v(s[k])}" placeholder="${v(p[k])}" aria-label="${unit}"><small>${unit}</small></label>`;
   const inpPdc = () => `<label class="f"><input class="num" id="${idp}-kg" inputmode="decimal" data-in="set" data-i="${i}" data-j="${j}" data-k="kg" value="${s.kg ? v(s.kg) : ''}" placeholder="${p.kg ? '+' + v(p.kg) : 'PDC'}" aria-label="Lest en kg, vide pour le poids du corps"><small>lest</small></label>`;
   if (kind === 'cardio') return `<div class="set cardio ${s.ok ? 'ok' : ''}" data-i="${i}" data-j="${j}"><span class="n">${n}</span>${inp('min', 'min', 'numeric')}${inp('km', 'km')}${inp('bpm', 'bpm', 'numeric')}${ok}${del}</div>`;
-  return `<div class="set ${s.ok ? 'ok' : ''} ${s.d ? 'drop' : ''} ${isCurSet(d, i, j) ? 'cur' : ''}" data-i="${i}" data-j="${j}"><span class="n" title="${s.d ? 'Dégressive' : 'Série ' + n}">${s.d ? '↳' : n}</span>${isPdc(kind, e.ex) ? inpPdc() : inp('kg', 'kg')}<span class="x">×</span>${inp('r', 'reps', 'numeric')}${ok}${del}</div>`;
+  return `<div class="set ${s.ok ? 'ok' : ''} ${s.d ? 'drop' : ''} ${s.w ? 'warm' : ''} ${skipW(e, j) ? 'skip' : ''} ${isCurSet(d, i, j) ? 'cur' : ''}" data-i="${i}" data-j="${j}"><span class="n" title="${s.w ? 'Échauffement ' + wn : s.d ? 'Dégressive' : 'Série ' + n}">${s.w ? 'É' + wn : s.d ? '↳' : n}</span>${isPdc(kind, e.ex) ? inpPdc() : inp('kg', 'kg')}<span class="x">×</span>${inp('r', 'reps', 'numeric')}${ok}${del}</div>`;
 }
 function pgFocus(d) { const sg = S.sessions[d]?.groups || []; return sg.includes(UI.pgF) ? UI.pgF : sg[sg.length - 1] || null; }
 function proposals(d) {
@@ -4140,8 +4156,8 @@ function tplFormHtml() {
 }
 function tfSyncFields() { const t = SHEET.ctx; if (!t) return; const n = $('#tf-name'), d = $('#tf-day'); if (n) t.name = n.value; if (d) t.day = d.value ? +d.value : null; }
 function exportCsv() {
-  const rows = [['date', 'exercice', 'groupe', 'serie', 'kg', 'reps', 'degressive', 'min', 'km', 'bpm'].join(';')];
-  for (const d of Object.keys(S.sessions).sort()) for (const e of S.sessions[d].entries || []) { let n = 0; doneSets(e).forEach(s => { if (!s.d) n++; rows.push([d, `"${exOf(e.ex).name.replace(/"/g, '""')}"`, GL[exOf(e.ex).group] || '', n, v(s.kg), v(s.r), s.d ? 'oui' : '', v(s.min), v(s.km), v(s.bpm)].join(';')); }); }
+  const rows = [['date', 'exercice', 'groupe', 'serie', 'kg', 'reps', 'degressive', 'min', 'km', 'bpm', 'echauffement'].join(';')];
+  for (const d of Object.keys(S.sessions).sort()) for (const e of S.sessions[d].entries || []) { let n = 0, w = 0; (e.sets || []).filter(s => s.ok).forEach(s => { if (s.w) w++; else if (!s.d) n++; rows.push([d, `"${exOf(e.ex).name.replace(/"/g, '""')}"`, GL[exOf(e.ex).group] || '', s.w ? 'E' + w : n, v(s.kg), v(s.r), s.d ? 'oui' : '', v(s.min), v(s.km), v(s.bpm), s.w ? 'oui' : ''].join(';')); }); }
   return '﻿' + rows.join('\r\n');
 }
 async function bulkImport(data) {
@@ -4303,13 +4319,13 @@ const A = {
     const { i, e } = curEntry(el); if (!e) return; const j = +el.dataset.j, s = e.sets[j], kind = kindOf(e.ex);
     if (!s.ok) {
       const res = validateSet(e, j, UI.date); if (!res) return;
-      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(restFor(e.ex, s));
+      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(restOf(e, s));
       rerenderCard(i); afterValidate(e, s, res);
       return;
     } else { s.ok = false; delete s.t; touch('sessions', UI.date, 400); }
     rerenderCard(i);
   },
-  'set-del': el => { const { i, e } = curEntry(el); if (!e) return; e.sets.splice(+el.dataset.j, 1); if (e.sets[0]?.d) delete e.sets[0].d; touch('sessions', UI.date); rerenderCard(i); },
+  'set-del': el => { const { i, e } = curEntry(el); if (!e) return; e.sets.splice(+el.dataset.j, 1); { const f0 = e.sets.find(x => !x.w); if (f0?.d) delete f0.d; } touch('sessions', UI.date); rerenderCard(i); },
   'set-add': el => { const { i, e } = curEntry(el); if (!e) return; e.sets.push({ ok: false }); touch('sessions', UI.date); rerenderCard(i); $(`#cards article[data-i="${i}"] .set:last-child input`)?.focus(); },
   'set-drop': el => { const { i, e } = curEntry(el); if (!e) return; e.sets.push({ ok: false, d: true }); touch('sessions', UI.date); rerenderCard(i); $(`#cards article[data-i="${i}"] .set:last-child input`)?.focus(); },
   'ex-new': el => openSheet(exFormHtml(null, el.dataset.name || ''), { fromSession: UI.tab === 'seance' }),
@@ -4386,7 +4402,7 @@ const A = {
     const noRest = wasOk || kindOf(e.ex) === 'cardio' || (nx.i === FOCUS.i && e.sets[nx.j]?.d);
     FOCUS.next = nx;
     if (noRest) { fxGoNext(); return; }
-    FOCUS.phase = 'rest'; startRest(restFor(e.ex, s)); renderFocus();
+    FOCUS.phase = 'rest'; startRest(restOf(e, s)); renderFocus();
   },
   'fx-skip': () => { stopRest(); fxGoNext(); },
   'fx-unok': () => { const e = focusEntries()[FOCUS.i], s = e?.sets?.[FOCUS.j]; if (!s) return; s.ok = false; delete s.t; touch('sessions', UI.date, 400); renderFocus(); },
@@ -4548,7 +4564,7 @@ const A = {
   },
   'ex-sugg': el => {
     const { i, e } = curEntry(el); if (!e) return; const inc = +el.dataset.inc;
-    e.sets.forEach((x, j) => { if (x.ok || x.d || x.kg != null) return; const p = placeholder(e, j, UI.date) || {}; if (p.kg != null) x.kg = Math.round((p.kg + inc) * 100) / 100; });
+    e.sets.forEach((x, j) => { if (x.ok || x.d || x.w || x.kg != null) return; const p = placeholder(e, j, UI.date) || {}; if (p.kg != null) x.kg = Math.round((p.kg + inc) * 100) / 100; });
     touch('sessions', UI.date); if (FOCUS.open) renderFocus(); else rerenderCard(i); toast(`+${nf(inc, 1)} kg appliqués : valide chaque série avec la coche.`);
   },
   'sess-finish': () => {
@@ -4609,7 +4625,7 @@ document.addEventListener('submit', e => {
   const sets = parseQuick(f.querySelector('input').value, kindOf(entry.ex));
   if (!sets) { toast(isPdc(kindOf(entry.ex), entry.ex) ? 'Format non reconnu. Exemples : 3x12 · 15/15/10 · 3x8+10 (lest)' : 'Format non reconnu. Exemples : 4x10x59 · 22/26/30 x10 · 90-70 x10-8'); return; }
   if (isPdc(kindOf(entry.ex), entry.ex)) sets.forEach(x => bwNorm(x, UI.date));
-  entry.sets = sets; touch('sessions', UI.date, 300); rerenderCard(i); toast(`${sets.length} série${sets.length > 1 ? 's' : ''} enregistrée${sets.length > 1 ? 's' : ''}.`);
+  entry.sets = [...(entry.sets || []).filter(x => x.w), ...sets]; touch('sessions', UI.date, 300); rerenderCard(i); toast(`${sets.length} série${sets.length > 1 ? 's' : ''} enregistrée${sets.length > 1 ? 's' : ''}.`);
 });
 document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('#sheet-wrap').hidden) closeSheet(); else if (FOCUS.open) focusClose(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushAll(); else if (FOCUS.open) wakeOn(); });
@@ -5237,9 +5253,9 @@ boot();
 
 /* ================= v8.0 : refonte ergonomique ================= */
 function grpFold(d, entries, groups) { return !UI.grpOpen && groups.length > 0 && entries.some(e => kindOf(e.ex) !== 'cardio' && doneSets(e).length); }
-function curExIdx(d) { return (S.sessions[d]?.entries || []).findIndex(x => (x.sets || []).some(z => !z.ok)); }
+function curExIdx(d) { return (S.sessions[d]?.entries || []).findIndex(x => (x.sets || []).some((z, k) => !z.ok && !skipW(x, k))); }
 function exFold(d, i) { if (UI.exOpen && UI.exOpen[d + ':' + i]) return false; const c = curExIdx(d); return c > i; }
-function isCurSet(d, i, j) { if (curExIdx(d) !== i) return false; const e = S.sessions[d]?.entries?.[i]; return !!e && e.sets.findIndex(z => !z.ok) === j; }
+function isCurSet(d, i, j) { if (curExIdx(d) !== i) return false; const e = S.sessions[d]?.entries?.[i]; return !!e && firstTodo(e) === j; }
 function beatHtml(lp, kind) { if (kind !== 'w' || !lp) return ''; const b = bestSet(lp.sets || []); return b && b.kg ? `<span class="beat">À battre <b>${nf(b.kg, 2)} kg × ${b.r}</b></span>` : ''; }
 function fxRefHtml(e, lp, kind, d) {
   if (kind !== 'w' || !lp) return '';
@@ -5261,7 +5277,7 @@ function homeSug(t) {
 }
 function homeHero(t) {
   const es = (S.sessions[t]?.entries || []).filter(e => kindOf(e.ex) !== 'cardio');
-  const done = es.reduce((a, e) => a + doneSets(e).length, 0), todo = es.reduce((a, e) => a + (e.sets || []).filter(x => !x.ok).length, 0);
+  const done = es.reduce((a, e) => a + doneSets(e).length, 0), todo = es.reduce((a, e) => a + (e.sets || []).filter(x => !x.ok && !x.w).length, 0);
   const gl = (S.sessions[t]?.groups || []).filter(musG).map(k => GL[k]).join(' + ') || dayGroups(t).filter(musG).map(k => GL[k]).join(' + ') || 'Séance';
   const card = (eb, title, meta, beat, btns) => `<section class="card hero"><div class="hero-eb"><span>${eb}</span></div><h2>${esc(title)}</h2>${meta ? `<p class="hero-m">${meta}</p>` : ''}${beat}<div class="hero-b">${btns}</div></section>`;
   if (es.length && done && !todo) return card('SÉANCE FAITE', gl, `${done} séries · ${nf(dayTonnage(t))} kg soulevés`, '', `<button class="btn ghost-d" data-a="go-seance" data-d="${t}">Voir la séance</button>`);
@@ -5359,7 +5375,7 @@ function bPeriode() {
 }
 /* Séries de travail d'une entrée (sans échauffement ni dégressives). */
 function bWorkSets(entry) {
-  const sets = (entry.sets || []).filter(s => s.ok && (s.r || s.min) && !s.d);
+  const sets = (entry.sets || []).filter(s => s.ok && (s.r || s.min) && !s.d && !s.w);
   if (kindOf(entry.ex) !== 'w') return sets;
   const max = Math.max(0, ...sets.map(s => +s.kg || 0));
   return sets.filter(s => (+s.kg || 0) >= max * BILAN.seuilEchauffement);
@@ -5624,6 +5640,49 @@ A['cat-f'] = el => {
   for (const x of document.querySelectorAll('.cat-seg button')) { const on = x.dataset.v === v; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); }
   saveUI();
 };
+
+/* ================= v8.7 : séries d'échauffement ================= */
+const WARM_REST = [60, 90]; // entre deux échauffements, puis avant la 1re série de travail
+// Montée par défaut vers la charge de la 1re série de travail, selon le nombre d'échauffements (part de la charge, reps)
+const WARM_RAMP = { 1: [[.6, 8]], 2: [[.5, 10], [.75, 5]], 3: [[.4, 10], [.6, 6], [.8, 3]], 4: [[.4, 10], [.55, 6], [.7, 4], [.85, 2]] };
+function skipW(e, k) { const s = e?.sets?.[k]; return !!s && !!s.w && !s.ok && e.sets.some((x, m) => m > k && x.ok && !x.w); }
+function restOf(e, s) {
+  if (!s || !s.w) return restFor(e.ex, s);
+  const nx = e.sets[e.sets.indexOf(s) + 1];
+  return nx && nx.w ? WARM_REST[0] : WARM_REST[1];
+}
+function placeholder(entry, j, d) {
+  const all = entry.sets || [], s = all[j];
+  if (!all.some(x => x.w)) return phWork(entry, j, d);
+  if (s && s.w) return warmPh(entry, j, d);
+  const work = all.filter(x => !x.w), jj = s ? work.indexOf(s) : j - (all.length - work.length);
+  return phWork({ ...entry, sets: work }, jj, d);
+}
+function warmPh(e, j, d) {
+  const k = e.sets.slice(0, j).filter(x => x.w).length, n = e.sets.filter(x => x.w).length, lp = lastPerf(e.ex, d);
+  const h = lp && lp.w && lp.w[k]; if (h) return { kg: h.kg, r: h.r };
+  const work = e.sets.filter(x => !x.w), w0 = work[0], p0 = w0 ? (phWork({ ...e, sets: work }, 0, d) || {}) : {};
+  const kg = w0?.kg ?? p0.kg, r = w0?.r ?? p0.r, step = (WARM_RAMP[Math.min(n, 4)] || WARM_RAMP[4])[Math.min(k, 3)];
+  if (kindOf(e.ex) === 'bw') return r ? { kg: 0, r: Math.max(3, Math.round(r / 2)) } : {};
+  if (!kg) return {};
+  const x = kg * step[0], rd = x >= 20 ? Math.round(x / 2.5) * 2.5 : Math.round(x);
+  return { kg: Math.max(0, rd), r: step[1] };
+}
+function warmLab(e, j, kind) {
+  if (kind === 'cardio' || !e.sets.some(x => x.w)) return '';
+  const s = e.sets[j], prev = e.sets[j - 1];
+  if (s.w && !(prev && prev.w)) return `<div class="warm-l">Échauffement <small>ne compte pas dans le travail</small></div>`;
+  if (!s.w && prev && prev.w) return `<div class="warm-l">Séries de travail</div>`;
+  return '';
+}
+function addWarm(e) {
+  const f = e.sets.findIndex(x => !x.w), at = f < 0 ? e.sets.length : f;
+  e.sets.splice(at, 0, { ok: false, w: true }); touch('sessions', UI.date); return at;
+}
+Object.assign(A, {
+  'set-warm': el => { const { i, e } = curEntry(el); if (!e) return; const at = addWarm(e); rerenderCard(i); $(`#s-${i}-${at}-kg`)?.focus(); },
+  'fx-warm': () => { const e = focusEntries()[FOCUS.i]; if (!e) return; FOCUS.j = addWarm(e); FOCUS.phase = 'set'; renderFocus(); }
+});
 </script>
 </body>
 </html>
