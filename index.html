@@ -834,6 +834,32 @@ select.inp.pg-range{width:auto;flex:none;max-width:150px;min-height:44px;padding
 .fx-end{align-self:center;text-align:center}
 .fx-rest .fx-end{margin-top:2px}
 body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env(safe-area-inset-top,0px) + 10px);bottom:auto}
+
+/* ===== v8.9 : un chrono de repos par exercice ===== */
+.fx-ring{background:conic-gradient(var(--rc,var(--accent)) calc(var(--p)*1%),var(--surface-2) 0)}
+.fx-chips{display:flex;flex-direction:column;gap:8px}
+.fx-chips:empty{display:none}
+.fx-chip{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;box-sizing:border-box;padding:8px 12px 8px 8px;background:var(--surface);border:1px solid var(--line);border-radius:16px;color:var(--ink);text-align:left}
+.fx-chip-r{--p:100;width:42px;height:42px;border-radius:50%;background:conic-gradient(var(--rc) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center;flex:none}
+.fx-chip-r i{width:32px;height:32px;border-radius:50%;background:var(--surface);display:block}
+.fx-chip-t{display:flex;flex-direction:column;flex:1;min-width:0}
+.fx-chip-t span{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-chip-t small{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-chip b{font:700 28px/1 var(--f-d);font-variant-numeric:tabular-nums;color:var(--rc);flex:none}
+.fx-due{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px;background:var(--rc);color:#14171A;border-radius:18px}
+.fx-due-t{display:flex;flex-direction:column;flex:1;min-width:0;gap:2px}
+.fx-due-t b{font:800 30px/1 var(--f-d);text-transform:uppercase;letter-spacing:.02em}
+.fx-due-t span{font-weight:600;font-size:15px}
+.fx-due-t small{font-size:13.5px}
+.fx-due button{min-height:52px;padding:0 18px;border-radius:14px;background:#14171A;color:#F3F4F1;font-weight:700;font-size:17px;flex:none}
+.rest.multi{flex-direction:column;align-items:stretch;gap:0;padding:4px;border-radius:20px;width:min(520px,calc(100% - 32px));box-sizing:border-box}
+.rest-row{display:flex;align-items:center;gap:10px;padding:4px 4px 4px 12px;min-width:0}
+.rest-row+.rest-row{border-top:1px solid color-mix(in srgb,var(--surface) 16%,transparent)}
+.rest-row i{width:10px;height:10px;border-radius:50%;flex:none}
+.rest-row .rl{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600;font-size:14.5px}
+.rest-row .rl small{font-weight:500;opacity:.75;font-size:13px}
+.rest-row.done{background:var(--accent);color:var(--on-accent);border-radius:16px}
+.rest-row.done button{color:var(--on-accent);background:rgba(0,0,0,.08)}
 </style>
 </head>
 <body>
@@ -1943,6 +1969,7 @@ function validateSet(e, j, d) {
   if (isPdc(kind, e.ex)) bwFreeze(d, true);
   if (hist.length && kind === 'bw') rec = isTimedEx(e.ex) ? (s.r || 0) > Math.max(maxReps(hist), maxReps(others)) : bwScore([s], d) > Math.max(...(idx().byEx[e.ex] || []).filter(x => x.date < d).map(x => bwScore(x.sets, x.date)), bwScore(others, d)) + 0.01;
   if (s.w) rec = false;
+  { const rr = restGet(e.ex); if (rr) { restDrop(rr); restSync(); restPill(); } }
   s.ok = true; s.t = Date.now(); touch('sessions', d, 400);
   return { rec };
 }
@@ -1958,7 +1985,7 @@ function focusOpen() {
   const es = focusEntries();
   if (!es.length) { toast("Choisis d'abord une séance type ou ajoute des exercices."); return; }
   let p = null; for (let i = 0; i < es.length && !p; i++) { const f = firstTodo(es[i]); if (f >= 0) p = { i, j: f }; }
-  Object.assign(FOCUS, { open: true, i: p ? p.i : 0, j: p ? p.j : 0, phase: p ? (REST.on ? 'rest' : 'set') : 'done', t0: Date.now(), next: p && REST.on ? p : null });
+  Object.assign(FOCUS, { open: true, i: p ? p.i : 0, j: p ? p.j : 0, phase: p ? (restViewFor(p.i) ? 'rest' : 'set') : 'done', t0: Date.now(), next: p && restViewFor(p.i) ? p : null });
   $('#focus').hidden = false; document.body.classList.add('noscroll', 'focus-on');
   wakeOn(); clearInterval(FOCUS.clock); FOCUS.clock = setInterval(tickClock, 1000);
   renderFocus(); $('#focus').scrollTop = 0;
@@ -1967,12 +1994,12 @@ function focusOpen() {
 function focusClose() {
   if (!FOCUS.open) return;
   FOCUS.open = false; clearInterval(FOCUS.clock); wakeOff();
-  if (REST.on) { $('#rest').hidden = false; }
+  restPill();
   $('#focus').hidden = true; $('#focus').innerHTML = ''; document.body.classList.remove('focus-on');
   if ($('#sheet-wrap').hidden) document.body.classList.remove('noscroll');
   render();
 }
-function fxMiniHtml() {
+function fxMiniHtmlOld() {
   if (FOCUS.phase === 'rest' || !REST.on) return '';
   const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000));
   return `<div class="fx-mini" id="fx-mini" role="timer" aria-live="off"><button class="fx-mini-go" data-a="fx-ring" aria-label="Afficher le chrono de repos"><span id="fx-mini-l">Repos</span><b id="fx-mini-time">${Math.floor(left / 60)}:${pad(left % 60)}</b></button><button data-a="rest-plus">+15 s</button><button data-a="rest-stop">Passer</button></div>`;
@@ -2018,8 +2045,8 @@ function renderFocus() {
     const nx = FOCUS.next, ne = nx ? es[nx.i] : null, np = ne ? (placeholder(ne, nx.j, d) || {}) : {}, nk = ne ? kindOf(ne.ex) : 'w';
     const nxs = ne ? ne.sets[nx.j] : null;
     const desc = ne ? `${nx.i !== FOCUS.i ? esc(exOf(ne.ex).name) + ' · ' : ''}${nk === 'cardio' ? 'cardio' : `${isPdc(nk, ne.ex) ? pdcLab(nxs.kg ?? np.kg ?? 0) : nf(nxs.kg ?? np.kg ?? 0, 2) + ' kg'} × ${nxs.r ?? np.r ?? '?'}`}` : '';
-    const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000));
-    body = `<div class="fx-rest"><div class="fx-ring" id="fx-ring" style="--p:${Math.max(0, Math.min(100, (REST.end - Date.now()) / (REST.dur * 1000) * 100))}"><b id="fx-rest-time">${Math.floor(left / 60)}:${pad(left % 60)}</b><span>Repos</span></div>
+    const RV = restViewFor(FOCUS.i) || { ex: '', end: Date.now(), dur: 1, c: 0 }, left = restLeft(RV);
+    body = `<div class="fx-rest"><div class="fx-ring" id="fx-ring" data-rtp="${esc(RV.ex)}" style="--p:${rtPct(RV)};--rc:${restCol(RV)}"><b id="fx-rest-time" data-rt="${esc(RV.ex)}">${Math.floor(left / 60)}:${pad(left % 60)}</b><span>${RESTS.length > 1 && RV.ex && RV.ex !== '_' ? 'Repos · ' + esc(GL[exOf(RV.ex).group] || exOf(RV.ex).name) : 'Repos'}</span></div>
       <div class="row"><button class="btn ghost" data-a="rest-plus">+15 s</button><button class="btn" data-a="fx-skip">Passer</button></div>
       ${desc ? `<p class="fx-next">Ensuite : <b>${desc}</b></p>` : ''}${nx && nx.i === FOCUS.i ? fxEndHtml(e) : ''}</div>`;
   } else if (!s) {
@@ -4228,12 +4255,12 @@ for (const k of TRAIN_KEYS) { const R = REST_BY[k]; TRAIN[k].rs = `${restCatTxt(
 
 /* ================= Minuteur de repos ================= */
 const REST = { end: 0, dur: 90, t: null, hide: null, on: false };
-function startRest(sec) {
+function startRestOld(sec) {
   REST.end = Date.now() + sec * 1000; REST.dur = sec; REST.on = true;
   const el = $('#rest'); el.hidden = false; el.classList.remove('done'); $('#rest-label').textContent = 'Repos';
   clearInterval(REST.t); clearTimeout(REST.hide); tickRest(); REST.t = setInterval(tickRest, 250);
 }
-function tickRest() {
+function tickRestOld() {
   const left = Math.max(0, Math.ceil((REST.end - Date.now()) / 1000)), txt = `${Math.floor(left / 60)}:${pad(left % 60)}`;
   $('#rest-time').textContent = txt;
   const fm = $('#fx-mini-time'); if (fm) fm.textContent = txt;
@@ -4247,7 +4274,7 @@ function tickRest() {
     clearTimeout(REST.hide); REST.hide = setTimeout(stopRest, 6000);
   }
 }
-function stopRest() { clearInterval(REST.t); clearTimeout(REST.hide); REST.on = false; $('#rest').hidden = true; $('#fx-mini')?.remove(); }
+function stopRestOld() { clearInterval(REST.t); clearTimeout(REST.hide); REST.on = false; $('#rest').hidden = true; $('#fx-mini')?.remove(); }
 
 /* ================= Actions ================= */
 const curEntry = el => { const i = +el.dataset.i; return { i, e: S.sessions[UI.date]?.entries?.[i] }; };
@@ -4326,7 +4353,7 @@ const A = {
     const { i, e } = curEntry(el); if (!e) return; const j = +el.dataset.j, s = e.sets[j], kind = kindOf(e.ex);
     if (!s.ok) {
       const res = validateSet(e, j, UI.date); if (!res) return;
-      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(restOf(e, s));
+      const next = e.sets[j + 1]; if (!(next && next.d) && kind !== 'cardio') startRest(restOf(e, s), e.ex);
       rerenderCard(i); afterValidate(e, s, res);
       return;
     } else { s.ok = false; delete s.t; touch('sessions', UI.date, 400); }
@@ -4404,14 +4431,15 @@ const A = {
     const d = UI.date, e = focusEntries()[FOCUS.i], s = e?.sets?.[FOCUS.j]; if (!s) return;
     const wasOk = s.ok;
     if (!wasOk) { const res = validateSet(e, FOCUS.j, d); if (!res) return; afterValidate(e, s, res); }
-    const nx = nextTodo(FOCUS.i, FOCUS.j);
+    const nx = restPrefer(nextTodo(FOCUS.i, FOCUS.j), FOCUS.i);
     if (!nx) { stopRest(); FOCUS.phase = 'done'; renderFocus(); return; }
+    if (!wasOk && nx.i !== FOCUS.i && fxJoin(nx)) return;
     const noRest = wasOk || kindOf(e.ex) === 'cardio' || (nx.i === FOCUS.i && e.sets[nx.j]?.d);
     FOCUS.next = nx;
     if (noRest) { fxGoNext(); return; }
-    FOCUS.phase = 'rest'; startRest(restOf(e, s)); renderFocus();
+    FOCUS.phase = 'rest'; startRest(restOf(e, s), e.ex); renderFocus();
   },
-  'fx-skip': () => { stopRest(); fxGoNext(); },
+  'fx-skip': () => { const r = restViewFor(FOCUS.i); if (r) stopRest(r.ex); fxGoNext(); },
   'fx-unok': () => { const e = focusEntries()[FOCUS.i], s = e?.sets?.[FOCUS.j]; if (!s) return; s.ok = false; delete s.t; touch('sessions', UI.date, 400); renderFocus(); },
   'fx-pip': el => { FOCUS.j = +el.dataset.j; FOCUS.phase = 'set'; renderFocus(); },
   'fx-nav': el => { const es = focusEntries(); FOCUS.i = Math.max(0, Math.min(es.length - 1, FOCUS.i + +el.dataset.d)); const f = firstTodo(es[FOCUS.i]); FOCUS.j = f >= 0 ? f : 0; fxRestOrSet(f); renderFocus(); $('#focus').scrollTop = 0; },
@@ -5694,7 +5722,9 @@ Object.assign(A, {
 /* ================= v8.8 : terminer un exercice, chrono de repos gardé ================= */
 // Pendant un repos, l'exercice affiché garde le grand chrono et devient la suite ; sinon on montre sa série à faire.
 function fxRestOrSet(f) {
-  if (REST.on && f >= 0) { FOCUS.phase = 'rest'; FOCUS.next = { i: FOCUS.i, j: f }; }
+  const own = restGet(focusEntries()[FOCUS.i]?.ex);
+  if (own && own.done) { restDrop(own); restSync(); restPill(); }
+  if (f >= 0 && restViewFor(FOCUS.i)) { FOCUS.phase = 'rest'; FOCUS.next = { i: FOCUS.i, j: f }; }
   else { FOCUS.phase = 'set'; FOCUS.next = null; }
 }
 // Séries non faites qu'on peut retirer (au moins une série de travail validée)
@@ -5722,16 +5752,158 @@ Object.assign(A, {
   'fx-endex': () => {
     const i = FOCUS.i, e = focusEntries()[i]; if (!e) return;
     const r = endExercise(e); if (!r) return;
-    const nx = nextExTodo(i);
+    const nx = restPrefer(nextExTodo(i), i);
     if (!nx) { FOCUS.next = null; FOCUS.phase = 'done'; }
-    else { FOCUS.i = nx.i; FOCUS.j = nx.j; FOCUS.next = REST.on ? nx : null; FOCUS.phase = REST.on ? 'rest' : 'set'; }
+    else { FOCUS.i = nx.i; FOCUS.j = nx.j; fxRestOrSet(nx.j); }
     renderFocus(); $('#focus').scrollTop = 0; endToast(e, r);
   },
   'ex-end': el => { const { e } = curEntry(el); closeSheet(); if (!e) return; const r = endExercise(e); if (!r) return; render(); endToast(e, r); },
   'fx-ring': () => {
-    if (!REST.on) return;
+    if (!restViewFor(FOCUS.i)) return;
     const e = focusEntries()[FOCUS.i], cur = e?.sets?.[FOCUS.j], f = cur && !cur.ok ? FOCUS.j : firstTodo(e);
     FOCUS.next = f >= 0 ? { i: FOCUS.i, j: f } : nextTodo(FOCUS.i, FOCUS.j); FOCUS.phase = 'rest'; renderFocus();
+  }
+});
+
+/* ================= v8.9 : un chrono de repos par exercice (superset) ================= */
+const RESTS = [];
+const REST_COLS = ['var(--accent)', '#46B4FF', '#2ED3B7', '#B58CFF'];
+const restCol = r => REST_COLS[((r && r.c) || 0) % REST_COLS.length];
+const restGet = ex => (ex && RESTS.find(r => r.ex === ex)) || null;
+const restLeft = r => r.done ? 0 : Math.max(0, Math.ceil((r.end - Date.now()) / 1000));
+const rtClock = r => { const l = restLeft(r); return `${Math.floor(l / 60)}:${pad(l % 60)}`; };
+const rtPct = r => r.done ? 0 : Math.max(0, Math.min(100, (r.end - Date.now()) / (r.dur * 1000) * 100));
+function restDrop(r) { const k = RESTS.indexOf(r); if (k >= 0) RESTS.splice(k, 1); }
+// REST garde la forme d'avant (repos le plus proche de la fin) pour le code qui le lit encore
+function restSync() {
+  const run = RESTS.filter(r => !r.done).sort((a, b) => a.end - b.end);
+  REST.on = run.length > 0; if (run[0]) { REST.end = run[0].end; REST.dur = run[0].dur; }
+  if (RESTS.length && !REST.t) REST.t = setInterval(tickRest, 250);
+  if (!RESTS.length && REST.t) { clearInterval(REST.t); REST.t = null; }
+}
+function startRest(sec, ex = '_') {
+  let r = restGet(ex);
+  if (!r) { const used = new Set(RESTS.map(x => x.c)); let c = 0; while (used.has(c)) c++; r = { ex, c }; RESTS.push(r); }
+  Object.assign(r, { end: Date.now() + sec * 1000, dur: sec, done: false, keep: 0 });
+  restSync(); restPill(); tickRest();
+}
+function stopRest(ex) {
+  if (typeof ex !== 'string') RESTS.length = 0; else { const r = restGet(ex); if (r) restDrop(r); }
+  restSync(); restPill();
+}
+// Repos affiché en grand pour l'exercice i : le sien, sinon celui d'un exercice terminé (repos avant l'exercice suivant)
+function restViewFor(i) {
+  const es = focusEntries(), e = es[i]; if (!e) return null;
+  const own = restGet(e.ex); if (own) return own.done ? null : own;
+  let best = null;
+  for (const r of RESTS) {
+    if (r.done) continue;
+    const x = es.find(y => y.ex === r.ex); if (x && firstTodo(x) >= 0) continue;
+    if (!best || r.end < best.end) best = r;
+  }
+  return best;
+}
+// Exercice suivant : priorité au partenaire de superset qui attend (repos fini d'abord, puis le plus proche de la fin)
+function restPrefer(nx, i) {
+  if (nx && nx.i === i) return nx;
+  const es = focusEntries(); let best = null;
+  for (const r of RESTS) {
+    const k = es.findIndex(x => x.ex === r.ex); if (k < 0 || k === i) continue;
+    const f = firstTodo(es[k]); if (f < 0) continue;
+    const sc = r.done ? r.keep - 1e13 : r.end;
+    if (!best || sc < best.s) best = { s: sc, i: k, j: f };
+  }
+  return best ? { i: best.i, j: best.j } : nx;
+}
+// Exercice terminé, le suivant a déjà son repos : on le rejoint (anneau) ou on y va tout de suite s'il est fini
+function fxJoin(nx) {
+  const r = restGet(focusEntries()[nx.i]?.ex); if (!r) return false;
+  if (r.done) { restDrop(r); restSync(); restPill(); FOCUS.next = nx; fxGoNext(); return true; }
+  FOCUS.i = nx.i; FOCUS.j = nx.j; FOCUS.next = nx; FOCUS.phase = 'rest'; renderFocus(); $('#focus').scrollTop = 0; return true;
+}
+function setLab(e, f) {
+  const s = e.sets[f]; if (!s) return '';
+  if (s.w) return 'Échauffement'; if (s.d) return 'Dégressive';
+  let n = 0; for (let k = 0; k <= f; k++) if (!e.sets[k].d && !e.sets[k].w) n++;
+  return `Série ${n} sur ${e.sets.filter(x => !x.d && !x.w).length}`;
+}
+function setDesc(e, f) {
+  const s = e.sets[f], kind = kindOf(e.ex); if (!s) return '';
+  if (kind === 'cardio') return 'cardio';
+  const p = placeholder(e, f, UI.date) || {}, kg = s.kg ?? p.kg ?? 0, r = s.r ?? p.r ?? '?';
+  return isPdc(kind, e.ex) ? `${pdcLab(kg)} × ${r}` : `${nf(kg, 2)} kg × ${r}`;
+}
+function fxChip(r) {
+  const es = focusEntries(), i = es.findIndex(x => x.ex === r.ex), e = es[i], f = e ? firstTodo(e) : -1;
+  const nm = r.ex === '_' || !e ? 'Repos' : exOf(r.ex).name, g = e ? (GL[exOf(r.ex).group] || '') : '', col = restCol(r);
+  if (r.done) {
+    if (f < 0) return '';
+    return `<div class="fx-due" role="status" style="--rc:${col}"><span class="fx-due-t"><b>À toi</b><span>${esc(nm)}</span><small>${esc(setLab(e, f))} · ${esc(setDesc(e, f))}</small></span><button data-a="fx-goex" data-ex="${esc(r.ex)}">Y aller</button></div>`;
+  }
+  const toRing = i === FOCUS.i || f < 0;
+  const sub = f >= 0 ? `${g ? g + ' · ' : ''}ensuite ${setDesc(e, f)}` : 'avant l’exercice suivant';
+  return `<button class="fx-chip" data-a="${toRing ? 'fx-ring' : 'fx-goex'}" data-ex="${esc(r.ex)}" style="--rc:${col}" aria-label="Repos ${esc(nm)} : ${rtClock(r)}"><span class="fx-chip-r" data-rtp="${esc(r.ex)}" style="--p:${rtPct(r)}"><i></i></span><span class="fx-chip-t"><span>${esc(nm)}</span><small>${esc(sub)}</small></span><b data-rt="${esc(r.ex)}">${rtClock(r)}</b></button>`;
+}
+function fxMiniHtml() {
+  const view = FOCUS.phase === 'rest' ? restViewFor(FOCUS.i) : null;
+  const done = RESTS.filter(r => r.done).sort((a, b) => a.keep - b.keep), run = RESTS.filter(r => !r.done && r !== view).sort((a, b) => a.c - b.c);
+  return `<div class="fx-chips" id="fx-chips">${[...done, ...run].map(fxChip).join('')}</div>`;
+}
+function fxChipsRefresh() {
+  if (!FOCUS.open) return;
+  if (FOCUS.phase === 'rest' && !restViewFor(FOCUS.i)) { fxGoNext(); return; }
+  const c = $('#fx-chips'); if (c) c.outerHTML = fxMiniHtml(); else renderFocus();
+}
+// Pastille du bas (vue séance) : une ligne par repos ; un seul repos = la pastille d'avant
+function restPill() {
+  const el = $('#rest'); if (!el) return;
+  const rs = RESTS.slice().sort((a, b) => a.c - b.c);
+  if (!rs.length) { el.hidden = true; el.className = 'rest'; return; }
+  el.hidden = false;
+  if (rs.length === 1) {
+    const r = rs[0];
+    el.className = 'rest' + (r.done ? ' done' : '');
+    el.innerHTML = `<span id="rest-label">${r.done ? 'À toi' : 'Repos'}</span><b id="rest-time" data-rt="${esc(r.ex)}">${rtClock(r)}</b><button data-a="rest-plus" data-ex="${esc(r.ex)}">+15 s</button><button data-a="rest-stop" data-ex="${esc(r.ex)}" aria-label="Passer le repos">Passer</button>`;
+    return;
+  }
+  el.className = 'rest multi';
+  const glab = r => { const ex = S.exercises[r.ex]; return ex ? (GL[ex.group] || ex.name) : 'Repos'; };
+  el.innerHTML = rs.map(r => {
+    const ex = S.exercises[r.ex], g = glab(r), lab = ex && rs.some(o => o !== r && glab(o) === g) ? ex.name : g;
+    return `<div class="rest-row ${r.done ? 'done' : ''}" title="${esc(ex ? ex.name : 'Repos')}"><i style="background:${restCol(r)}"></i><span class="rl">${r.done ? 'À toi · ' : ''}${esc(lab)}</span><b data-rt="${esc(r.ex)}">${rtClock(r)}</b><button data-a="rest-plus" data-ex="${esc(r.ex)}">+15 s</button><button data-a="rest-stop" data-ex="${esc(r.ex)}" aria-label="${r.done ? 'Fermer' : 'Passer le repos'}">${r.done ? 'OK' : 'Passer'}</button></div>`;
+  }).join('');
+}
+function tickRest() {
+  const now = Date.now(); let changed = false, buzz = false, goNext = false;
+  const view = FOCUS.open && FOCUS.phase === 'rest' ? restViewFor(FOCUS.i) : null;
+  for (const r of RESTS.slice()) {
+    if (!r.done && r.end <= now) {
+      buzz = true; changed = true;
+      if (r === view) { restDrop(r); goNext = true; continue; }
+      const e = focusEntries().find(x => x.ex === r.ex);
+      if (RESTS.length > 1 && (!e || firstTodo(e) < 0)) { restDrop(r); continue; }
+      r.done = true; r.keep = now + (FOCUS.open || RESTS.length > 1 ? 180000 : 6000);
+    } else if (r.done && r.keep <= now) { restDrop(r); changed = true; }
+  }
+  for (const el of document.querySelectorAll('[data-rt]')) { const r = restGet(el.dataset.rt); if (r && !r.done) el.textContent = rtClock(r); }
+  for (const el of document.querySelectorAll('[data-rtp]')) { const r = restGet(el.dataset.rtp); if (r) el.style.setProperty('--p', rtPct(r)); }
+  if (buzz) { try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch { } }
+  if (changed) { restSync(); restPill(); if (FOCUS.open) { if (goNext) fxGoNext(); else fxChipsRefresh(); } }
+}
+Object.assign(A, {
+  'rest-plus': el => {
+    const r = el?.dataset?.ex ? restGet(el.dataset.ex) : (FOCUS.open ? restViewFor(FOCUS.i) : RESTS[0]);
+    if (r && !r.done) { r.end += 15000; r.dur += 15; restSync(); tickRest(); return; }
+    startRest(15, r ? r.ex : (FOCUS.open ? focusEntries()[FOCUS.i]?.ex : '') || '_');
+    if (FOCUS.open) renderFocus();
+  },
+  'rest-stop': el => {
+    const ex = el?.dataset?.ex; if (ex) stopRest(ex); else stopRest();
+    if (FOCUS.open) fxChipsRefresh();
+  },
+  'fx-goex': el => {
+    const es = focusEntries(), i = es.findIndex(x => x.ex === el.dataset.ex); if (i < 0) return;
+    FOCUS.i = i; const f = firstTodo(es[i]); FOCUS.j = f >= 0 ? f : 0; fxRestOrSet(f); renderFocus(); $('#focus').scrollTop = 0;
   }
 });
 </script>
