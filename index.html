@@ -860,6 +860,24 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .rest-row .rl small{font-weight:500;opacity:.75;font-size:13px}
 .rest-row.done{background:var(--accent);color:var(--on-accent);border-radius:16px}
 .rest-row.done button{color:var(--on-accent);background:rgba(0,0,0,.08)}
+
+/* ===== v8.10 : exercice terminé ===== */
+.ex.fold{gap:4px}
+.ex.fold .tags .tag-poly,.ex.fold .tags .tag-iso,.ex.fold .tags button.tag,.ex.fold .ex-endb{display:none}
+.ex.fin.fold{background:var(--surface-2);box-shadow:none;border-color:transparent}
+.ex-fold .fin-t{display:flex;flex-direction:column;flex:1;min-width:0;line-height:1.25}
+.ex-fold .fin-t b{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--good-text)}
+.ex-fold .fin-t span{font-size:14px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-fold.open{min-height:36px}
+.ex-endb{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;min-height:48px}
+.ex-endb svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.6}
+.fx-end{align-self:stretch;min-height:48px;border:1px solid var(--line-2);border-radius:14px;text-decoration:none;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 12px}
+.fx-fin{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;padding:12px 0 4px}
+.fx-fin-c{width:72px;height:72px;border-radius:50%;background:var(--good-text);display:grid;place-items:center}
+.fx-fin-c svg{width:38px;height:38px;stroke:#fff;fill:none;stroke-width:3}
+.fx-fin h3{font:800 32px/1 var(--f-d);margin:0}
+.fx-fin p{margin:0;font-size:15px;color:var(--ink-2)}
+.fx-fin .fx-go{align-self:stretch}
 </style>
 </head>
 <body>
@@ -2048,7 +2066,9 @@ function renderFocus() {
     const RV = restViewFor(FOCUS.i) || { ex: '', end: Date.now(), dur: 1, c: 0 }, left = restLeft(RV);
     body = `<div class="fx-rest"><div class="fx-ring" id="fx-ring" data-rtp="${esc(RV.ex)}" style="--p:${rtPct(RV)};--rc:${restCol(RV)}"><b id="fx-rest-time" data-rt="${esc(RV.ex)}">${Math.floor(left / 60)}:${pad(left % 60)}</b><span>${RESTS.length > 1 && RV.ex && RV.ex !== '_' ? 'Repos · ' + esc(GL[exOf(RV.ex).group] || exOf(RV.ex).name) : 'Repos'}</span></div>
       <div class="row"><button class="btn ghost" data-a="rest-plus">+15 s</button><button class="btn" data-a="fx-skip">Passer</button></div>
-      ${desc ? `<p class="fx-next">Ensuite : <b>${desc}</b></p>` : ''}${nx && nx.i === FOCUS.i ? fxEndHtml(e) : ''}</div>`;
+      ${desc ? `<p class="fx-next">Ensuite : <b>${desc}</b></p>` : ''}${fxEndHtml(e)}</div>`;
+  } else if (isFin(e)) {
+    body = fxFinHtml(e, d);
   } else if (!s) {
     body = `<div class="empty"><b>Aucune série</b>Ajoute une série avec le bouton + ci-dessus.</div>`;
   } else {
@@ -2069,7 +2089,7 @@ function renderFocus() {
 function fxListHtml(intro = false) {
   const es = focusEntries(), d = UI.date, r = refPick(d);
   const ref = r ? `<p class="small muted" style="margin:0 0 4px">Dernière séance comparable : <b>${fmtDayLong(r.d)}</b> · ${esc(dayGroups(r.d).filter(musG).map(k => GL[k]).join(' + '))} · ${lsMeta(r.d)}</p>` : '';
-  return `<h2>${intro ? 'Ta séance du jour' : 'Exercices de la séance'}</h2>${ref}<div class="list fx-list">${es.map((e, i) => { const ds = doneSets(e).length, tot = e.sets.filter(x => !x.w).length, lp = lastPerf(e.ex, d); const lt = lp ? `dernière fois ${notation(lp.sets, kindOf(e.ex), e.ex)}` : 'première fois'; return `<button class="li" data-a="fx-jump" data-i="${i}"><div class="main"><div class="t">${!intro && i === FOCUS.i ? '▸ ' : ''}${esc(exOf(e.ex).name)}</div><div class="s">${intro ? `${tot} série${tot > 1 ? 's' : ''}` : `${ds}/${tot} séries validées`} · ${esc(lt)}</div></div>${ds === tot && tot ? `<span class="pill good">${ICON.check} Fait</span>` : ICON.right}</button>`; }).join('')}</div>
+  return `<h2>${intro ? 'Ta séance du jour' : 'Exercices de la séance'}</h2>${ref}<div class="list fx-list">${es.map((e, i) => { const ds = doneSets(e).length, tot = e.sets.filter(x => !x.w).length, lp = lastPerf(e.ex, d); const lt = lp ? `dernière fois ${notation(lp.sets, kindOf(e.ex), e.ex)}` : 'première fois'; return `<button class="li" data-a="fx-jump" data-i="${i}"><div class="main"><div class="t">${!intro && i === FOCUS.i ? '▸ ' : ''}${esc(exOf(e.ex).name)}</div><div class="s">${intro ? `${tot} série${tot > 1 ? 's' : ''}` : `${ds}/${tot} séries validées`} · ${esc(lt)}</div></div>${ds === tot && tot ? `<span class="pill good">${ICON.check} Terminé</span>` : ICON.right}</button>`; }).join('')}</div>
     ${intro ? `<div class="row end"><button class="btn" data-a="sheet-close">C'est parti</button></div>` : `<div class="row between wrap"><button class="btn ghost" data-a="fx-addex">Ajouter un exercice</button><button class="btn" data-a="sheet-close">Fermer</button></div>`}`;
 }
 
@@ -3673,15 +3693,16 @@ function sessSummary(d) {
 }
 function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
-  const allOk = (e.sets || []).length > 0 && e.sets.every((z, k) => z.ok || skipW(e, k)), fold = allOk && exFold(d, i);
-  return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''}" data-i="${i}">
+  const allOk = (e.sets || []).length > 0 && e.sets.every((z, k) => z.ok || skipW(e, k)), fin = isFin(e), open = !!(UI.exOpen && UI.exOpen[d + ':' + i]), fold = fin ? !open : allOk && exFold(d, i);
+  return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''} ${fin ? 'fin' : ''}" data-i="${i}">
     <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
-    ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}"><span class="chk">${ICON.check}</span><span>${esc(notation(ds, kind, e.ex))}</span>${lp ? cmpLast(e, lp) : ''}</button>` : ''}
+    ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}" aria-label="Terminé, voir le détail des séries"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>${ds.length} série${ds.length > 1 ? 's' : ''} · ${esc(notation(ds, kind, e.ex))}</span></span>${lp ? cmpLast(e, lp) : ''}</button>` : fin ? `<button class="ex-fold open" data-a="ex-refold" data-i="${i}"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>Replier le détail</span></span></button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
     ${(() => { const sg = overload(e, d); return sg ? `<button class="sugg" data-a="ex-sugg" data-i="${i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''; })()}
     ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}
     <div class="sets">${(e.sets || []).map((s, j) => warmLab(e, j, kind) + setRow(e, i, j, d, kind)).join('')}</div>
+    ${canEnd(e) ? `<button class="btn ghost block ex-endb" data-a="ex-end" data-i="${i}">${ICON.check}<span>Terminer l’exercice</span></button>` : ''}
     <div class="ex-actions">${lp && (e.sets || []).some(x => !x.ok) ? `<button class="lnk" data-a="ex-fill" data-i="${i}">Comme la dernière fois</button>` : ''}<button class="lnk" data-a="set-add" data-i="${i}">+ Série</button>${kind !== 'cardio' ? `<button class="lnk" data-a="set-drop" data-i="${i}">+ Dégressive</button><button class="lnk" data-a="set-warm" data-i="${i}">+ Échauffement</button>` : ''}
       <form class="quick" data-submit="quick" data-i="${i}"><input id="q-${i}" placeholder="${kind === 'cardio' ? 'min/km/bpm ex. 35/5,2/128' : kind === 'bw' ? (isPdc(kind, e.ex) ? 'ex. 3x12 ou 15/15/10 · +10 = lest' : 'ex. 3x45') : 'ex. 4x10x59 ou 22/26/30 x10'}" autocomplete="off" enterkeyhint="done" aria-label="Saisie rapide"><button class="btn sm ghost" type="submit">OK</button></form></div>
   </article>`;
@@ -4343,7 +4364,7 @@ const A = {
   'ex-add': el => { if (el.dataset.close && !$('#sheet-wrap').hidden) { closeSheet(); toast(`${exOf(el.dataset.id).name} ajouté à la séance`); } const s = ensureSession(UI.date); s.entries.push(newEntry(el.dataset.id, UI.date)); const g = exOf(el.dataset.id).group; if (g && !s.groups.includes(g)) s.groups.push(g); UI.addQ = ''; touch('sessions', UI.date); render(); const cards = $$('#cards article'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
   'ex-menu': el => { const { i, e } = curEntry(el); if (!e) return; const n = S.sessions[UI.date].entries.length; openSheet(`<h2>${esc(exOf(e.ex).name)}</h2>${exMuscleTxt(e.ex) ? `<p class="small muted">Travaille : ${exMuscleTxt(e.ex)}</p>` : ''}<div class="list">
       ${i > 0 ? `<button class="opt" data-a="ex-move" data-i="${i}" data-step="-1">Monter</button>` : ''}${i < n - 1 ? `<button class="opt" data-a="ex-move" data-i="${i}" data-step="1">Descendre</button>` : ''}
-      ${(() => { const k = endN(e); return k ? `<button class="opt" data-a="ex-end" data-i="${i}">Terminer l’exercice (retirer ${k} série${k > 1 ? 's' : ''} non faite${k > 1 ? 's' : ''})</button>` : ''; })()}<button class="opt" data-a="ex-fiche" data-id="${e.ex}">Fiche : technique, muscles, prescription</button><button class="opt" data-a="see-prog" data-id="${e.ex}">Voir la progression</button><button class="opt" data-a="ex-edit" data-id="${e.ex}">Modifier l'exercice (nom, note machine)</button>
+      ${(() => { if (!canEnd(e)) return ''; const k = (e.sets || []).filter(x => !x.ok).length; return `<button class="opt" data-a="ex-end" data-i="${i}">Terminer l’exercice${k ? ` (retirer ${k} série${k > 1 ? 's' : ''} non faite${k > 1 ? 's' : ''})` : ''}</button>`; })()}<button class="opt" data-a="ex-fiche" data-id="${e.ex}">Fiche : technique, muscles, prescription</button><button class="opt" data-a="see-prog" data-id="${e.ex}">Voir la progression</button><button class="opt" data-a="ex-edit" data-id="${e.ex}">Modifier l'exercice (nom, note machine)</button>
       <button class="opt" data-a="ex-fill" data-i="${i}">Tout valider d'après la dernière fois</button>
       <button class="opt danger" data-a="ex-drop" data-i="${i}">Retirer de la séance</button></div><button class="btn ghost" data-a="sheet-close">Fermer</button>`); },
   'ex-move': el => { const s = S.sessions[UI.date], i = +el.dataset.i, j = i + +el.dataset.step; [s.entries[i], s.entries[j]] = [s.entries[j], s.entries[i]]; touch('sessions', UI.date); closeSheet(); render(); },
@@ -5735,18 +5756,20 @@ function nextExTodo(i) {
   return null;
 }
 function fxEndHtml(e) {
-  if (!endN(e)) return '';
-  const nx = nextExTodo(FOCUS.i), nm = nx ? exOf(focusEntries()[nx.i].ex).name : '';
+  if (!canEnd(e)) return '';
+  const nx = restPrefer(nextExTodo(FOCUS.i), FOCUS.i), nm = nx ? exOf(focusEntries()[nx.i].ex).name : '';
   return `<button class="lnk fx-end" data-a="fx-endex">${nx ? `Terminer l’exercice, passer à ${esc(nm)}` : 'Terminer l’exercice'}</button>`;
 }
 function endExercise(e) {
-  const n = endN(e); if (!n) return null;
-  const bak = e.sets.slice(); e.sets = e.sets.filter(x => x.ok); touch('sessions', UI.date);
-  return { bak, n };
+  if (!canEnd(e)) return null;
+  const bak = e.sets.slice(), fin0 = !!e.fin, n = e.sets.filter(x => !x.ok).length;
+  e.sets = e.sets.filter(x => x.ok); e.fin = true; touch('sessions', UI.date);
+  const k = (S.sessions[UI.date]?.entries || []).indexOf(e); if (k >= 0 && UI.exOpen) delete UI.exOpen[UI.date + ':' + k];
+  return { bak, n, fin0 };
 }
 function endToast(e, r) {
   const s = r.n > 1 ? 's' : '';
-  toast(`${exOf(e.ex).name} terminé : ${r.n} série${s} non faite${s} retirée${s}.`, { label: 'Annuler', fn: () => { e.sets = r.bak; touch('sessions', UI.date); if (FOCUS.open) renderFocus(); else render(); } });
+  toast(r.n ? `${exOf(e.ex).name} terminé : ${r.n} série${s} non faite${s} retirée${s}.` : `${exOf(e.ex).name} terminé.`, { label: 'Annuler', fn: () => { e.sets = r.bak; if (r.fin0) e.fin = true; else delete e.fin; touch('sessions', UI.date); if (FOCUS.open) renderFocus(); else render(); } });
 }
 Object.assign(A, {
   'fx-endex': () => {
@@ -5905,6 +5928,21 @@ Object.assign(A, {
     const es = focusEntries(), i = es.findIndex(x => x.ex === el.dataset.ex); if (i < 0) return;
     FOCUS.i = i; const f = firstTodo(es[i]); FOCUS.j = f >= 0 ? f : 0; fxRestOrSet(f); renderFocus(); $('#focus').scrollTop = 0;
   }
+});
+
+/* ================= v8.10 : exercice terminé ================= */
+const isFin = e => !!(e && e.fin && (e.sets || []).length && e.sets.every(x => x.ok));
+const canEnd = e => !!e && doneSets(e).length > 0 && !isFin(e);
+function fxFinHtml(e, d) {
+  const ds = doneSets(e), kind = kindOf(e.ex), lp = lastPerf(e.ex, d), es = focusEntries(), nx = restPrefer(nextExTodo(FOCUS.i), FOCUS.i), ne = nx ? es[nx.i] : null;
+  return `<div class="fx-fin"><span class="fx-fin-c">${ICON.check}</span><h3>Exercice terminé</h3>
+    <p>${ds.length} série${ds.length > 1 ? 's' : ''} · <b>${esc(notation(ds, kind, e.ex))}</b></p>${lp ? `<div>${cmpLast(e, lp)}</div>` : ''}
+    ${ne ? `<button class="btn accent fx-go" data-a="fx-goex" data-ex="${esc(ne.ex)}">Passer à ${esc(exOf(ne.ex).name)}</button>` : `<button class="btn accent fx-go" data-a="fx-finish">Fin de séance</button>`}
+    <button class="lnk" data-a="fx-reopen">Rouvrir l’exercice</button></div>`;
+}
+Object.assign(A, {
+  'ex-refold': el => { const i = +el.dataset.i; if (UI.exOpen) delete UI.exOpen[UI.date + ':' + i]; rerenderCard(i); },
+  'fx-reopen': () => { const e = focusEntries()[FOCUS.i]; if (!e) return; delete e.fin; touch('sessions', UI.date); FOCUS.j = Math.max(0, e.sets.length - 1); FOCUS.phase = 'set'; renderFocus(); }
 });
 </script>
 </body>
