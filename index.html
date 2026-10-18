@@ -878,6 +878,36 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .fx-fin h3{font:800 32px/1 var(--f-d);margin:0}
 .fx-fin p{margin:0;font-size:15px;color:var(--ink-2)}
 .fx-fin .fx-go{align-self:stretch}
+
+/* ===== v8.11 : doublons ===== */
+.pk-kind.pk-dup{background:color-mix(in srgb,var(--warn) 30%,transparent);color:var(--ink)}
+.dup-bn{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;box-sizing:border-box;padding:8px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 16%,transparent);border:1px solid color-mix(in srgb,var(--warn) 45%,transparent);color:var(--ink);text-align:left}
+.dup-bn b{font-size:14.5px}.dup-bn span{flex:1;font-size:13.5px;color:var(--ink-2)}.dup-bn svg{width:18px;height:18px}
+.dup-p{border:1px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.dup-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dup-xs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.dup-x{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.dup-x.keep{border-color:var(--ink)}
+.dup-x b{font-size:14.5px;overflow-wrap:anywhere}.dup-x span{font-size:12.5px;color:var(--muted)}
+.dup-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dup-f{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--warn) 14%,transparent);font-size:14px}
+.lnk.danger-l{color:var(--crit-text)}
+
+/* ===== v8.11 : séances types ===== */
+.tplw{position:relative;display:flex;min-width:0}
+.tplw .tpl{flex:1;min-width:0;padding-right:44px}
+.tpl-ed{position:absolute;top:2px;right:2px;width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:var(--ink-2);background:transparent}
+.tpl-ed svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tpl-new{border-style:dashed;background:transparent}
+.tf-list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tf-row{display:flex;align-items:center;gap:6px;padding:4px 4px 4px 10px;min-height:52px}
+.tf-row+.tf-row{border-top:1px solid var(--line)}
+.tf-n{font:700 16px var(--f-d);color:var(--muted);width:20px;text-align:center;flex:none}
+.tf-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.tf-t b{font-size:14.5px;font-weight:600;overflow-wrap:anywhere}.tf-t small{font-size:12px;color:var(--muted)}
+.tf-b{width:40px;height:44px;border-radius:10px;display:grid;place-items:center;color:var(--ink);background:transparent;flex:none}
+.tf-b:disabled{opacity:.3}
+.tf-b svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </head>
 <body>
@@ -1702,7 +1732,7 @@ function pkRow(id, d, opts = {}) {
   const e = exOf(id), lp = lastPerf(id, d), pr = presc(id), inS = opts.inSession;
   const last = lp ? `Dernière fois ${fmtDay(lp.date)} : <b>${esc(notation(lp.sets, e.kind, id))}</b>` : 'Jamais fait';
   const cat = catOf(id);
-  return `<div class="pk-row" data-cat="${cat || ''}"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${cat ? `<span class="pk-kind pk-${cat}">${CAT_L[cat]}</span>` : ''}${e.kind === 'bw' ? '<span class="pk-kind">PDC</span>' : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
+  return `<div class="pk-row" data-cat="${cat || ''}"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${cat ? `<span class="pk-kind pk-${cat}">${CAT_L[cat]}</span>` : ''}${e.kind === 'bw' ? '<span class="pk-kind">PDC</span>' : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}${dupOf(id).length ? '<span class="pk-kind pk-dup">Doublon ?</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
 }
 /* Sélection par muscle (feuille) */
 const pkState = () => (UI.pk ||= { sel: null, group: '', q: '' });
@@ -1749,6 +1779,7 @@ function exFicheHtml(id, d = UI.date) {
     ${map.length ? `<div><div class="ef-sec">Muscles travaillés</div><div class="ef-mus">${pkBig(id)}<div>${mrows}</div></div></div>` : ''}
     <div><div class="ef-sec">Comment faire</div><ol class="ef-cues">${exCues(id).map(x => `<li>${esc(x)}</li>`).join('')}</ol><p style="margin:8px 0 0"><a class="lnk" href="${yt}" target="_blank" rel="noopener">Voir une vidéo de la technique</a></p></div>
     <div class="ef-tiles"><div class="ef-tile"><span class="l">Dernière fois</span><span class="v">${lp ? esc(notation(lp.sets, ex.kind, id)) : '–'}</span><span class="d">${lp ? relDay(lp.date) : 'jamais fait'}</span></div><div class="ef-tile"><span class="l">Cette semaine</span><span class="v">${wk != null ? n1(wk) : '–'}</span><span class="d">${main && MUSL[main] ? `séries sur ${esc(MUSL[main].l.toLowerCase())}` : 'séries'}</span></div></div>
+    ${ficheDupHtml(id)}
     <div class="row wrap">${UI.pkBack ? `<button class="btn ghost" data-a="pk-back">Retour à la liste</button>` : `<button class="btn ghost" data-a="see-prog" data-id="${id}">Progression</button>`}${inS ? `<button class="btn" data-a="sheet-close">Fermer</button>` : `<button class="btn accent" data-a="ex-add" data-id="${id}" data-close="1">Ajouter à la séance</button>`}</div></div>`;
 }
 /* Conseils : séries et reps selon l'objectif */
@@ -3664,7 +3695,7 @@ VIEWS.seance = {
     ${dayBar(d, 'day')}
     ${musE ? `<button class="btn accent block fx-launch" data-a="focus-open">${ICON.expand} Mode salle plein écran</button>` : ''}
     ${lastSessHtml(d, musE)}
-    ${!musE && tpls.length ? `<section class="stack"><h2 class="sec-t">Séances types</h2><div class="tpls">${tpls.map(([id, t]) => `<button class="tpl ${tplSug && tplSug[0] === id ? 'sug' : ''}" data-a="tpl-apply" data-id="${id}"><b>${esc(t.name)}</b><span>${t.day ? cap(JOURS[t.day - 1]) + ' · ' : ''}${(t.ex || []).length} exercices</span></button>`).join('')}</div></section>` : ''}
+    ${!musE ? tplSectionHtml(tpls, tplSug) : ''}
     ${!musE ? recentSessHtml(d) : ''}
     ${!musE ? `<button class="btn ghost block" data-a="act-new" data-d="${d}">+ Activité : marche, run, vélo…</button>` : ''}
     ${grpFold(d, entries, groups) ? `<section class="grp-sum"><div class="chips">${groups.map(k => `<span class="chip on">${esc(GL[k] || k)}</span>`).join('')}</div><button class="lnk" data-a="grp-open">Modifier</button></section>` : `<section class="stack"><h2 class="sec-t">Groupes travaillés ${groups.length ? `<span class="tiny muted">${groups.length}</span>` : ''}</h2>
@@ -3680,7 +3711,7 @@ VIEWS.seance = {
       <label class="field">Ressenti (1 à 10)<input class="inp" id="sess-rpe" data-in="sess-rpe" inputmode="numeric" value="${v(s.rpe)}" placeholder="ex. 7"></label></div>
       <label class="field">Note<textarea class="inp" id="sess-note" data-in="sess-note" rows="2" placeholder="Sensations, fatigue, réglages…">${esc(s.note || '')}</textarea></label>
       ${(s.entries || []).length ? `<button class="btn accent block" data-a="sess-finish">Terminer la séance et voir le bilan</button>` : ''}
-      <div class="row wrap">${idx().days.includes(d) ? `<button class="btn sm ghost" data-a="rc-open" data-d="${d}">Image de la séance</button>` : ''}<button class="btn sm ghost" data-a="tpl-from-session">Enregistrer comme séance type</button><button class="btn sm ghost danger" data-a="sess-clear">Vider la séance</button></div>
+      <div class="row wrap">${idx().days.includes(d) ? `<button class="btn sm ghost" data-a="rc-open" data-d="${d}">Image de la séance</button>` : ''}${tplUpdBtn()}<button class="btn sm ghost" data-a="tpl-from-session">${tplUpdBtn() ? 'Enregistrer comme nouvelle séance type' : 'Enregistrer comme séance type'}</button><button class="btn sm ghost danger" data-a="sess-clear">Vider la séance</button></div>
     </section>` : ''}`;
   }
 };
@@ -3747,6 +3778,7 @@ function proposals(d) {
       ${rest.length ? `<details class="prop-more" id="pm-${g}" ${more}><summary>Autres exercices ${esc(GL[g])} (${rest.length})</summary>${rest.map(([id, e]) => propBtn(id, e, d)).join('')}</details>` : ''}</div>`);
   }
   const seg = catSeg(uniq(shown)); if (seg) out.splice(!q && sg.length > 1 ? 1 : 0, 0, seg);
+  { const dl = dupBanner(uniq(shown)); if (dl) out.splice(!q && sg.length > 1 ? 1 : 0, 0, dl); }
   if (q && !exact) out.push(`<button class="btn ghost block" data-a="ex-new" data-name="${esc(UI.addQ.trim())}">Créer « ${esc(UI.addQ.trim())} »</button>`);
   if (!q) out.push(`<button class="lnk" data-a="ex-new" data-name="">+ Créer un nouvel exercice</button>`);
   return out.join('') || `<p class="small muted" style="margin:0">Tous les exercices de ce groupe sont déjà dans la séance.</p>`;
@@ -4141,7 +4173,7 @@ VIEWS.reglages = {
     <section class="card stack"><h2 class="sec-t">Journées types</h2>
       ${(() => { const dt = dayTypes(), ks = Object.keys(dt).filter(k => dt[k]).sort(); return ks.length ? `<div class="list">${ks.map(k => `<div class="li"><div class="main"><div class="t">${cap(JOURS[k - 1])}</div><div class="s">${nf(dt[k].kcal)} kcal · ${Object.keys(dt[k].meals || {}).map(x => SL[x]).join(', ')}</div></div><button class="btn sm ghost danger" data-a="dt-del" data-w="${k}">Supprimer</button></div>`).join('')}</div>` : '<p class="small muted" style="margin:0">Dans Nutrition, note une journée complète puis « Enregistrer comme journée type » : elle te sera proposée en un geste ce jour de la semaine.</p>'; })()}
     </section>
-    <section class="card stack"><div class="row between"><h2 class="sec-t">Exercices</h2><button class="btn sm ghost" data-a="ex-new" data-name="">Nouveau</button></div>
+    <section class="card stack"><div class="row between"><h2 class="sec-t">Exercices</h2><button class="btn sm ghost" data-a="ex-new" data-name="">Nouveau</button></div>${dupBanner(null)}
       ${GROUPS.map(g => { const list = Object.entries(S.exercises).filter(([, e]) => e.group === g.k && !e.archived).sort((a, b) => a[1].name.localeCompare(b[1].name, 'fr')); return list.length ? `<details class="card" style="padding:10px 12px;box-shadow:none"><summary><span><b>${g.l}</b> <span class="tiny muted">${list.length}</span></span></summary><div class="list">${list.map(([id, e]) => `<button class="li" data-a="ex-edit" data-id="${id}"><div class="main"><div class="t">${esc(e.name)}</div><div class="s">${KINDS.find(k => k.k === (e.kind || 'w')).l}${uses[id] ? ` · ${uses[id]} séance${uses[id] > 1 ? 's' : ''}` : ''}</div></div>${ICON.right}</button>`).join('')}</div></details>` : ''; }).join('')}
       ${archived.length ? `<details class="card" style="padding:10px 12px;box-shadow:none"><summary><span><b>Masqués</b> <span class="tiny muted">${archived.length}</span></span></summary><div class="list">${archived.map(([id, e]) => `<div class="li"><div class="main"><div class="t">${esc(e.name)}</div><div class="s">${GL[e.group] || ''} · historique conservé</div></div><button class="btn sm ghost" data-a="ex-restore" data-id="${id}">Réactiver</button></div>`).join('')}</div></details>` : ''}
     </section>
@@ -4198,7 +4230,7 @@ function exFormHtml(id, name = '') {
     <div class="row"><button class="btn ghost" data-a="sheet-close">Annuler</button><button class="btn" data-a="ex-save">Enregistrer</button></div></div>
     ${id && u ? `<p class="tiny muted">Utilisé dans ${u} séance${u > 1 ? 's' : ''} : le masquer le retire des propositions sans toucher à ton historique.</p>` : ''}`;
 }
-function tplFormHtml() {
+function tplFormHtmlOld() {
   const t = SHEET.ctx; const chosen = new Set(t.ex);
   const groups = uniq([...t.groups, ...t.ex.map(id => exOf(id).group)]).filter(Boolean);
   return `<h2>${t.id ? 'Modifier la séance type' : 'Nouvelle séance type'}</h2>
@@ -4407,7 +4439,7 @@ const A = {
   'tpl-from-session': () => { const s = S.sessions[UI.date]; if (!s) return; const ex = (s.entries || []).map(e => e.ex); SHEET.ctx = null; openSheet('', { id: null, name: (s.groups || []).map(g => GL[g]).join(' + ') || 'Ma séance', day: dow(UI.date) + 1, groups: [...(s.groups || [])], ex }); $('#sheet').innerHTML = tplFormHtml(); },
   'tpl-edit': el => { const id = el.dataset.id, t = id ? S.templates[id] : null; openSheet('', { id: id || null, name: t?.name || '', day: t?.day || null, groups: [...(t?.groups || [])], ex: [...(t?.ex || [])] }); $('#sheet').innerHTML = tplFormHtml(); },
   'tf-grp': el => { tfSyncFields(); const t = SHEET.ctx, g = el.dataset.g; t.groups = t.groups.includes(g) ? t.groups.filter(x => x !== g) : [...t.groups, g]; const sc = $('#sheet').scrollTop; $('#sheet').innerHTML = tplFormHtml(); $('#sheet').scrollTop = sc; },
-  'tpl-save': () => { tfSyncFields(); const t = SHEET.ctx; if (!t.name.trim()) { toast('Donne un nom à la séance type.'); return; } if (!t.ex.length) { toast('Coche au moins un exercice.'); return; } const id = t.id || 't-' + uid(); S.templates[id] = { name: t.name.trim(), day: t.day || null, groups: t.groups, ex: t.ex }; touch('templates', id); closeSheet(); render(); toast('Séance type enregistrée.'); },
+  'tpl-save': () => { tfSyncFields(); const t = SHEET.ctx; if (!t.name.trim()) { toast('Donne un nom à la séance type.'); return; } if (!t.ex.length) { toast('Coche au moins un exercice.'); return; } const id = t.id || 't-' + uid(); S.templates[id] = { name: t.name.trim(), day: t.day || null, groups: uniq([...t.groups, ...t.ex.map(x => exOf(x).group)]).filter(Boolean), ex: t.ex }; touch('templates', id); closeSheet(); render(); toast('Séance type enregistrée.'); },
   'tpl-del': () => { const id = SHEET.ctx.id; closeSheet(); confirmSheet({ title: 'Supprimer la séance type ?', text: `« ${esc(S.templates[id]?.name || '')} » sera supprimée. Tes séances passées ne changent pas.`, ok: 'Supprimer', danger: true, onOk: () => { delete S.templates[id]; touch('templates', id); render(); } }); },
   'nf-add': el => openSheet(composerHtml(el.dataset.s), { slot: el.dataset.s, j: null }),
   'nf-edit': el => { const it = S.nutrition[UI.ndate]?.meals?.[el.dataset.s]?.[+el.dataset.j]; if (it) openSheet(composerHtml(el.dataset.s, it, +el.dataset.j), { slot: el.dataset.s, j: +el.dataset.j, items: it.items, src: it.src }); },
@@ -4730,7 +4762,7 @@ const planOf = () => amAdmin() ? 'complet' : (AUTH.profile?.plan === 'complet' ?
 function canUse(k) { if (!BRICK[k]) return true; if (BRICK_DENY.has(k)) return false; if (planOf() === 'complet') return true; return brickTier(k) === 'gratuit' || (AUTH.profile?.options || []).includes(k); }
 const iaSleep = () => canUse('sommeil') && canUse('ia_sommeil');
 const ACT_BRICK = {
-  seances_types: 'tpl-apply tpl-edit tpl-save tpl-del tpl-from-session tpl-swap sess-redo', salle: 'focus-open', guide_exos: 'pk-open ex-fiche train-guide',
+  seances_types: 'tpl-apply tpl-edit tpl-save tpl-del tpl-from-session tpl-swap sess-redo tpl-upd', salle: 'focus-open', guide_exos: 'pk-open ex-fiche train-guide',
   coach: 'ex-sugg coach-toggle', ia_bilan: 'bilan-ia', progres: 'see-prog', muscles: 'mus-sel mus-src mus-all mus-add mus-add-to',
   nutrition: 'meal-now nf-add hq-add q-add nf-copyday dt-open nutri-off nutri-period fav-new', corps: 'weigh', sommeil: 'sl-open',
   import_sante: 'h-import h-paste guide hae-token hae-guide', withings: 'wt-connect wt-sync', ligue: 'lg-open', rituel: 'rit-open',
@@ -5944,6 +5976,200 @@ Object.assign(A, {
   'ex-refold': el => { const i = +el.dataset.i; if (UI.exOpen) delete UI.exOpen[UI.date + ':' + i]; rerenderCard(i); },
   'fx-reopen': () => { const e = focusEntries()[FOCUS.i]; if (!e) return; delete e.fin; touch('sessions', UI.date); FOCUS.j = Math.max(0, e.sets.length - 1); FOCUS.phase = 'set'; renderFocus(); }
 });
+
+/* ================= v8.11 : doublons d'exercices ================= */
+const DUP_STOP = new Set(['de', 'du', 'des', 'd', 'a', 'au', 'aux', 'la', 'le', 'les', 'l', 'en', 'avec', 'et', 'sur', 'un', 'une', 'pour', 'prise']);
+const DUP_SYN = {
+  couche: ['couche', 'couche banc', 'developpe couche', 'developpe couche barre', 'developpe couche banc', 'couche barre', 'bench press', 'bench'],
+  'incline haltere': ['incline haltere', 'developpe incline haltere'],
+  'incline barre': ['incline barre', 'developpe incline barre', 'developpe incline'],
+  'ecarte poulie haute': ['ecarte poulie haute', 'vis vis', 'poulie vis vis', 'ecarte vis vis', 'ecarte poulie vis vis', 'cable crossover', 'crossover'],
+  'pec deck': ['pec deck', 'peck deck', 'butterfly', 'pec deck machine', 'butterfly machine'],
+  dip: ['dip', 'dip barre parallele', 'dip parallele'],
+  pompe: ['pompe', 'push up', 'pushup'],
+  traction: ['traction', 'pull up', 'traction pronation', 'traction barre fixe'],
+  'tirage vertical': ['tirage vertical', 'tirage vertical large', 'tirage poitrine', 'lat pulldown', 'tirage vertical poulie', 'tirage poulie haute'],
+  'tirage horizontal': ['tirage horizontal', 'tirage horizontal poulie', 'rowing assis', 'rowing assis poulie', 'seated row', 'rowing poulie', 'tirage assis'],
+  'rowing barre': ['rowing barre', 'rowing buste penche', 'rowing penche', 'barbell row'],
+  'rowing haltere': ['rowing haltere', 'rowing haltere un bra', 'rowing un bra'],
+  'developpe militaire': ['developpe militaire', 'developpe militaire barre', 'military press', 'overhead press'],
+  'developpe assis haltere': ['developpe assis haltere', 'developpe haltere assis', 'developpe epaule haltere'],
+  'elevation laterale': ['elevation laterale', 'elevation laterale haltere', 'ecarte debout', 'ecarte lateral', 'lateral raise'],
+  oiseau: ['oiseau', 'arriere epaule', 'reverse fly', 'elevation posterieure', 'oiseau haltere', 'reverse pec deck'],
+  'face pull': ['face pull', 'facepull', 'tirage visage'],
+  shrug: ['shrug', 'haussement epaule'],
+  'curl barre ez': ['curl barre ez', 'curl ez', 'curl barre'],
+  'curl marteau': ['curl marteau', 'hammer curl'],
+  'curl pupitre': ['curl pupitre', 'larry scott', 'curl larry scott', 'preacher curl'],
+  'barre front': ['barre front', 'skull crusher', 'extension triceps couche'],
+  'triceps poulie haute': ['triceps poulie haute', 'extension triceps poulie haute', 'pushdown', 'triceps pushdown'],
+  'extension nuque': ['extension nuque', 'extension nuque haltere', 'extension triceps nuque', 'french press'],
+  squat: ['squat', 'squat barre', 'back squat'],
+  'presse cuisse': ['presse', 'presse cuisse', 'leg press', 'presse jambe'],
+  'leg extension': ['leg extension', 'extension jambe', 'extension quadricep', 'leg extension machine'],
+  'leg curl': ['leg curl', 'leg curl allonge', 'curl jambe', 'leg curl machine', 'curl ischio'],
+  'sdt jambe tendue': ['souleve terre jambe tendue', 'sdt jambe tendue', 'rdl', 'souleve terre roumain', 'sdt roumain', 'romanian deadlift'],
+  'souleve terre': ['souleve terre', 'sdt', 'deadlift'],
+  'hip thrust': ['hip thrust', 'hip thrust barre'],
+  'fente bulgare': ['fente bulgare', 'split squat bulgare', 'bulgarian split squat'],
+  'mollet debout': ['extension mollet', 'mollet debout', 'extension mollet debout', 'calf raise', 'mollet machine debout'],
+  'mollet assis': ['mollet assis', 'extension mollet assis', 'seated calf'],
+  'crunch poulie': ['crunch poulie', 'crunch corde', 'crunch poulie haute'],
+  'releve jambe': ['releve jambe', 'leg raise', 'releve jambe suspendu'],
+  gainage: ['gainage', 'planche', 'plank'],
+  abducteur: ['abducteur', 'abducteur machine'],
+  adducteur: ['adducteur', 'adducteur machine'],
+  'extension lombaire': ['extension lombaire', 'hyperextension', 'banc lombaire']
+};
+const dupWords = t => norm(t).replace(/œ/g, 'oe').replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(w => w && !DUP_STOP.has(w)).map(w => w.length > 3 && /[sx]$/.test(w) ? w.slice(0, -1) : w);
+const DUP_MAP = (() => { const m = {}; for (const [k, vs] of Object.entries(DUP_SYN)) for (const v of vs) m[dupWords(v).join(' ')] = k; return m; })();
+function dupKeys(name) {
+  const m = String(name || '').match(/^(.*?)\s*\(([^)]*)\)\s*$/), main = dupWords(m ? m[1] : name).join(' '), keys = [DUP_MAP[main] || main];
+  if (m) { const al = dupWords(m[2]).join(' '); if (DUP_MAP[al] || al.split(' ').length >= 2) keys.push(DUP_MAP[al] || al); }
+  return { keys, words: main.split(' ').filter(Boolean), flat: main, known: !!DUP_MAP[main] };
+}
+function dupLev(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 3;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) { const cur = [i]; for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; }
+  return prev[b.length];
+}
+const dupKeyOf = (a, b) => [a, b].sort().join('|');
+let DUP = null, DUP_V = -1;
+function dupPairs() {
+  if (DUP && DUP_V === VER) return DUP;
+  const no = new Set((S.settings.main || {}).dupNo || []);
+  const ex = Object.entries(S.exercises).filter(([, e]) => e && !e.archived).map(([id, e]) => ({ id, g: e.group || '', ...dupKeys(e.name) }));
+  const out = [];
+  for (let i = 0; i < ex.length; i++) for (let j = i + 1; j < ex.length; j++) {
+    const a = ex[i], b = ex[j];
+    if (a.g && b.g && a.g !== b.g) continue;
+    if (no.has(dupKeyOf(a.id, b.id))) continue;
+    let lvl = '';
+    if (a.keys.some(k => b.keys.includes(k))) lvl = 'sur';
+    else if (!(a.known && b.known)) {
+      const [sm, bg] = a.words.length <= b.words.length ? [a.words, b.words] : [b.words, a.words];
+      if (sm.length >= 2 && sm.every(w => bg.includes(w))) lvl = 'possible';
+      else if (a.flat.length >= 8 && dupLev(a.flat, b.flat) <= 2) lvl = 'possible';
+    }
+    if (lvl) out.push({ a: a.id, b: b.id, lvl });
+  }
+  out.sort((x, y) => (x.lvl === y.lvl ? 0 : x.lvl === 'sur' ? -1 : 1));
+  DUP = out; DUP_V = VER; return out;
+}
+const dupOf = id => dupPairs().filter(p => p.a === id || p.b === id).map(p => ({ other: p.a === id ? p.b : p.a, lvl: p.lvl }));
+// Exercice à garder par défaut : le plus utilisé, sinon celui du catalogue
+function dupKeep(a, b) { const ua = refUses(a), ub = refUses(b); if (ua !== ub) return ua > ub ? a : b; return CATX[a] ? a : CATX[b] ? b : a; }
+const usesTxt = id => { const n = refUses(id); return n ? `${n} séance${n > 1 ? 's' : ''}` : 'jamais utilisé'; };
+function dupBanner(ids) {
+  const ps = dupPairs().filter(p => !ids || ids.includes(p.a) || ids.includes(p.b)); if (!ps.length) return '';
+  const g = ids ? (exOf(ps[0].a).group || '') : '';
+  return `<button class="dup-bn" data-a="dup-open" data-g="${ids ? esc(g) : ''}"><b>${ps.length} doublon${ps.length > 1 ? 's' : ''} possible${ps.length > 1 ? 's' : ''}</b><span>Vérifier et fusionner</span>${ICON.right}</button>`;
+}
+function dupPairHtml(p) {
+  const A = exOf(p.a), B = exOf(p.b), k = dupKeep(p.a, p.b);
+  const side = id => `<div class="dup-x ${id === k ? 'keep' : ''}"><b>${esc(exOf(id).name)}</b><span>${esc(usesTxt(id))}${CATX[id] ? ' · catalogue' : ''}</span></div>`;
+  return `<div class="dup-p"><div class="dup-h"><span class="pk-kind ${p.lvl === 'sur' ? 'pk-dup' : ''}">${p.lvl === 'sur' ? 'Même exercice' : 'Peut-être le même'}</span><span class="tiny muted">${esc(GL[A.group || B.group] || '')}</span></div>
+    <div class="dup-xs">${side(p.a)}${side(p.b)}</div>
+    <div class="dup-acts"><button class="btn sm" data-a="dup-merge" data-keep="${k}" data-drop="${k === p.a ? p.b : p.a}">Garder « ${esc(exOf(k).name)} »</button><button class="btn sm ghost" data-a="dup-merge" data-keep="${k === p.a ? p.b : p.a}" data-drop="${k}">Garder l’autre</button><button class="lnk" data-a="dup-no" data-a1="${p.a}" data-b1="${p.b}">Pas un doublon</button></div></div>`;
+}
+function dupSheetHtml(g) {
+  const ps = dupPairs().filter(p => !g || exOf(p.a).group === g || exOf(p.b).group === g);
+  return `<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Exercices${g ? ' · ' + esc(GL[g] || g) : ''}</div><h2 style="margin:2px 0 0">Doublons possibles</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
+    <p class="small muted" style="margin:0">Fusionner garde un seul exercice : les séances et séances types de l’autre passent dessus, puis il est supprimé. Tu peux annuler juste après.</p>
+    ${ps.length ? `<div class="stack" style="gap:10px">${ps.map(dupPairHtml).join('')}</div>` : '<p class="small" style="margin:0">Aucun doublon trouvé.</p>'}
+    <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+function ficheDupHtml(id) {
+  if (!S.exercises[id]) return '';
+  const ds = dupOf(id), u = refUses(id);
+  const box = ds.map(x => `<div class="dup-f"><span>${x.lvl === 'sur' ? 'Doublon' : 'Doublon possible'} avec <b>« ${esc(exOf(x.other).name)} »</b> (${esc(usesTxt(x.other))})</span><div class="row wrap" style="gap:6px"><button class="btn sm" data-a="dup-merge" data-keep="${id}" data-drop="${x.other}">Garder celui-ci</button><button class="btn sm ghost" data-a="dup-merge" data-keep="${x.other}" data-drop="${id}">Garder l’autre</button><button class="lnk" data-a="dup-no" data-a1="${id}" data-b1="${x.other}">Pas un doublon</button></div></div>`).join('');
+  return `${box}<button class="lnk danger-l" data-a="ex-delete" data-id="${id}" style="align-self:flex-start">${u ? 'Masquer de ma liste' : 'Supprimer de ma liste'}</button>`;
+}
+function dupMerge(keep, drop) {
+  const K = S.exercises[keep], D = S.exercises[drop]; if (!K || !D || keep === drop) return;
+  const snap = { k: clone(K), d: clone(D), sess: {}, tpl: {} }; let n = 0;
+  for (const [d, s] of Object.entries(S.sessions)) {
+    const es = s.entries || [], b = es.find(e => e.ex === drop); if (!b) continue;
+    snap.sess[d] = clone(s); n++;
+    const k = es.find(e => e.ex === keep);
+    if (k) { const all = [...(k.sets || []), ...(b.sets || [])]; k.sets = [...all.filter(x => x.w), ...all.filter(x => !x.w)]; s.entries = es.filter(e => e !== b); }
+    else b.ex = keep;
+    touch('sessions', d);
+  }
+  for (const [tid, t] of Object.entries(S.templates)) if ((t.ex || []).includes(drop)) { snap.tpl[tid] = clone(t); t.ex = uniq(t.ex.map(x => x === drop ? keep : x)); touch('templates', tid); }
+  let kc = false; if (!K.note && D.note) { K.note = D.note; kc = true; } if (K.step == null && D.step != null) { K.step = D.step; kc = true; } if (!K.cat && D.cat) { K.cat = D.cat; kc = true; }
+  if (kc) touch('exercises', keep);
+  delete S.exercises[drop]; touch('exercises', drop);
+  if (UI.prog && UI.prog.ex === drop) UI.prog.ex = keep;
+  return { snap, n };
+}
+function dupUndo(keep, drop, r) {
+  S.exercises[keep] = r.snap.k; touch('exercises', keep);
+  S.exercises[drop] = r.snap.d; touch('exercises', drop);
+  for (const [d, s] of Object.entries(r.snap.sess)) { S.sessions[d] = s; touch('sessions', d); }
+  for (const [tid, t] of Object.entries(r.snap.tpl)) { S.templates[tid] = t; touch('templates', tid); }
+}
+Object.assign(A, {
+  'dup-open': el => { const g = el.dataset.g || ''; SHEET.ctx = null; openSheet(dupSheetHtml(g), { mode: 'dup', g }); },
+  'dup-merge': el => {
+    const keep = el.dataset.keep, drop = el.dataset.drop, dn = exOf(drop).name, kn = exOf(keep).name;
+    const r = dupMerge(keep, drop); if (!r) return;
+    const inDup = SHEET.ctx && SHEET.ctx.mode === 'dup';
+    if (inDup) $('#sheet').innerHTML = dupSheetHtml(SHEET.ctx.g); else closeSheet();
+    render();
+    toast(`« ${dn} » fusionné dans « ${kn} »${r.n ? ` (${r.n} séance${r.n > 1 ? 's' : ''})` : ''}.`, { label: 'Annuler', fn: () => { dupUndo(keep, drop, r); if (SHEET.ctx && SHEET.ctx.mode === 'dup') $('#sheet').innerHTML = dupSheetHtml(SHEET.ctx.g); render(); } });
+  },
+  'dup-no': el => {
+    const m = (S.settings.main ||= {}); m.dupNo = uniq([...(m.dupNo || []), dupKeyOf(el.dataset.a1, el.dataset.b1)]); touch('settings', 'main');
+    if (SHEET.ctx && SHEET.ctx.mode === 'dup') $('#sheet').innerHTML = dupSheetHtml(SHEET.ctx.g); else closeSheet();
+    render(); toast('Noté : ce ne sont pas des doublons.');
+  }
+});
+
+/* ================= v8.11 : séances types ================= */
+const TPL_PEN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></svg>';
+function tplSectionHtml(tpls, sug) {
+  const n = t => (t.ex || []).length;
+  const tiles = tpls.map(([id, t]) => `<div class="tplw"><button class="tpl ${sug && sug[0] === id ? 'sug' : ''}" data-a="tpl-apply" data-id="${id}"><b>${esc(t.name)}</b><span>${t.day ? cap(JOURS[t.day - 1]) + ' · ' : ''}${n(t)} exercice${n(t) > 1 ? 's' : ''}</span></button><button class="tpl-ed" data-a="tpl-edit" data-id="${id}" aria-label="Modifier ${esc(t.name)}">${TPL_PEN}</button></div>`).join('');
+  return `<section class="stack"><h2 class="sec-t">Séances types</h2><div class="tpls">${tiles}<button class="tpl tpl-new" data-a="tpl-edit" data-id=""><b>+ Nouvelle</b><span>${tpls.length ? 'séance type' : 'crée ta première séance type'}</span></button></div></section>`;
+}
+function tfChecksHtml(t) {
+  const chosen = new Set(t.ex), q = norm((t.q || '').trim());
+  const lab = ([id, e]) => `<label><input type="checkbox" data-ch="tf-ex" value="${id}" ${chosen.has(id) ? 'checked' : ''}> ${esc(e.name)}${chosen.has(id) ? ` <span class="tiny muted">#${t.ex.indexOf(id) + 1}</span>` : ''}</label>`;
+  const byName = (a, b) => a[1].name.localeCompare(b[1].name, 'fr');
+  if (q) {
+    const l = Object.entries(S.exercises).filter(([id, e]) => (!e.archived || chosen.has(id)) && norm(e.name).includes(q)).sort(byName);
+    return l.length ? l.map(([id, e]) => lab([id, e]).replace('</label>', ` <span class="tiny muted">${esc(GL[e.group] || '')}</span></label>`)).join('') : '<p class="small muted" style="margin:6px 0">Aucun exercice trouvé.</p>';
+  }
+  const groups = uniq([...t.groups, ...t.ex.map(id => exOf(id).group)]).filter(Boolean);
+  return groups.length ? groups.map(g => `<h5>${GL[g] || g}</h5>` + Object.entries(S.exercises).filter(([id, e]) => e.group === g && (!e.archived || chosen.has(id))).sort(byName).map(lab).join('')).join('') : '<p class="small muted" style="margin:6px 0">Choisis un groupe ou cherche un exercice.</p>';
+}
+function tplFormHtml() {
+  const t = SHEET.ctx;
+  const rows = t.ex.map((id, k) => `<div class="tf-row"><span class="tf-n">${k + 1}</span><span class="tf-t"><b>${esc(exOf(id).name)}</b><small>${esc(GL[exOf(id).group] || '')}</small></span><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Monter ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="1" ${k < t.ex.length - 1 ? '' : 'disabled'} aria-label="Descendre ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="tf-b" data-a="tf-rm" data-id="${id}" aria-label="Retirer ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
+  return `<h2>${t.id ? 'Modifier la séance type' : 'Nouvelle séance type'}</h2>
+    <div class="grid2"><label class="field">Nom<input class="inp" id="tf-name" value="${esc(t.name)}" placeholder="ex. Pecs / Dos A"></label>
+    <label class="field">Jour habituel<select class="inp" id="tf-day"><option value="">Aucun</option>${JOURS.map((j, k) => `<option value="${k + 1}" ${+t.day === k + 1 ? 'selected' : ''}>${cap(j)}</option>`).join('')}</select></label></div>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Dans la séance, dans l’ordre · ${t.ex.length}</span>${t.ex.length ? `<div class="tf-list">${rows}</div>` : '<p class="small muted" style="margin:0">Ajoute des exercices ci-dessous.</p>'}</div>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Ajouter des exercices</span>
+      <input class="inp" id="tf-q" data-in="tf-q" placeholder="Chercher un exercice" value="${esc(t.q || '')}" autocomplete="off" aria-label="Chercher un exercice">
+      <div class="chips">${GROUPS.map(g => `<button class="chip ${t.groups.includes(g.k) ? 'on' : ''}" data-a="tf-grp" data-g="${g.k}">${g.l}</button>`).join('')}</div>
+      <div class="checks" id="tf-checks">${tfChecksHtml(t)}</div></div>
+    <div class="row between wrap">${t.id ? `<button class="btn ghost danger" data-a="tpl-del">Supprimer</button>` : '<span></span>'}<div class="row"><button class="btn ghost" data-a="sheet-close">Annuler</button><button class="btn" data-a="tpl-save">Enregistrer</button></div></div>`;
+}
+function tfRerender() { const sc = $('#sheet').scrollTop; $('#sheet').innerHTML = tplFormHtml(); $('#sheet').scrollTop = sc; }
+function tplUpdBtn() { const s = S.sessions[UI.date], t = s && s.tpl && S.templates[s.tpl]; return t ? `<button class="btn sm ghost" data-a="tpl-upd">Mettre à jour « ${esc(t.name)} »</button>` : ''; }
+Object.assign(A, {
+  'tf-mv': el => { tfSyncFields(); const t = SHEET.ctx, k = t.ex.indexOf(el.dataset.id), j = k + +el.dataset.d; if (k < 0 || j < 0 || j >= t.ex.length) return; [t.ex[k], t.ex[j]] = [t.ex[j], t.ex[k]]; tfRerender(); },
+  'tf-rm': el => { tfSyncFields(); const t = SHEET.ctx; t.ex = t.ex.filter(x => x !== el.dataset.id); tfRerender(); },
+  'tpl-upd': () => {
+    const s = S.sessions[UI.date], t = s && S.templates[s.tpl]; if (!t) return;
+    openSheet('', { id: s.tpl, name: t.name || '', day: t.day || null, groups: uniq([...(t.groups || []), ...(s.groups || [])]), ex: uniq((s.entries || []).map(e => e.ex)) });
+    $('#sheet').innerHTML = tplFormHtml();
+  }
+});
+Object.assign(IN, { 'tf-q': el => { const t = SHEET.ctx; if (!t) return; t.q = el.value; const c = $('#tf-checks'); if (c) c.innerHTML = tfChecksHtml(t); } });
 </script>
 </body>
 </html>
