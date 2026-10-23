@@ -928,6 +928,25 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .fx-rest .fx-sc{max-width:100%}
 .tbl small.h-pos,.tbl small.h-note{display:block;font-size:11.5px;line-height:1.3;color:var(--muted);font-weight:400;white-space:normal}
 .tbl small.h-note{max-width:240px}
+
+/* v8.14 : muscles de la semaine */
+.wkm .sec-t{margin:0}
+.wkm-days{display:flex;flex-wrap:wrap;gap:6px}
+.wkm-d{font-size:12.5px;padding:4px 10px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.wkm-d b{font-weight:700;color:var(--ink)}
+.wkm-g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 16px}
+@media (max-width:340px){.wkm-g{grid-template-columns:minmax(0,1fr)}}
+.wkm-r{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:2px 8px}
+.wkm-l{font-size:13.5px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wkm-v{font-size:13px;font-weight:700}.wkm-v small{font-weight:500;color:var(--muted)}
+.wkm-b{grid-column:1 / -1;height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.wkm-b i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.wkm-r.ok .wkm-b i{background:var(--good)}.wkm-r.ok .wkm-v{color:var(--good)}
+.wkm-r.zero .wkm-l{color:var(--muted);font-weight:500}
+.wkm-miss{display:flex;flex-direction:column;gap:4px}.wkm-miss p{margin:0;font-size:14px;line-height:1.45}
+.wkm-line{display:flex;flex-direction:column;gap:6px}
+.wkm .banner.good{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good-text)}
+.wkm-r.ok .wkm-v{color:var(--good-text)}
 </style>
 </head>
 <body>
@@ -3700,7 +3719,7 @@ function weekBodyHtml() {
 VIEWS.accueil = {
   html() {
     const t = today();
-    return `${reqHomeHtml()}${homeHero(t)}${gameBar()}${coachCard(t)}${recapCard(t)}${todayCard(t)}${homeNutri(t)}
+    return `${reqHomeHtml()}${homeHero(t)}${gameBar()}${coachCard(t)}${recapCard(t)}${todayCard(t)}${wkMusHtml(weekStart(t))}${homeNutri(t)}
     <details class="wk" id="week-det" ${UI.weekOpen ? 'open' : ''}><summary><span class="wk-in"><span class="wk-row"><span class="sec-t">Ma semaine</span><span class="wk-sum">${weekSummary()}</span></span>${weekPills()}</span></summary>
       <div class="stack wk-body">${weekBodyHtml()}</div></details>`;
   }
@@ -3716,6 +3735,7 @@ VIEWS.seance = {
     ${dayBar(d, 'day')}
     ${musE ? `<button class="btn accent block fx-launch" data-a="focus-open">${ICON.expand} Mode salle plein écran</button>` : ''}
     ${lastSessHtml(d, musE)}
+    ${!musE && weekStart(d) === weekStart(today()) ? wkMusHtml(weekStart(d)) : ''}
     ${!musE ? tplSectionHtml(tpls, tplSug) : ''}
     ${!musE ? recentSessHtml(d) : ''}
     ${!musE ? `<button class="btn ghost block" data-a="act-new" data-d="${d}">+ Activité : marche, run, vélo…</button>` : ''}
@@ -6305,6 +6325,60 @@ function aiErrMsg(code) {
   if (code === 'unavailable') return 'Connexion impossible : vérifie le réseau et réessaie.';
   return undefined;
 }
+
+/* ================= v8.14 : muscles de la semaine (Accueil, Séance) ================= */
+const WK_MG = { quadriceps: 'jambes', ischios: 'jambes', adducteurs: 'jambes', trapezes: 'dos' };
+const WK_GROUPS = ['pecs', 'dos', 'epaules', 'biceps', 'triceps', 'jambes', 'fessiers', 'mollets', 'abdos'];
+const wkGrp = k => WK_MG[k] || k;
+function wkMus(w) {
+  const days = sessionDaysIn(w, addDays(w, 6)).filter(isMuscuDay), W = mwWork(days);
+  const rows = MUS.filter(M => !M.opt).map(M => { const r = W.rows.find(x => x.k === M.k), v = r ? r.v : 0; return { k: M.k, l: M.l, v, min: M.min, st: v >= M.min ? 'ok' : v > 0 ? 'part' : 'zero' }; });
+  return { days, rows };
+}
+// « Jambes (quadriceps, ischio-jambiers) », « Épaules (3/10) »
+function wkMissTxt(list, withN) {
+  const gs = uniq(list.map(r => wkGrp(r.k)));
+  return gs.map(g => { const ms = list.filter(r => wkGrp(r.k) === g), lab = GL[g] || g;
+    const det = ms.length > 1 || ms[0].k !== g ? ms.map(r => r.l.toLowerCase() + (withN ? ` ${n1(r.v)}/${r.min}` : '')).join(', ') : withN ? `${n1(ms[0].v)}/${ms[0].min}` : '';
+    return det ? `${esc(lab)} <span class="muted">(${esc(det)})</span>` : esc(lab); }).join(', ');
+}
+// Séance type qui touche le plus de muscles en retard (priorité aux muscles pas encore travaillés)
+function wkTplSug(rows) {
+  if (!canUse('seances_types')) return null;
+  const need = new Map(rows.filter(r => r.st !== 'ok').map(r => [r.k, r.st])); if (!need.size) return null;
+  let best = null;
+  for (const [id, tp] of Object.entries(S.templates)) {
+    const hit = new Set(); for (const ex of tp.ex || []) for (const [m, wg] of exMap(ex)) if (wg >= 1 && need.has(m)) hit.add(m);
+    const sc = [...hit].reduce((a, m) => a + (need.get(m) === 'zero' ? 1.5 : 1), 0);
+    if (sc > 0 && (!best || sc > best.sc)) best = { id, t: tp, sc };
+  }
+  return best;
+}
+function wkMusHtml(w) {
+  const t = today(), cw = weekStart(t), cur = w === cw, cfg = CFG(), { days, rows } = wkMus(w);
+  const left = cur ? 6 - dow(t) : 0, n = days.length;
+  const head = `<div class="row between" style="align-items:flex-start;gap:10px"><div><h2 class="sec-t">Muscles de la semaine</h2><span class="tiny muted">${cur ? `Semaine du ${fmtDM(w)} · ${left ? `${left} jour${left > 1 ? 's' : ''} restant${left > 1 ? 's' : ''}` : 'dernier jour'}` : `semaine du ${fmtDM(w)}`}</span></div><span class="pill ${n >= cfg.muscu ? 'good' : ''}">${n}/${cfg.muscu} séance${cfg.muscu > 1 ? 's' : ''}</span></div>`;
+  const dch = n ? `<div class="wkm-days">${days.map(d => `<span class="wkm-d"><b>${cap(JOURS[dow(d)].slice(0, 3))}.</b> ${esc(dayGroups(d).filter(musG).map(g => GL[g] || g).join(' · ') || 'muscu')}</span>`).join('')}</div>` : '';
+  if (!canUse('muscles')) {
+    const done = uniq(days.flatMap(dayGroups)).filter(musG), todo = WK_GROUPS.filter(g => !done.includes(g));
+    return `<section class="card stack wkm">${head}${dch || '<p class="small muted" style="margin:0">Pas encore de séance de muscu cette semaine.</p>'}
+      ${done.length ? `<div class="wkm-line"><span class="eyebrow">Travaillés</span><div class="chips">${done.map(g => `<span class="chip on">${esc(GL[g] || g)}</span>`).join('')}</div></div>` : ''}
+      ${todo.length ? `<div class="wkm-line"><span class="eyebrow">Pas encore travaillés</span><div class="chips">${todo.map(g => `<span class="chip">${esc(GL[g])}</span>`).join('')}</div></div>` : ''}</section>`;
+  }
+  const zero = rows.filter(r => r.st === 'zero'), part = rows.filter(r => r.st === 'part'), sug = wkTplSug(rows);
+  const bars = n ? `<div class="wkm-g" role="list">${rows.map(r => `<div class="wkm-r ${r.st}" role="listitem"><span class="wkm-l">${esc(r.l)}</span><span class="wkm-v num-t">${n1(r.v)}<small>/${r.min}</small></span><span class="wkm-b" aria-hidden="true"><i style="width:${Math.min(100, Math.round(r.v / r.min * 100))}%"></i></span></div>`).join('')}</div>` : '';
+  const msg = !n ? `<p class="small muted" style="margin:0">Pas encore de séance de muscu cette semaine.</p>`
+    : !zero.length && !part.length ? `<div class="banner good">Tous les muscles ont leur minimum de séries cette semaine.</div>`
+    : `<div class="wkm-miss">${zero.length ? `<p><b>Pas encore travaillé :</b> ${wkMissTxt(zero)}</p>` : ''}${part.length ? `<p><b>À compléter :</b> ${wkMissTxt(part, true)}</p>` : ''}</div>`;
+  const today0 = !(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio');
+  const act = sug && cur && (zero.length || part.length) ? (today0 ? `<button class="btn block" data-a="wkm-go" data-id="${sug.id}">Séance conseillée : ${esc(sug.t.name || 'séance type')}</button>` : `<p class="small" style="margin:0">Prochaine séance conseillée : <b>${esc(sug.t.name || 'séance type')}</b></p>`) : '';
+  return `<section class="card stack wkm">${head}${dch}${bars}${msg}${act}
+    ${n ? `<div class="row between wrap"><span class="tiny muted">Séries de la semaine / minimum conseillé. Un muscle qui aide compte pour ½.</span><button class="lnk" data-a="wkm-det" data-w="${w}">Détail par muscle</button></div>` : ''}</section>`;
+}
+Object.assign(A, {
+  'wkm-go': el => { const t = today(); UI.date = t; if (!(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio')) applyTemplate(el.dataset.id); UI.tab = 'seance'; UI.addQ = ''; saveUI(); render(); window.scrollTo({ top: 0 }); },
+  'wkm-det': el => { const w = el.dataset.w; openSheet(`<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Semaine du ${fmtDM(w)}</div><h2 style="margin:2px 0 0">Travail par muscle</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>${mwWeekHtml(w)}<div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`); }
+});
 </script>
 </body>
 </html>
