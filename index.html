@@ -2556,7 +2556,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
   } catch (e) {
     const code = e && e.code;
     if (text && code !== 'cancelled' && applySleep(c, parseSleepText(text))) c.err = '';
-    else c.err = { cancelled: '', plan_locked: 'Lecture automatique non incluse dans ta formule : colle le texte de la capture ou saisis les valeurs.', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? 'Lecture interrompue, réessaie.';
+    else c.err = { cancelled: '', plan_locked: 'Lecture automatique non incluse dans ta formule : colle le texte de la capture ou saisis les valeurs.', not_granted: 'Lecture refusée : saisis les valeurs à la main.', sampling_disabled: 'Lecture indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance la lecture.', image_rejected: 'Image refusée : fais une capture d’écran (pas une photo de l’écran).', images_unavailable: 'Lecture d’image indisponible ici : colle le texte de la capture.' }[code] ?? aiErrMsg(code) ?? 'Lecture interrompue, réessaie.';
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(code)) SAMPLE_OFF = true;
     if (code === 'images_unavailable') SAMPLE_IMG = false;
   } finally {
@@ -4089,7 +4089,7 @@ Réponds uniquement avec un objet JSON, sans texte autour, de la forme :
     st.textContent = 'Estimation prête : ajuste si besoin, puis ajoute.';
   } catch (e) {
     const c = e && e.code;
-    const msg = { cancelled: '', plan_locked: 'Option non incluse dans ta formule : saisis les valeurs à la main.', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c];
+    const msg = { cancelled: '', plan_locked: 'Option non incluse dans ta formule : saisis les valeurs à la main.', not_granted: 'Estimation refusée : saisis les valeurs à la main.', sampling_disabled: 'Estimation indisponible sur ce compte.', rate_limited: 'Trop de demandes pour le moment, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance l’estimation.', image_rejected: 'Photo refusée : essaie une autre image.', refused: 'Estimation impossible pour cette description.', session_expired: 'Reconnecte-toi à Claude puis réessaie.' }[c] ?? aiErrMsg(c);
     if (['not_granted', 'sampling_disabled', 'not_declared', 'capability_disabled', 'capability_removed'].includes(c)) SAMPLE_OFF = true;
     if (c === 'images_unavailable') SAMPLE_IMG = false;
     if (st) st.textContent = msg ?? 'Estimation interrompue, réessaie.';
@@ -4988,7 +4988,7 @@ const AI = {
     if (r.status === 429) throw mkErr('rate_limited');
     if (r.status === 403) { let j = null; try { j = await r.json(); } catch { } if (j && j.code === 'plan') { BRICK_DENY.add(j.feature || body.feature); throw mkErr('plan_locked', j.error); } throw mkErr('not_granted'); }
     if (r.status === 401) throw mkErr('not_granted');
-    if (!r.ok) throw mkErr('error', 'HTTP ' + r.status);
+    if (!r.ok) { let t = ''; try { t = await r.text(); } catch { } if (/credit balance|billing|crédit/i.test(t)) throw mkErr('credit', t.slice(0, 300)); throw mkErr(r.status >= 500 ? 'upstream' : 'error', 'HTTP ' + r.status + ' ' + t.slice(0, 200)); }
     const j = await r.json(); return j.json;
   }
 };
@@ -5642,7 +5642,7 @@ Réponds uniquement en JSON : {"synthese":"3 phrases max","priorites":[{"titre":
   catch (e) {
     const code = e && e.code;
     if (code === 'plan_locked') { BILAN_UI.iaBusy = false; render(); openSheet(lockSheetHtml('ia_bilan')); return; }
-    BILAN_UI.iaErr = { rate_limited: 'Trop de demandes, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance.', not_granted: 'Analyse IA non configurée.' }[code] || 'Analyse interrompue, réessaie.';
+    BILAN_UI.iaErr = { rate_limited: 'Trop de demandes, réessaie dans un instant.', invalid_json: 'Réponse illisible, relance.', not_granted: 'Analyse IA non configurée.' }[code] || aiErrMsg(code) || 'Analyse interrompue, réessaie.';
   }
   finally { BILAN_UI.iaBusy = false; if (UI.tab === 'progres') render(); }
 }
@@ -6297,6 +6297,14 @@ Object.assign(A, {
   'sn-save': () => snSave($('#sn-c')?.value),
   'sn-clear': () => snSave('')
 });
+
+/* ================= v8.13 : erreurs du service IA ================= */
+function aiErrMsg(code) {
+  if (code === 'credit') return amAdmin() ? 'Crédit de l’API IA épuisé : recharge ton compte Anthropic (console.anthropic.com, Plans & Billing), puis réessaie.' : 'Service IA momentanément indisponible, réessaie plus tard. En attendant, saisis les valeurs à la main.';
+  if (code === 'upstream') return 'Le service IA ne répond pas, réessaie dans un instant.';
+  if (code === 'unavailable') return 'Connexion impossible : vérifie le réseau et réessaie.';
+  return undefined;
+}
 </script>
 </body>
 </html>
