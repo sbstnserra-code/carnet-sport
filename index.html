@@ -6401,7 +6401,7 @@ function wkTplSug(rows) {
   return best;
 }
 const grpLe = g => g === 'dos' ? 'le dos' : 'les ' + (GL[g] || g).toLowerCase();
-function wkSugHtml(sug, rows, today0) {
+function wkSugHtmlOld(sug, rows, today0) {
   const nm = esc(sug.t.name || 'séance type'), k = sug.skip.length, sg = uniq(sug.skip.map(x => exOf(x).group).filter(Boolean));
   const r1 = sg.length === 1 ? rows.find(x => x.k === sg[0]) : null;
   const note = k ? `<p class="tiny muted wkm-note">Sans ${k > 1 ? `les ${k} exercices` : 'l’exercice'} pour ${sg.map(grpLe).join(' et ')} (${r1 ? `déjà ${n1(r1.v)}/${r1.min}` : 'déjà faits'} cette semaine)${today0 ? ` : ${sug.keep.length} exercice${sug.keep.length > 1 ? 's' : ''} ajouté${sug.keep.length > 1 ? 's' : ''}.` : '.'}</p>` : '';
@@ -6430,6 +6430,16 @@ Object.assign(A, {
     UI.tab = 'seance'; UI.addQ = ''; saveUI(); render(); window.scrollTo({ top: 0 });
   }
 });
+
+/* ================= v8.16 : libellé de la séance conseillée = ce qui est ajouté ================= */
+function wkSugHtml(sug, rows, today0) {
+  const k = sug.skip.length, tn = esc(sug.t.name || 'séance type'), sg = uniq(sug.skip.map(x => exOf(x).group).filter(Boolean));
+  const kg = uniq(sug.keep.map(x => exOf(x).group).filter(musG)), nm = k && kg.length ? kg.map(g => esc(GL[g] || g)).join(' + ') : tn;
+  const r1 = sg.length === 1 ? rows.find(x => x.k === sg[0]) : null, nk = sug.keep.length;
+  const note = k ? `<p class="tiny muted wkm-note">Tirée de ta séance type « ${tn} », sans ${k > 1 ? `les ${k} exercices` : 'l’exercice'} pour ${sg.map(grpLe).join(' et ')} (${r1 ? `déjà ${n1(r1.v)}/${r1.min}` : 'déjà faits'} cette semaine)${today0 ? ` : ${nk} exercice${nk > 1 ? 's' : ''} ajouté${nk > 1 ? 's' : ''}.` : '.'}</p>` : '';
+  return today0 ? `<div class="stack" style="gap:6px"><button class="btn block" data-a="wkm-go" data-id="${sug.id}" data-ex="${sug.keep.join(',')}">Séance conseillée : ${nm}</button>${note}</div>`
+    : `<div class="stack" style="gap:4px"><p class="small" style="margin:0">Prochaine séance conseillée : <b>${nm}</b></p>${note}</div>`;
+}
 </script>
 </body>
 </html>
