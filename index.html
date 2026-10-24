@@ -947,6 +947,8 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .wkm-line{display:flex;flex-direction:column;gap:6px}
 .wkm .banner.good{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good-text)}
 .wkm-r.ok .wkm-v{color:var(--good-text)}
+
+.wkm-note{margin:0;line-height:1.4}
 </style>
 </head>
 <body>
@@ -6332,7 +6334,7 @@ const WK_GROUPS = ['pecs', 'dos', 'epaules', 'biceps', 'triceps', 'jambes', 'fes
 const wkGrp = k => WK_MG[k] || k;
 function wkMus(w) {
   const days = sessionDaysIn(w, addDays(w, 6)).filter(isMuscuDay), W = mwWork(days);
-  const rows = MUS.filter(M => !M.opt).map(M => { const r = W.rows.find(x => x.k === M.k), v = r ? r.v : 0; return { k: M.k, l: M.l, v, min: M.min, st: v >= M.min ? 'ok' : v > 0 ? 'part' : 'zero' }; });
+  const rows = MUS.filter(M => !M.opt).map(M => { const r = W.rows.find(x => x.k === M.k), v = r ? r.v : 0; return { k: M.k, l: M.l, v, min: M.min, max: M.max, st: v >= M.min ? 'ok' : v > 0 ? 'part' : 'zero' }; });
   return { days, rows };
 }
 // « Jambes (quadriceps, ischio-jambiers) », « Épaules (3/10) »
@@ -6343,7 +6345,7 @@ function wkMissTxt(list, withN) {
     return det ? `${esc(lab)} <span class="muted">(${esc(det)})</span>` : esc(lab); }).join(', ');
 }
 // Séance type qui touche le plus de muscles en retard (priorité aux muscles pas encore travaillés)
-function wkTplSug(rows) {
+function wkTplSugOld(rows) {
   if (!canUse('seances_types')) return null;
   const need = new Map(rows.filter(r => r.st !== 'ok').map(r => [r.k, r.st])); if (!need.size) return null;
   let best = null;
@@ -6371,13 +6373,62 @@ function wkMusHtml(w) {
     : !zero.length && !part.length ? `<div class="banner good">Tous les muscles ont leur minimum de séries cette semaine.</div>`
     : `<div class="wkm-miss">${zero.length ? `<p><b>Pas encore travaillé :</b> ${wkMissTxt(zero)}</p>` : ''}${part.length ? `<p><b>À compléter :</b> ${wkMissTxt(part, true)}</p>` : ''}</div>`;
   const today0 = !(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio');
-  const act = sug && cur && (zero.length || part.length) ? (today0 ? `<button class="btn block" data-a="wkm-go" data-id="${sug.id}">Séance conseillée : ${esc(sug.t.name || 'séance type')}</button>` : `<p class="small" style="margin:0">Prochaine séance conseillée : <b>${esc(sug.t.name || 'séance type')}</b></p>`) : '';
-  return `<section class="card stack wkm">${head}${dch}${bars}${msg}${act}
+  const act = sug && cur && (zero.length || part.length) ? wkSugHtml(sug, rows, today0) : '';
+  return `<section class="card stack wkm">${head}${dch}${bars}${msg}${n ? wkOverHtml(rows) : ''}${act}
     ${n ? `<div class="row between wrap"><span class="tiny muted">Séries de la semaine / minimum conseillé. Un muscle qui aide compte pour ½.</span><button class="lnk" data-a="wkm-det" data-w="${w}">Détail par muscle</button></div>` : ''}</section>`;
 }
 Object.assign(A, {
   'wkm-go': el => { const t = today(); UI.date = t; if (!(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio')) applyTemplate(el.dataset.id); UI.tab = 'seance'; UI.addQ = ''; saveUI(); render(); window.scrollTo({ top: 0 }); },
   'wkm-det': el => { const w = el.dataset.w; openSheet(`<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Semaine du ${fmtDM(w)}</div><h2 style="margin:2px 0 0">Travail par muscle</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>${mwWeekHtml(w)}<div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`); }
+});
+
+/* ================= v8.15 : séance conseillée sans les exercices déjà faits ================= */
+function wkTplSug(rows) {
+  if (!canUse('seances_types')) return null;
+  const st = new Map(rows.map(r => [r.k, r.st])), need = new Set(rows.filter(r => r.st !== 'ok').map(r => r.k)); if (!need.size) return null;
+  let best = null;
+  for (const [id, tp] of Object.entries(S.templates)) {
+    const hit = new Set(), keep = [], skip = [];
+    for (const ex of (tp.ex || []).filter(x => S.exercises[x] && !S.exercises[x].archived)) {
+      const prim = exMap(ex).filter(([, wg]) => wg >= 1).map(([m]) => m), h = prim.filter(m => need.has(m));
+      h.forEach(m => hit.add(m));
+      if (!h.length && prim.some(m => st.get(m) === 'ok')) skip.push(ex); else keep.push(ex);
+    }
+    if (!hit.size) continue;
+    const sc = [...hit].reduce((a, m) => a + (st.get(m) === 'zero' ? 1.5 : 1), 0) - skip.length * .25;
+    if (!best || sc > best.sc) best = { id, t: tp, sc, keep, skip };
+  }
+  return best;
+}
+const grpLe = g => g === 'dos' ? 'le dos' : 'les ' + (GL[g] || g).toLowerCase();
+function wkSugHtml(sug, rows, today0) {
+  const nm = esc(sug.t.name || 'séance type'), k = sug.skip.length, sg = uniq(sug.skip.map(x => exOf(x).group).filter(Boolean));
+  const r1 = sg.length === 1 ? rows.find(x => x.k === sg[0]) : null;
+  const note = k ? `<p class="tiny muted wkm-note">Sans ${k > 1 ? `les ${k} exercices` : 'l’exercice'} pour ${sg.map(grpLe).join(' et ')} (${r1 ? `déjà ${n1(r1.v)}/${r1.min}` : 'déjà faits'} cette semaine)${today0 ? ` : ${sug.keep.length} exercice${sug.keep.length > 1 ? 's' : ''} ajouté${sug.keep.length > 1 ? 's' : ''}.` : '.'}</p>` : '';
+  return today0 ? `<div class="stack" style="gap:6px"><button class="btn block" data-a="wkm-go" data-id="${sug.id}" data-ex="${sug.keep.join(',')}">Séance conseillée : ${nm}</button>${note}</div>`
+    : `<div class="stack" style="gap:4px"><p class="small" style="margin:0">Prochaine séance conseillée : <b>${nm}</b></p>${note}</div>`;
+}
+function wkOverHtml(rows) {
+  const o = rows.filter(r => r.max && r.v > r.max); if (!o.length) return '';
+  return `<p class="small muted" style="margin:0">Au-delà du maximum conseillé : ${o.map(r => `${esc(r.l)} ${n1(r.v)}/${r.max}`).join(', ')}. Inutile d’en rajouter cette semaine.</p>`;
+}
+Object.assign(A, {
+  'wkm-go': el => {
+    const t = today(); UI.date = t;
+    if (!(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio')) {
+      const tp = S.templates[el.dataset.id], ids = (el.dataset.ex || '').split(',').filter(x => S.exercises[x] && !S.exercises[x].archived);
+      const full = tp && (tp.ex || []).filter(x => S.exercises[x] && !S.exercises[x].archived).every(x => ids.includes(x));
+      if (!ids.length || full) applyTemplate(el.dataset.id);
+      else {
+        const s = ensureSession(t), pre = s.entries.slice();
+        s.groups = uniq([...s.groups, ...ids.map(x => exOf(x).group).filter(Boolean)]);
+        for (const id of ids) if (!s.entries.some(e => e.ex === id)) s.entries.push(newEntry(id, t));
+        if (pre.length && pre.every(e => kindOf(e.ex) === 'cardio')) s.entries = [...s.entries.slice(pre.length), ...pre];
+        touch('sessions', t);
+      }
+    }
+    UI.tab = 'seance'; UI.addQ = ''; saveUI(); render(); window.scrollTo({ top: 0 });
+  }
 });
 </script>
 </body>
