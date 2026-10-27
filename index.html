@@ -2380,7 +2380,7 @@ function gameBar() {
 function quests(t) {
   const cfg = CFG(), tpl = templateFor(t), mus = isMuscuDay(t), car = isCardioDay(t), exm = hval(t, 'exmin') || 0, am = actMin(t);
   const q = [];
-  if (tpl || mus) q.push({ l: mus ? 'Séance faite' : `Séance ${tpl[1].name}`, s: mus ? `${nf(dayTonnage(t))} kg · ${muscuSets(t)} séries` : 'Prévue aujourd’hui', done: mus, p: mus ? 100 : 0, xp: 50, a: mus ? 'go-seance' : 'gym-go', attrs: mus ? `data-d="${t}"` : `data-tpl="${tpl[0]}"` });
+  if (tpl || mus) q.push({ l: mus ? 'Séance faite' : questSeance(t, tpl).l, s: mus ? `${nf(dayTonnage(t))} kg · ${muscuSets(t)} séries` : questSeance(t, tpl).s, done: mus, p: mus ? 100 : 0, xp: 50, a: mus ? 'go-seance' : 'gym-go', attrs: mus ? `data-d="${t}"` : `data-tpl="${tpl[0]}"` });
   else { const ok = car || exm >= WALK_MIN; q.push({ l: 'Repos actif · 30 min', s: car ? cardioDesc(t) : am ? `${cardioDesc(t)} · encore ${nf(WALK_MIN - am)} min` : exm ? `${nf(exm)} min d’exercice sur la Watch` : 'Marche, vélo, natation…', done: ok, p: ok ? 100 : Math.max(am, exm) / WALK_MIN * 100, xp: 25, a: 'act-new', attrs: '' }); }
   const mn = mealsNoted(t), kc = dayNutri(t).real.kcal;
   q.push({ l: 'Repas notés', v: `${mn}/3`, s: kc ? `${nf(kc)} kcal notées` : 'Détaillé, favori ou express', done: mn >= 3, p: mn / 3 * 100, xp: 15, a: 'meal-now', attrs: 'data-s="auto"' });
@@ -3731,7 +3731,7 @@ VIEWS.accueil = {
 VIEWS.seance = {
   html() {
     const d = UI.date, s = S.sessions[d], entries = s?.entries || [], groups = s?.groups || [];
-    const tplSug = templateFor(d), musE = entries.some(e => kindOf(e.ex) !== 'cardio');
+    const tplSug = recoTplSug(d), musE = entries.some(e => kindOf(e.ex) !== 'cardio');
     const tpls = Object.entries(S.templates).sort((a, b) => (+a[1].day || 9) - (+b[1].day || 9));
     return `
     ${dayBar(d, 'day')}
@@ -5413,6 +5413,7 @@ function homeHero(t) {
   const card = (eb, title, meta, beat, btns) => `<section class="card hero"><div class="hero-eb"><span>${eb}</span></div><h2>${esc(title)}</h2>${meta ? `<p class="hero-m">${meta}</p>` : ''}${beat}<div class="hero-b">${btns}</div></section>`;
   if (es.length && done && !todo) return card('SÉANCE FAITE', gl, `${done} séries · ${nf(dayTonnage(t))} kg soulevés`, '', `<button class="btn ghost-d" data-a="go-seance" data-d="${t}">Voir la séance</button>`);
   if (es.length) return card(done ? 'SÉANCE EN COURS' : 'SÉANCE PRÊTE', gl, `${done} / ${done + todo} séries validées`, '', `<button class="btn accent" data-a="gym-go">${done ? 'Reprendre la séance' : 'Démarrer la séance'}</button>`);
+  { const hr = heroReco(t, card); if (hr) return hr; }
   const sg = homeSug(t);
   if (!sg) return card('TA PREMIÈRE SÉANCE', 'Choisis tes groupes', 'Les exercices proposés s’affichent avec tes charges au fil des séances.', '', `<button class="btn accent" data-a="go-seance" data-d="${t}">Commencer</button>`);
   let beat = '';
@@ -6367,13 +6368,13 @@ function wkMusHtml(w) {
       ${done.length ? `<div class="wkm-line"><span class="eyebrow">Travaillés</span><div class="chips">${done.map(g => `<span class="chip on">${esc(GL[g] || g)}</span>`).join('')}</div></div>` : ''}
       ${todo.length ? `<div class="wkm-line"><span class="eyebrow">Pas encore travaillés</span><div class="chips">${todo.map(g => `<span class="chip">${esc(GL[g])}</span>`).join('')}</div></div>` : ''}</section>`;
   }
-  const zero = rows.filter(r => r.st === 'zero'), part = rows.filter(r => r.st === 'part'), sug = wkTplSug(rows);
+  const zero = rows.filter(r => r.st === 'zero'), part = rows.filter(r => r.st === 'part'), sug = null;
   const bars = n ? `<div class="wkm-g" role="list">${rows.map(r => `<div class="wkm-r ${r.st}" role="listitem"><span class="wkm-l">${esc(r.l)}</span><span class="wkm-v num-t">${n1(r.v)}<small>/${r.min}</small></span><span class="wkm-b" aria-hidden="true"><i style="width:${Math.min(100, Math.round(r.v / r.min * 100))}%"></i></span></div>`).join('')}</div>` : '';
   const msg = !n ? `<p class="small muted" style="margin:0">Pas encore de séance de muscu cette semaine.</p>`
     : !zero.length && !part.length ? `<div class="banner good">Tous les muscles ont leur minimum de séries cette semaine.</div>`
     : `<div class="wkm-miss">${zero.length ? `<p><b>Pas encore travaillé :</b> ${wkMissTxt(zero)}</p>` : ''}${part.length ? `<p><b>À compléter :</b> ${wkMissTxt(part, true)}</p>` : ''}</div>`;
   const today0 = !(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio');
-  const act = sug && cur && (zero.length || part.length) ? wkSugHtml(sug, rows, today0) : '';
+  const act = cur ? wkRecoHtml(t, today0) : '';
   return `<section class="card stack wkm">${head}${dch}${bars}${msg}${n ? wkOverHtml(rows) : ''}${act}
     ${n ? `<div class="row between wrap"><span class="tiny muted">Séries de la semaine / minimum conseillé. Un muscle qui aide compte pour ½.</span><button class="lnk" data-a="wkm-det" data-w="${w}">Détail par muscle</button></div>` : ''}</section>`;
 }
@@ -6440,6 +6441,100 @@ function wkSugHtml(sug, rows, today0) {
   return today0 ? `<div class="stack" style="gap:6px"><button class="btn block" data-a="wkm-go" data-id="${sug.id}" data-ex="${sug.keep.join(',')}">Séance conseillée : ${nm}</button>${note}</div>`
     : `<div class="stack" style="gap:4px"><p class="small" style="margin:0">Prochaine séance conseillée : <b>${nm}</b></p>${note}</div>`;
 }
+
+/* ================= v8.17 : séance du jour logique (récupération + manques de la semaine) ================= */
+const REC_Y = 3, REC_Y2 = 8; // séries effectives la veille / l'avant-veille au-delà desquelles le muscle se repose
+function recMus(d) {
+  const out = new Map(), y = mwWork([addDays(d, -1)]), y2 = mwWork([addDays(d, -2)]);
+  for (const r of y.rows) if (r.v >= REC_Y) out.set(r.k, { when: 1, v: r.v });
+  for (const r of y2.rows) if (r.v >= REC_Y2 && !out.has(r.k)) out.set(r.k, { when: 2, v: r.v });
+  return out;
+}
+// « Pectoraux, Triceps (travaillés hier) · Dos (gros volume avant-hier) » ; off = 1 quand on parle de demain
+function recTxt(rec, off = 0) {
+  const by = {}; for (const [m, o] of rec) { if (!MUSL[m] || MUSL[m].opt) continue; (by[o.when] ||= []).push(MUSL[m].l); }
+  const day = w => ['aujourd’hui', 'hier', 'avant-hier'][w - off] || 'récemment';
+  return Object.keys(by).sort().map(w => `${by[w].join(', ')} (${+w === 1 ? `travaillé${by[w].length > 1 ? 's' : ''} ${day(1)}` : `gros volume ${day(2)}`})`).join(' · ');
+}
+let RECO_C = {}, RECO_V = -1;
+function dayReco(d) {
+  if (!canUse('muscles') || !idx().days.length) return null;
+  if (RECO_V !== VER) { RECO_C = {}; RECO_V = VER; } if (RECO_C[d] !== undefined) return RECO_C[d];
+  const { rows } = wkMus(weekStart(d)), rec = recMus(d), st = new Map(rows.map(r => [r.k, r.st]));
+  const miss = rows.filter(r => r.st !== 'ok'), needR = miss.filter(r => !rec.has(r.k)), need = new Set(needR.map(r => r.k));
+  const tplDay = templateFor(d); let best = null;
+  if (need.size && canUse('seances_types')) for (const [id, tp] of Object.entries(S.templates)) {
+    const hit = new Set(), keep = [], rest = [], done = [];
+    for (const ex of (tp.ex || []).filter(x => S.exercises[x] && !S.exercises[x].archived)) {
+      const prim = exMap(ex).filter(([, wg]) => wg >= 1).map(([m]) => m);
+      if (prim.some(m => rec.has(m))) { rest.push(ex); continue; }
+      const h = prim.filter(m => need.has(m)); h.forEach(m => hit.add(m));
+      if (!h.length && prim.some(m => st.get(m) === 'ok')) done.push(ex); else keep.push(ex);
+    }
+    if (!hit.size) continue;
+    const sc = [...hit].reduce((a, m) => a + (st.get(m) === 'zero' ? 1.5 : 1), 0) - (rest.length + done.length) * .25 + (tplDay && tplDay[0] === id ? .3 : 0);
+    if (!best || sc > best.sc) best = { id, t: tp, sc, keep, rest, done };
+  }
+  let R;
+  if (best) { const part = best.rest.length + best.done.length, kg = uniq(best.keep.map(x => exOf(x).group).filter(musG)); R = { kind: 'tpl', ...best, label: part && kg.length ? kg.map(g => GL[g] || g).join(' + ') : (best.t.name || 'Séance type') }; }
+  else if (need.size) {
+    const ord = needR.slice().sort((a, b) => (a.st === 'zero' ? 0 : 1) - (b.st === 'zero' ? 0 : 1) || a.v / a.min - b.v / b.min);
+    const groups = uniq(ord.map(r => wkGrp(r.k))).slice(0, 3);
+    R = { kind: 'grp', groups, label: groups.map(g => GL[g] || g).join(' + ') };
+  } else R = { kind: miss.length ? 'rest' : 'ok' };
+  Object.assign(R, { rows, rec, miss, need });
+  return (RECO_C[d] = R);
+}
+const recoBtn = (R, txt, cls = 'btn block') => R.kind === 'tpl' ? `<button class="${cls}" data-a="wkm-go" data-id="${R.id}" data-ex="${R.keep.join(',')}">${txt}</button>` : `<button class="${cls}" data-a="reco-grp" data-g="${R.groups.join(',')}">${txt}</button>`;
+function recoNote(R, today0) {
+  if (R.kind === 'grp') return `<p class="tiny muted wkm-note">Aucune séance type ne couvre ça sans reprendre un muscle en récupération : choisis tes exercices dans ces groupes.</p>`;
+  if (R.kind !== 'tpl') return '';
+  const k = R.done.length + R.rest.length; if (!k) return '';
+  const gD = uniq(R.done.map(x => exOf(x).group).filter(Boolean)), gR = uniq(R.rest.map(x => exOf(x).group).filter(Boolean)).filter(g => !gD.includes(g)), parts = [];
+  if (gD.length) { const r1 = gD.length === 1 ? R.rows.find(x => x.k === gD[0]) : null; parts.push(`pour ${gD.map(grpLe).join(' et ')} (${r1 ? `déjà ${n1(r1.v)}/${r1.min}` : 'déjà faits'} cette semaine)`); }
+  if (gR.length) parts.push(`pour ${gR.map(grpLe).join(' et ')} (en récupération)`);
+  const nk = R.keep.length;
+  return `<p class="tiny muted wkm-note">Tirée de ta séance type « ${esc(R.t.name || 'séance type')} », sans ${k > 1 ? `les ${k} exercices` : 'l’exercice'} ${parts.join(' ni ')}${today0 ? ` : ${nk} exercice${nk > 1 ? 's' : ''} ajouté${nk > 1 ? 's' : ''}.` : '.'}</p>`;
+}
+// Carte « Muscles de la semaine » : récupération + séance conseillée (aujourd'hui, ou demain si la séance du jour est commencée)
+function wkRecoHtml(t, today0) {
+  const off = today0 ? 0 : 1, d = addDays(t, off), R = dayReco(d); if (!R) return '';
+  const rt = recTxt(R.rec, off), rl = rt ? `<p class="small" style="margin:0"><b>En récupération${off ? ' demain' : ''} :</b> ${esc(rt)}</p>` : '';
+  let main = '';
+  if (R.kind === 'tpl' || R.kind === 'grp') main = today0 ? `<div class="stack" style="gap:6px">${recoBtn(R, `Séance conseillée : ${esc(R.label)}`)}${recoNote(R, true)}</div>` : `<div class="stack" style="gap:4px"><p class="small" style="margin:0">Prochaine séance conseillée : <b>${esc(R.label)}</b></p>${recoNote(R, false)}</div>`;
+  else if (R.kind === 'rest') main = `<p class="small" style="margin:0">${off ? 'Demain' : 'Aujourd’hui'} : <b>repos, cardio ou mobilité</b>. Ce qui te manque est encore en récupération.</p>`;
+  return rl + main;
+}
+// Carte du haut de l'Accueil
+function heroReco(t, card) {
+  const R = dayReco(t); if (!R) return null;
+  const rt = recTxt(R.rec), rl = rt ? `<p class="hero-m">En récupération : ${esc(rt)}</p>` : '';
+  const other = `<button class="btn ghost-d" data-a="go-seance" data-d="${t}">Autre</button>`;
+  if (R.kind === 'tpl' || R.kind === 'grp') {
+    let from = null; if (R.kind === 'tpl') { const ks = new Set(R.keep); for (const d of idx().days.slice().reverse()) if (d < t && (S.sessions[d]?.entries || []).some(e => ks.has(e.ex) && doneSets(e).length)) { from = d; break; } }
+    let beat = ''; if (from) { const e = (S.sessions[from].entries || []).find(x => R.keep.includes(x.ex) && kindOf(x.ex) === 'w' && doneSets(x).length), b = e ? bestSet(doneSets(e)) : null; if (b && b.kg) beat = `<div class="hero-beat">${ICON.up.replace('<svg', '<svg class="ico"')}<span>À battre : <b>${esc(exOf(e.ex).name)} ${nf(b.kg, 2)} kg × ${b.r}</b></span></div>`; }
+    const meta = R.kind === 'grp' ? 'Choisis tes exercices dans ces groupes' : from ? `Dernière fois ${relDay(from)} · ${lsMeta(from)}` : 'Première fois avec ces exercices';
+    return card(`TA SÉANCE DU JOUR <small>ce qui te manque cette semaine</small>`, R.label, meta, beat + rl, recoBtn(R, 'Démarrer la séance', 'btn accent') + other);
+  }
+  if (R.kind === 'rest') return card('RÉCUPÉRATION', 'Repos, cardio ou mobilité', `Ce qui te manque cette semaine (${esc(uniq(R.miss.map(r => GL[wkGrp(r.k)] || r.l)).join(', '))}) doit encore récupérer.`, rl, `<button class="btn accent" data-a="act-new">Activité</button><button class="btn ghost-d" data-a="go-seance" data-d="${t}">Séance</button>`);
+  return card('SEMAINE DANS LA CIBLE', 'Séance libre ou repos', 'Tous les muscles ont leur minimum de séries cette semaine.', rl, `<button class="btn accent" data-a="go-seance" data-d="${t}">Faire une séance</button><button class="btn ghost-d" data-a="act-new">Activité</button>`);
+}
+// Quête « Séance … » de la carte du jour
+function questSeance(t, tpl) {
+  const R = dayReco(t), name = tpl[1].name || 'du jour';
+  if (R && (R.kind === 'tpl' || R.kind === 'grp') && R.label !== tpl[1].name) return { l: `Séance ${R.label}`, s: 'Conseillée aujourd’hui' };
+  if (R && R.kind === 'rest') return { l: `Séance ${name}`, s: 'Récupération conseillée' };
+  return { l: `Séance ${name}`, s: 'Prévue aujourd’hui' };
+}
+// Tuile mise en avant dans Séance : la séance type conseillée si elle est utilisée entière, aucune si elle est partielle
+function recoTplSug(d) {
+  if (d !== today()) return templateFor(d);
+  const R = dayReco(d); if (!R || R.kind === 'ok') return templateFor(d);
+  return R.kind === 'tpl' && !(R.rest.length + R.done.length) && S.templates[R.id] ? [R.id, S.templates[R.id]] : null;
+}
+Object.assign(A, {
+  'reco-grp': el => { const t = today(), gs = (el.dataset.g || '').split(',').filter(Boolean); UI.date = t; const s = ensureSession(t); s.groups = uniq([...(s.groups || []), ...gs]); touch('sessions', t); UI.pgF = gs[0] || null; UI.addQ = ''; UI.tab = 'seance'; saveUI(); render(); window.scrollTo({ top: 0 }); }
+});
 </script>
 </body>
 </html>
