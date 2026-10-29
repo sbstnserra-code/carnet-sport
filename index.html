@@ -949,6 +949,16 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .wkm-r.ok .wkm-v{color:var(--good-text)}
 
 .wkm-note{margin:0;line-height:1.4}
+
+/* v8.18 : commentaire par exercice */
+.ex-cm{display:flex;gap:7px;align-items:flex-start;width:100%;text-align:left;margin:0;padding:8px 10px;border-radius:10px;background:var(--surface-2);font-size:13.5px;line-height:1.4;color:var(--ink-2);overflow-wrap:anywhere}
+.ex-cm svg{width:14px;height:14px;flex:none;margin-top:2px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ex-cm.prev{background:transparent;padding:0 2px;color:var(--muted);font-style:italic}
+.ex.fold .ex-cm.prev{display:none}
+.lnk.ec-warn{color:var(--warn-text,var(--ink));text-decoration-color:var(--warn)}
+.fx-ecl{align-self:flex-start;font-size:13.5px;font-weight:600;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px;padding:4px 0}
+.fx-ecl.ec-warn{text-decoration-color:var(--warn)}
+.fx-ex .fx-ec{margin:2px 0 0}
 </style>
 </head>
 <body>
@@ -1285,7 +1295,7 @@ function idx() {
   const byEx = {}, days = [];
   for (const d of Object.keys(S.sessions).sort()) {
     const s = S.sessions[d]; let any = false;
-    for (const e of (s.entries || [])) { const ds = doneSets(e); if (!ds.length) continue; any = true; (byEx[e.ex] ||= []).push({ date: d, sets: ds, w: warmSets(e) }); }
+    for (const e of (s.entries || [])) { const ds = doneSets(e); if (!ds.length) continue; any = true; (byEx[e.ex] ||= []).push({ date: d, sets: ds, w: warmSets(e), c: e.c || '' }); }
     if (any) days.push(d);
   }
   const uses = {}; for (const k in byEx) uses[k] = byEx[k].length;
@@ -2121,7 +2131,7 @@ function renderFocus() {
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
   const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
     <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
-    ${fxRefHtml(e, lp, kind, d)}
+    ${fxRefHtml(e, lp, kind, d)}${fxExNoteHtml(e, lp)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
     ${sg && FOCUS.phase === 'set' ? `<button class="sugg" data-a="ex-sugg" data-i="${FOCUS.i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''}</div>`;
   let cnt = 0, wc = 0;
@@ -3774,11 +3784,11 @@ function exCard(e, i, d) {
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}" aria-label="Terminé, voir le détail des séries"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>${ds.length} série${ds.length > 1 ? 's' : ''} · ${esc(notation(ds, kind, e.ex))}</span></span>${lp ? cmpLast(e, lp) : ''}</button>` : fin ? `<button class="ex-fold open" data-a="ex-refold" data-i="${i}"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>Replier le détail</span></span></button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
     ${(() => { const sg = overload(e, d); return sg ? `<button class="sugg" data-a="ex-sugg" data-i="${i}" data-inc="${sg.inc}">${ICON.up.replace('<svg', '<svg class="ico" style="width:16px;height:16px"')} ${esc(sg.msg)}</button>` : ''; })()}
-    ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}
+    ${ex.note ? `<p class="exnote">${esc(ex.note)}</p>` : ''}${exCmHtml(e, i, d, lp)}
     <div class="sets">${(e.sets || []).map((s, j) => warmLab(e, j, kind) + setRow(e, i, j, d, kind) + setNoteLine(e, i, j, d)).join('')}</div>
     ${canEnd(e) ? `<button class="btn ghost block ex-endb" data-a="ex-end" data-i="${i}">${ICON.check}<span>Terminer l’exercice</span></button>` : ''}
     <div class="ex-actions">${lp && (e.sets || []).some(x => !x.ok) ? `<button class="lnk" data-a="ex-fill" data-i="${i}">Comme la dernière fois</button>` : ''}<button class="lnk" data-a="set-add" data-i="${i}">+ Série</button>${kind !== 'cardio' ? `<button class="lnk" data-a="set-drop" data-i="${i}">+ Dégressive</button><button class="lnk" data-a="set-warm" data-i="${i}">+ Échauffement</button>` : ''}
-      <form class="quick" data-submit="quick" data-i="${i}"><input id="q-${i}" placeholder="${kind === 'cardio' ? 'min/km/bpm ex. 35/5,2/128' : kind === 'bw' ? (isPdc(kind, e.ex) ? 'ex. 3x12 ou 15/15/10 · +10 = lest' : 'ex. 3x45') : 'ex. 4x10x59 ou 22/26/30 x10'}" autocomplete="off" enterkeyhint="done" aria-label="Saisie rapide"><button class="btn sm ghost" type="submit">OK</button></form></div>
+      ${exCmLink(e, i, d, lp)}<form class="quick" data-submit="quick" data-i="${i}"><input id="q-${i}" placeholder="${kind === 'cardio' ? 'min/km/bpm ex. 35/5,2/128' : kind === 'bw' ? (isPdc(kind, e.ex) ? 'ex. 3x12 ou 15/15/10 · +10 = lest' : 'ex. 3x45') : 'ex. 4x10x59 ou 22/26/30 x10'}" autocomplete="off" enterkeyhint="done" aria-label="Saisie rapide"><button class="btn sm ghost" type="submit">OK</button></form></div>
   </article>`;
 }
 function setRow(e, i, j, d, kind) {
@@ -4439,7 +4449,7 @@ const A = {
   'ex-add': el => { if (el.dataset.close && !$('#sheet-wrap').hidden) { closeSheet(); toast(`${exOf(el.dataset.id).name} ajouté à la séance`); } const s = ensureSession(UI.date); s.entries.push(newEntry(el.dataset.id, UI.date)); const g = exOf(el.dataset.id).group; if (g && !s.groups.includes(g)) s.groups.push(g); UI.addQ = ''; touch('sessions', UI.date); render(); const cards = $$('#cards article'); cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' }); },
   'ex-menu': el => { const { i, e } = curEntry(el); if (!e) return; const n = S.sessions[UI.date].entries.length; openSheet(`<h2>${esc(exOf(e.ex).name)}</h2>${exMuscleTxt(e.ex) ? `<p class="small muted">Travaille : ${exMuscleTxt(e.ex)}</p>` : ''}<div class="list">
       ${i > 0 ? `<button class="opt" data-a="ex-move" data-i="${i}" data-step="-1">Monter</button>` : ''}${i < n - 1 ? `<button class="opt" data-a="ex-move" data-i="${i}" data-step="1">Descendre</button>` : ''}
-      ${(() => { if (!canEnd(e)) return ''; const k = (e.sets || []).filter(x => !x.ok).length; return `<button class="opt" data-a="ex-end" data-i="${i}">Terminer l’exercice${k ? ` (retirer ${k} série${k > 1 ? 's' : ''} non faite${k > 1 ? 's' : ''})` : ''}</button>`; })()}<button class="opt" data-a="ex-fiche" data-id="${e.ex}">Fiche : technique, muscles, prescription</button><button class="opt" data-a="see-prog" data-id="${e.ex}">Voir la progression</button><button class="opt" data-a="ex-edit" data-id="${e.ex}">Modifier l'exercice (nom, note machine)</button>
+      ${(() => { if (!canEnd(e)) return ''; const k = (e.sets || []).filter(x => !x.ok).length; return `<button class="opt" data-a="ex-end" data-i="${i}">Terminer l’exercice${k ? ` (retirer ${k} série${k > 1 ? 's' : ''} non faite${k > 1 ? 's' : ''})` : ''}</button>`; })()}<button class="opt" data-a="ec-open" data-i="${i}">Commentaire sur l’exercice</button><button class="opt" data-a="ex-fiche" data-id="${e.ex}">Fiche : technique, muscles, prescription</button><button class="opt" data-a="see-prog" data-id="${e.ex}">Voir la progression</button><button class="opt" data-a="ex-edit" data-id="${e.ex}">Modifier l'exercice (nom, note machine)</button>
       <button class="opt" data-a="ex-fill" data-i="${i}">Tout valider d'après la dernière fois</button>
       <button class="opt danger" data-a="ex-drop" data-i="${i}">Retirer de la séance</button></div><button class="btn ghost" data-a="sheet-close">Fermer</button>`); },
   'ex-move': el => { const i = +el.dataset.i; entMove(UI.date, i, i + +el.dataset.step); closeSheet(); render(); },
@@ -5652,7 +5662,7 @@ async function bilanIA() {
     seriesParSemaine: B.groupes.map(g => ({ groupe: g.l, series: +g.parSem.toFixed(1), frequence: +g.freq.toFixed(1) })),
     partPoly: B.poly + B.iso ? Math.round(B.poly / (B.poly + B.iso) * 100) : null,
     exercices: B.exos.map(e => ({ nom: e.nom, type: e.cat, seances: e.n, rm1_debut: +e.deb.toFixed(1), rm1_fin: +e.fin.toFixed(1), evolution_pct: +e.pct.toFixed(1) })),
-    seriesIdentiques: B.identiques.length, notesSeries: B.muscuJours.flatMap(dd => (S.sessions[dd]?.entries || []).flatMap(e => (e.sets || []).filter(x => x.ok && x.c).map(x => ({ date: dd, exercice: exOf(e.ex).name, note: x.c })))).slice(-30), corps: { poids: B.poids, masseGrasse_pct: B.gras, muscle_kg: B.muscle },
+    seriesIdentiques: B.identiques.length, notesExercices: B.muscuJours.flatMap(dd => (S.sessions[dd]?.entries || []).filter(e => e.c && doneSets(e).length).map(e => ({ date: dd, exercice: exOf(e.ex).name, note: e.c }))).slice(-30), notesSeries: B.muscuJours.flatMap(dd => (S.sessions[dd]?.entries || []).flatMap(e => (e.sets || []).filter(x => x.ok && x.c).map(x => ({ date: dd, exercice: exOf(e.ex).name, note: x.c })))).slice(-30), corps: { poids: B.poids, masseGrasse_pct: B.gras, muscle_kg: B.muscle },
     sommeil_h: B.sommeil, pas: B.pas, proteines_g: B.prot, kcal: B.kcal, constats: cs.map(x => `${x.niv}: ${x.titre} - ${x.constat}`)
   };
   const prompt = `Tu es coach en musculation et recomposition corporelle. Voici les données agrégées d'un pratiquant (objectif d'entraînement : ${TRAIN[trainKey()].l.toLowerCase()}, objectif nutrition : ${goalTxt}).
@@ -6308,7 +6318,7 @@ function fxCmLast(d) {
   return `<button class="lnk" data-a="fx-note" data-i="${L.i}" data-j="${L.j}">+ Commentaire sur ${L.i !== FOCUS.i ? esc(exOf(e.ex).name) + ', ' : ''}${lab}</button>`;
 }
 // Historique de l'exercice : commentaires de la séance
-function histNotes(x) {
+function histNotesOld(x) {
   const w = (x.w || []).map((z, k) => z.c ? `É${k + 1} : ${esc(z.c)}` : '').filter(Boolean), o = []; let n = 0;
   for (const z of x.sets || []) { if (!z.d) n++; if (z.c) o.push(`${z.d ? 'Dég.' : 'S' + n} : ${esc(z.c)}`); }
   const all = [...w, ...o]; return all.length ? `<small class="h-note">${all.join(' · ')}</small>` : '';
@@ -6534,6 +6544,46 @@ function recoTplSug(d) {
 }
 Object.assign(A, {
   'reco-grp': el => { const t = today(), gs = (el.dataset.g || '').split(',').filter(Boolean); UI.date = t; const s = ensureSession(t); s.groups = uniq([...(s.groups || []), ...gs]); touch('sessions', t); UI.pgF = gs[0] || null; UI.addQ = ''; UI.tab = 'seance'; saveUI(); render(); window.scrollTo({ top: 0 }); }
+});
+
+/* ================= v8.18 : commentaire par exercice ================= */
+const EC_CHIPS = ['Volontairement plus léger', 'Fatigue', 'Gêne / douleur', 'Mauvais sommeil', 'Travail technique', 'Machine différente', 'Manque de temps'];
+// Charge max du jour sous celle de la dernière fois (exercices à charge seulement)
+function exLighter(e, lp) {
+  if (!lp || kindOf(e.ex) !== 'w') return false;
+  const ds = doneSets(e); if (!ds.length) return false;
+  const a = Math.max(...ds.map(x => +x.kg || 0)), b = Math.max(...(lp.sets || []).map(x => +x.kg || 0));
+  return b > 0 && a < b - 0.01;
+}
+function exCmHtml(e, i, d, lp) {
+  if (e.c) return `<button class="ex-cm" data-a="ec-open" data-i="${i}">${SN_PEN}<span>${esc(e.c)}</span></button>`;
+  return lp && lp.c ? `<p class="ex-cm prev">Dernière fois : « ${esc(lp.c)} »</p>` : '';
+}
+function exCmLink(e, i, d, lp) { return e.c ? '' : `<button class="lnk ${exLighter(e, lp) ? 'ec-warn' : ''}" data-a="ec-open" data-i="${i}">${exLighter(e, lp) ? 'Plus léger : noter pourquoi' : '+ Commentaire'}</button>`; }
+function fxExNoteHtml(e, lp) {
+  if (e.c) return `<button class="fx-sc fx-ec" data-a="ec-open" data-i="${FOCUS.i}">${SN_PEN}<span>${esc(e.c)}</span></button>`;
+  return `${lp && lp.c ? `<p class="fx-sc prev fx-ec">Dernière fois : « ${esc(lp.c)} »</p>` : ''}<button class="fx-ecl ${exLighter(e, lp) ? 'ec-warn' : ''}" data-a="ec-open" data-i="${FOCUS.i}">${exLighter(e, lp) ? 'Plus léger : noter pourquoi' : '+ Commentaire sur l’exercice'}</button>`;
+}
+function ecHtml(d, i) {
+  const e = S.sessions[d]?.entries?.[i]; if (!e) return '';
+  const kind = kindOf(e.ex), ds = doneSets(e), lp = lastPerf(e.ex, d), cur = (e.c || '').split(/\s*,\s*/).map(norm);
+  const ctx = [ds.length ? `Aujourd’hui : ${notation(ds, kind, e.ex)}` : 'Pas encore de série validée', lp ? `dernière fois : ${notation(lp.sets, kind, e.ex)}` : ''].filter(Boolean).join(' · ');
+  return `<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Commentaire sur l’exercice</div><h2 style="margin:2px 0 0">${esc(exOf(e.ex).name)}</h2><p class="small muted" style="margin:2px 0 0">${esc(ctx)}</p></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
+    ${lp && lp.c ? `<p class="small" style="margin:0"><span class="muted">Dernière fois :</span> « ${esc(lp.c)} »</p>` : ''}
+    <div class="chips sn-chips">${EC_CHIPS.map(c => `<button class="chip ${cur.includes(norm(c)) ? 'on' : ''}" data-a="sn-chip" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <label class="field">Pourquoi, comment ça s’est passé<textarea class="inp" id="sn-c" rows="3" maxlength="200" placeholder="ex. 5 kg de moins, épaule qui tire depuis mardi ; reprise progressive">${esc(e.c || '')}</textarea></label>
+    <div class="row between wrap">${e.c ? '<button class="btn ghost danger" data-a="ec-clear">Effacer</button>' : '<span></span>'}<div class="row"><button class="btn ghost" data-a="sheet-close">Annuler</button><button class="btn" data-a="ec-save">Enregistrer</button></div></div>`;
+}
+function ecSave(v) {
+  const c = SHEET.ctx; if (!c || c.mode !== 'ec') return; const e = S.sessions[c.d]?.entries?.[c.i];
+  if (e) { v = String(v || '').replace(/\s+/g, ' ').trim().slice(0, 200); if (v) e.c = v; else delete e.c; touch('sessions', c.d); }
+  closeSheet(); if (FOCUS.open) renderFocus(); else if (UI.tab === 'seance' && c.d === UI.date) rerenderCard(c.i); else render();
+}
+function histNotes(x) { return (x.c ? `<small class="h-note">Exercice : ${esc(x.c)}</small>` : '') + histNotesOld(x); }
+Object.assign(A, {
+  'ec-open': el => { const d = UI.date, i = +el.dataset.i, h = ecHtml(d, i); if (h) openSheet(h, { mode: 'ec', d, i }); },
+  'ec-save': () => ecSave($('#sn-c')?.value),
+  'ec-clear': () => ecSave('')
 });
 </script>
 </body>
