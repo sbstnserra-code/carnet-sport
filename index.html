@@ -962,6 +962,10 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 
 /* v8.19 : muscle précis */
 .tag.tag-mus{white-space:normal;text-align:left}
+
+/* v8.20 : matériel */
+.tag.tag-eq{background:transparent;border-color:var(--line-2);color:var(--muted)}
+.pk-kind.pk-eq{background:var(--surface-2);color:var(--ink-2)}
 </style>
 </head>
 <body>
@@ -1786,7 +1790,7 @@ function pkRow(id, d, opts = {}) {
   const e = exOf(id), lp = lastPerf(id, d), pr = presc(id), inS = opts.inSession;
   const last = lp ? `Dernière fois ${fmtDay(lp.date)} : <b>${esc(notation(lp.sets, e.kind, id))}</b>` : 'Jamais fait';
   const cat = catOf(id);
-  return `<div class="pk-row" data-cat="${cat || ''}"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${cat ? `<span class="pk-kind pk-${cat}">${CAT_L[cat]}</span>` : ''}${e.kind === 'bw' ? '<span class="pk-kind">PDC</span>' : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}${dupOf(id).length ? '<span class="pk-kind pk-dup">Doublon ?</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
+  return `<div class="pk-row" data-cat="${cat || ''}"><button class="pk-add" data-a="${inS ? 'ex-fiche' : 'ex-add'}" data-id="${id}" ${inS ? '' : 'data-close="1"'} aria-label="${inS ? 'Fiche' : 'Ajouter'} ${esc(e.name)}"><span class="pk-ico">${pkMini(id)}</span><span class="pk-t">${esc(e.name)}${cat ? `<span class="pk-kind pk-${cat}">${CAT_L[cat]}</span>` : ''}${eqOf(id) ? `<span class="pk-kind pk-eq">${esc(EQ_S[eqOf(id)])}</span>` : ''}${inS ? '<span class="pk-kind" style="background:var(--surface-2)">déjà dans la séance</span>' : ''}${dupOf(id).length ? '<span class="pk-kind pk-dup">Doublon ?</span>' : ''}</span><span class="pk-tg"><b>${pr.txt}</b></span><span class="pk-s">${esc(pkMusTxt(id) || GL[e.group] || '')}</span><span class="pk-l ${lp ? '' : 'never'}">${last}</span></button><button class="pk-info" data-a="ex-fiche" data-id="${id}" aria-label="Fiche ${esc(e.name)}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg></button></div>`;
 }
 /* Sélection par muscle (feuille) */
 const pkState = () => (UI.pk ||= { sel: null, group: '', q: '' });
@@ -2132,7 +2136,7 @@ function renderFocus() {
   const top = `<header class="fx-top"><button class="icon-btn" data-a="focus-close" aria-label="Quitter le mode salle">${ICON.xl}</button>
     <div class="fx-meta"><b>Exercice ${FOCUS.i + 1} / ${es.length}</b><span id="fx-clock">${fmtDur(Date.now() - sessStart())}</span></div>
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
-  const head = `<div class="fx-ex"><div class="tags">${exMusTag(e.ex)}${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
+  const head = `<div class="fx-ex"><div class="tags">${exMusTag(e.ex)}${eqTag(e.ex)}${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
     <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
     ${fxRefHtml(e, lp, kind, d)}${fxExNoteHtml(e, lp)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
@@ -3782,7 +3786,7 @@ function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
   const allOk = (e.sets || []).length > 0 && e.sets.every((z, k) => z.ok || skipW(e, k)), fin = isFin(e), open = !!(UI.exOpen && UI.exOpen[d + ':' + i]), fold = fin ? !open : allOk && exFold(d, i);
   return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''} ${fin ? 'fin' : ''}" data-i="${i}">
-    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags">${exMusTag(e.ex)}${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
+    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags">${exMusTag(e.ex)}${eqTag(e.ex)}${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}" aria-label="Terminé, voir le détail des séries"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>${ds.length} série${ds.length > 1 ? 's' : ''} · ${esc(notation(ds, kind, e.ex))}</span></span>${lp ? cmpLast(e, lp) : ''}</button>` : fin ? `<button class="ex-fold open" data-a="ex-refold" data-i="${i}"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>Replier le détail</span></span></button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
@@ -4280,7 +4284,7 @@ function exFormHtml(id, name = '') {
     <div class="grid2"><label class="field">Groupe<select class="inp" id="exf-group">${GROUPS.map(g => `<option value="${g.k}" ${g.k === e.group ? 'selected' : ''}>${g.l}</option>`).join('')}</select></label>
     <label class="field">Type<select class="inp" id="exf-kind">${KINDS.map(k => `<option value="${k.k}" ${k.k === (e.kind || 'w') ? 'selected' : ''}>${k.l}</option>`).join('')}</select></label></div>
     <label class="field">Mouvement<select class="inp" id="exf-cat"><option value="">Auto${id && catOf(id, true) ? ' · ' + (catOf(id, true) === 'poly' ? 'polyarticulaire' : 'isolation') : ''}</option><option value="poly" ${e.cat === 'poly' ? 'selected' : ''}>Polyarticulaire · repos ${restCatTxt('poly')}</option><option value="iso" ${e.cat === 'iso' ? 'selected' : ''}>Isolation · repos ${restCatTxt('iso')}</option></select></label>
-    <div class="grid2"><label class="field">Note (réglage machine, prise…)<input class="inp" id="exf-note" value="${esc(e.note || '')}" placeholder="ex. siège cran 4"></label>
+    ${eqSelHtml(id, e)}<div class="grid2"><label class="field">Note (réglage machine, prise…)<input class="inp" id="exf-note" value="${esc(e.note || '')}" placeholder="ex. siège cran 4"></label>
     <label class="field">Pas des boutons −/+ (kg)<input class="inp" id="exf-step" inputmode="decimal" value="${v(e.step)}" placeholder="auto"></label></div>
     <div class="row between wrap">${id ? `<button class="btn ghost danger" data-a="ex-delete" data-id="${id}">${u ? 'Masquer' : 'Supprimer'}</button>` : '<span></span>'}
     <div class="row"><button class="btn ghost" data-a="sheet-close">Annuler</button><button class="btn" data-a="ex-save">Enregistrer</button></div></div>
@@ -4477,7 +4481,7 @@ const A = {
     const name = $('#exf-name').value.trim(); if (!name) { toast('Donne un nom à l’exercice.'); return; }
     const data = { name, group: $('#exf-group').value, kind: $('#exf-kind').value, note: $('#exf-note').value.trim() };
     const st = toNum($('#exf-step')?.value); if (st && st > 0) data.step = st; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].step;
-    const cat = $('#exf-cat')?.value; if (cat === 'poly' || cat === 'iso') data.cat = cat; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].cat;
+    { const q = $('#exf-eq')?.value; if (q && EQ_L[q]) data.eq = q; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].eq; } const cat = $('#exf-cat')?.value; if (cat === 'poly' || cat === 'iso') data.cat = cat; else if (SHEET.ctx?.id) delete S.exercises[SHEET.ctx.id].cat;
     const ctx = SHEET.ctx || {};
     if (ctx.id) { Object.assign(S.exercises[ctx.id], data); touch('exercises', ctx.id); closeSheet(); render(); toast('Exercice modifié.'); return; }
     const id = norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) + '-' + Math.random().toString(36).slice(2, 6);
@@ -6093,7 +6097,7 @@ function dupLev(a, b) {
 }
 const dupKeyOf = (a, b) => [a, b].sort().join('|');
 let DUP = null, DUP_V = -1;
-function dupPairs() {
+function dupPairsOld() {
   if (DUP && DUP_V === VER) return DUP;
   const no = new Set((S.settings.main || {}).dupNo || []);
   const ex = Object.entries(S.exercises).filter(([, e]) => e && !e.archived).map(([id, e]) => ({ id, g: e.group || '', ...dupKeys(e.name) }));
@@ -6125,7 +6129,7 @@ function dupBanner(ids) {
 }
 function dupPairHtml(p) {
   const A = exOf(p.a), B = exOf(p.b), k = dupKeep(p.a, p.b);
-  const side = id => `<div class="dup-x ${id === k ? 'keep' : ''}"><b>${esc(exOf(id).name)}</b><span>${esc(usesTxt(id))}${CATX[id] ? ' · catalogue' : ''}</span></div>`;
+  const side = id => `<div class="dup-x ${id === k ? 'keep' : ''}"><b>${esc(exOf(id).name)}</b><span>${eqOf(id) ? esc(EQ_L[eqOf(id)]) + ' · ' : ''}${esc(usesTxt(id))}${CATX[id] ? ' · catalogue' : ''}</span></div>`;
   return `<div class="dup-p"><div class="dup-h"><span class="pk-kind ${p.lvl === 'sur' ? 'pk-dup' : ''}">${p.lvl === 'sur' ? 'Même exercice' : 'Peut-être le même'}</span><span class="tiny muted">${esc(GL[A.group || B.group] || '')}</span></div>
     <div class="dup-xs">${side(p.a)}${side(p.b)}</div>
     <div class="dup-acts"><button class="btn sm" data-a="dup-merge" data-keep="${k}" data-drop="${k === p.a ? p.b : p.a}">Garder « ${esc(exOf(k).name)} »</button><button class="btn sm ghost" data-a="dup-merge" data-keep="${k === p.a ? p.b : p.a}" data-drop="${k}">Garder l’autre</button><button class="lnk" data-a="dup-no" data-a1="${p.a}" data-b1="${p.b}">Pas un doublon</button></div></div>`;
@@ -6614,6 +6618,66 @@ function exMuscleTxt(id) {
   return m.filter(x => x[1] >= .5).map(([k, w, p]) => w >= 1 ? `<b>${esc(musNat(k, p))}</b>` : `${esc(musNat(k, p))} (aide)`).join(', ');
 }
 function pkMusTxt(id) { return exMap(id).slice().sort((a, b) => b[1] - a[1]).map(([m, w, parts]) => musNat(m, parts, .6) + (w < 1 ? ' (aide)' : '')).join(' · '); }
+
+/* ================= v8.20 : matériel par exercice, doublons qui distinguent barre / haltères / poulie ================= */
+const EQ_L = { barre: 'Barre', halteres: 'Haltères', poulie: 'Poulie', machine: 'Machine', guidee: 'Barre guidée', pdc: 'Poids du corps', kb: 'Kettlebell', elast: 'Élastique' };
+const EQ_S = { barre: 'Barre', halteres: 'Haltères', poulie: 'Poulie', machine: 'Machine', guidee: 'Guidée', pdc: 'PDC', kb: 'Kettlebell', elast: 'Élastique' };
+const CAT_EQ = { 'inc-halteres': 'halteres', 'developpe-incline-barre': 'barre', 'poulie-ecarte-basse': 'poulie', 'couche-banc': 'barre', 'pec-deck': 'machine', pompes: 'pdc', dips: 'pdc', 'ecarte-poulie-haute': 'poulie',
+  'tirage-vertical-large': 'poulie', tractions: 'pdc', 'pull-over-poulie': 'poulie', 'rowing-haltere': 'halteres', 'tirage-horizontal': 'poulie', 'rowing-barre': 'barre',
+  'developpe-assis': 'halteres', 'elevations-frontales': 'halteres', 'ecarte-debout': 'halteres', 'face-pull': 'poulie', oiseau: 'halteres', shrugs: 'halteres',
+  'curl-assis': 'halteres', 'curl-poulie': 'poulie', 'curl-pupitre': 'barre', 'curl-barre-ez': 'barre', 'curl-marteau': 'halteres', 'curl-inverse': 'barre', 'curl-poignets': 'barre',
+  'extension-nuque': 'halteres', 'barre-front': 'barre', 'triceps-poulie-basse': 'poulie', 'triceps-poulie-haute': 'poulie', 'dips-banc': 'pdc', kickback: 'halteres',
+  'presse-cuisses': 'machine', 'hack-squat': 'machine', squat: 'barre', 'leg-extension': 'machine', 'leg-curl': 'machine', 'sdt-jambes-tendues': 'barre', 'good-morning': 'barre',
+  'hip-thrust': 'barre', 'fentes-bulgares': 'halteres', abducteurs: 'machine', adducteurs: 'machine', 'extension-mollet': 'machine', 'mollets-assis': 'machine',
+  'crunch-poulie': 'poulie', 'releves-jambes': 'pdc', gainage: 'pdc', 'extensions-lombaires': 'pdc' };
+function eqInfer(name, kind) {
+  const n = ' ' + norm(name).replace(/œ/g, 'oe').replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+  if (/ (guide|guidee|smith) /.test(n)) return 'guidee';
+  if (/ (halteres?|alteres?|dumbbells?|db) /.test(n)) return 'halteres';
+  if (/ (poulies?|cables?|crossover|vis a vis|face pull) /.test(n)) return 'poulie';
+  if (/ machines? /.test(n)) return 'machine';
+  if (/ (barre|ez|barbell) /.test(n)) return 'barre';
+  if (/ (kettlebells?|kb) /.test(n)) return 'kb';
+  if (/ (elastiques?|bands?) /.test(n)) return 'elast';
+  if (/ (presse|leg extension|leg curl|hack|pec deck|peck deck|butterfly|chest press|shoulder press|abducteurs?|adducteurs?|mollets? assis|extension mollets?|calf) /.test(n)) return 'machine';
+  if (/ (pulldown|pull down|lat pull|seated row|tirage verticale?|tirage horizontal|tirage nuque|tirage poitrine) /.test(n)) return 'poulie';
+  if (/ (souleve de terre|souleve terre|deadlift|sdt|rdl|good morning|hip thrust|developpe militaire|rowing barre) /.test(n)) return 'barre';
+  return kind === 'bw' ? 'pdc' : '';
+}
+function eqOf(id) { const e = S.exercises[id]; if (!e) return ''; if (e.eq && EQ_L[e.eq]) return e.eq; if (e.kind === 'cardio') return ''; return eqInfer(e.name, e.kind) || CAT_EQ[id] || ''; }
+function eqTag(id) { const q = eqOf(id); return q && q !== 'pdc' ? `<span class="tag tag-eq">${esc(EQ_L[q])}</span>` : ''; }
+function eqSelHtml(id, e) {
+  const auto = eqInfer(e.name || '', e.kind) || (id ? CAT_EQ[id] : '') || '';
+  return `<label class="field">Matériel<select class="inp" id="exf-eq"><option value="">Auto${auto ? ' · ' + EQ_L[auto] : ' · non reconnu'}</option>${Object.entries(EQ_L).map(([k, l]) => `<option value="${k}" ${e.eq === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
+}
+// Doublons : matériel différent = jamais un doublon ; nom identique au matériel ou à l'accessoire près = doublon
+const DUP_EQW = new Set(['barre', 'haltere', 'altere', 'poulie', 'machine', 'guide', 'guidee', 'smith', 'cable', 'ez', 'strap', 'sangle', 'dumbbell', 'barbell', 'kettlebell', 'elastique', 'ceinture']);
+for (const [k, vs] of Object.entries({ adducteur: ['hip adducteur', 'adducteur hanche'], abducteur: ['hip abducteur', 'abducteur hanche'] })) for (const v of vs) DUP_MAP[dupWords(v).join(' ')] = k;
+function dupPairs() {
+  if (DUP && DUP_V === VER) return DUP;
+  const no = new Set((S.settings.main || {}).dupNo || []);
+  const ex = Object.entries(S.exercises).filter(([, e]) => e && !e.archived).map(([id, e]) => { const k = dupKeys(e.name); return { id, g: e.group || '', eq: eqOf(id), core: k.words.filter(w => !DUP_EQW.has(w)), ...k }; });
+  const out = [];
+  for (let i = 0; i < ex.length; i++) for (let j = i + 1; j < ex.length; j++) {
+    const a = ex[i], b = ex[j];
+    if (no.has(dupKeyOf(a.id, b.id))) continue;
+    if (a.eq && b.eq && a.eq !== b.eq) continue;
+    const sameG = !a.g || !b.g || a.g === b.g;
+    if ((a.g === 'cardio') !== (b.g === 'cardio')) continue;
+    let lvl = '';
+    if (a.flat === b.flat) lvl = sameG ? 'sur' : 'possible';
+    else if (a.keys.some(k => b.keys.includes(k))) lvl = 'sur';
+    else if (a.core.length && a.core.join(' ') === b.core.join(' ')) lvl = 'sur';
+    else if (sameG && !(a.known && b.known)) {
+      const [sm, bg] = a.core.length <= b.core.length ? [a.core, b.core] : [b.core, a.core];
+      if (sm.length >= 2 && sm.every(w => bg.includes(w))) lvl = 'possible';
+      else if (a.flat.length >= 8 && dupLev(a.flat, b.flat) <= 2) lvl = 'possible';
+    }
+    if (lvl) out.push({ a: a.id, b: b.id, lvl });
+  }
+  out.sort((x, y) => (x.lvl === y.lvl ? 0 : x.lvl === 'sur' ? -1 : 1));
+  DUP = out; DUP_V = VER; return out;
+}
 </script>
 </body>
 </html>
