@@ -959,6 +959,9 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .fx-ecl{align-self:flex-start;font-size:13.5px;font-weight:600;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-2);text-underline-offset:3px;padding:4px 0}
 .fx-ecl.ec-warn{text-decoration-color:var(--warn)}
 .fx-ex .fx-ec{margin:2px 0 0}
+
+/* v8.19 : muscle précis */
+.tag.tag-mus{white-space:normal;text-align:left}
 </style>
 </head>
 <body>
@@ -1776,7 +1779,7 @@ function pkFigure(regions, vals, sel, dx, label, clickable) {
 function pkMini(id) { const v = pkVals(id), side = pkSide(v); return `<svg class="pk-fig" viewBox="8 14 144 300" aria-hidden="true">${pkFigure(side === 'back' ? BODY_BACK : BODY_FRONT, v, null, 0, '', false)}</svg>`; }
 function pkBig(id) { const v = pkVals(id), side = pkSide(v); return `<svg class="pk-fig" viewBox="20 14 120 300" aria-hidden="true">${pkFigure(side === 'back' ? BODY_BACK : BODY_FRONT, v, null, 0, '', false)}</svg>`; }
 function pkMapSvg(sel) { const vals = {}; if (sel) vals[sel] = 1; return `<svg class="pkmap pk-fig" viewBox="0 0 330 332" role="img" aria-label="Carte des muscles, face et dos : touche une zone pour filtrer">${pkFigure(BODY_FRONT, vals, sel, 0, 'Face', true)}${pkFigure(BODY_BACK, vals, sel, 170, 'Dos', true)}</svg>`; }
-function pkMusTxt(id) {
+function pkMusTxtOld(id) {
   return exMap(id).slice().sort((a, b) => b[1] - a[1]).map(([m, w, parts]) => { const ks = Object.keys(parts || {}).sort((a, b) => parts[b] - parts[a]); const M = MUSL[m]; const pl = ks.length && M && M.parts.find(x => x[0] === ks[0]); return (M ? M.l : m) + (pl && parts[ks[0]] >= .6 ? ' ' + pl[1] : '') + (w < 1 ? ' (aide)' : ''); }).join(' · ');
 }
 function pkRow(id, d, opts = {}) {
@@ -2129,7 +2132,7 @@ function renderFocus() {
   const top = `<header class="fx-top"><button class="icon-btn" data-a="focus-close" aria-label="Quitter le mode salle">${ICON.xl}</button>
     <div class="fx-meta"><b>Exercice ${FOCUS.i + 1} / ${es.length}</b><span id="fx-clock">${fmtDur(Date.now() - sessStart())}</span></div>
     <button class="icon-btn" data-a="fx-list" aria-label="Liste des exercices">${ICON.list}</button></header>`;
-  const head = `<div class="fx-ex"><div class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
+  const head = `<div class="fx-ex"><div class="tags">${exMusTag(e.ex)}${catTag(e.ex)}${pr ? '<span class="badge-pr">Record</span>' : ''}</div>
     <h2>${esc(ex.name)}</h2><p class="fx-last">${lp ? `Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois sur cet exercice'}</p>
     ${fxRefHtml(e, lp, kind, d)}${fxExNoteHtml(e, lp)}
     ${ex.note ? `<p class="fx-last">${esc(ex.note)}</p>` : ''}
@@ -2678,7 +2681,7 @@ function exMap(id) {
   if (!r && ex && ex.kind !== 'cardio') { const n = norm(ex.name); for (const rule of EXRULES) { const [re, a, b] = rule; if (!re.test(n)) continue; if (typeof a === 'string' && a !== ex.group) continue; r = typeof a === 'string' ? b : a; break; } if (!r) r = GROUPMAP[ex.group]; }
   return (EXM_C[id] = r || []);
 }
-function exMuscleTxt(id) {
+function exMuscleTxtOld(id) {
   const m = exMap(id); if (!m.length) return '';
   return m.filter(x => x[1] >= .5).map(([k, w, p]) => { const top = Object.entries(p).sort((a, b) => b[1] - a[1])[0]; const lab = top && top[1] >= .5 ? partLabel(k + '.' + top[0]) : MUSL[k].l; return w >= 1 ? `<b>${esc(lab)}</b>` : esc(lab); }).join(', ');
 }
@@ -3779,7 +3782,7 @@ function exCard(e, i, d) {
   const ex = exOf(e.ex), kind = ex.kind || 'w', lp = lastPerf(e.ex, d), ds = doneSets(e), pr = isPR(e.ex, d, ds);
   const allOk = (e.sets || []).length > 0 && e.sets.every((z, k) => z.ok || skipW(e, k)), fin = isFin(e), open = !!(UI.exOpen && UI.exOpen[d + ':' + i]), fold = fin ? !open : allOk && exFold(d, i);
   return `<article class="ex ${ds.length ? '' : 'todo'} ${allOk ? 'done' : ''} ${fold ? 'fold' : ''} ${fin ? 'fin' : ''}" data-i="${i}">
-    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags"><span class="tag">${esc(GL[ex.group] || '')}</span>${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
+    <header class="ex-h"><div><h3>${esc(ex.name)}</h3><span class="tags">${exMusTag(e.ex)}${catBtn(e.ex) || (() => { const p = presc(e.ex); return p.txt ? `<button class="tag" data-a="ex-fiche" data-id="${e.ex}" title="Fiche de l’exercice">${p.txt}</button>` : ''; })()}${pr ? `<span class="badge-pr">Record</span>` : ''}</span></div>
       <button class="icon-btn" data-a="ex-menu" data-i="${i}" aria-label="Options de l'exercice">${ICON.dots}</button></header>
     ${fold ? `<button class="ex-fold" data-a="ex-unfold" data-i="${i}" aria-label="Terminé, voir le détail des séries"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>${ds.length} série${ds.length > 1 ? 's' : ''} · ${esc(notation(ds, kind, e.ex))}</span></span>${lp ? cmpLast(e, lp) : ''}</button>` : fin ? `<button class="ex-fold open" data-a="ex-refold" data-i="${i}"><span class="chk">${ICON.check}</span><span class="fin-t"><b>Terminé</b><span>Replier le détail</span></span></button>` : ''}
     <p class="last">${lp ? `${beatHtml(lp, kind)}Dernière fois, ${relDay(lp.date)}${posTxt(e, lp.date, d)} : <b>${esc(notation(lp.sets, kind, e.ex))}</b>${isPdc(kind, e.ex) ? ` <span class="muted">à ${nf(pdcW(lp.date), 1)} kg · aujourd’hui ${nf(pdcW(d), 1)} kg</span>` : ''}${cmpLast(e, lp)}` : 'Première fois : note tes séries.'}</p>
@@ -6194,14 +6197,14 @@ function tfChecksHtml(t) {
   const byName = (a, b) => a[1].name.localeCompare(b[1].name, 'fr');
   if (q) {
     const l = Object.entries(S.exercises).filter(([id, e]) => (!e.archived || chosen.has(id)) && norm(e.name).includes(q)).sort(byName);
-    return l.length ? l.map(([id, e]) => lab([id, e]).replace('</label>', ` <span class="tiny muted">${esc(GL[e.group] || '')}</span></label>`)).join('') : '<p class="small muted" style="margin:6px 0">Aucun exercice trouvé.</p>';
+    return l.length ? l.map(([id, e]) => lab([id, e]).replace('</label>', ` <span class="tiny muted">${esc(exMusShort(id))}</span></label>`)).join('') : '<p class="small muted" style="margin:6px 0">Aucun exercice trouvé.</p>';
   }
   const groups = uniq([...t.groups, ...t.ex.map(id => exOf(id).group)]).filter(Boolean);
   return groups.length ? groups.map(g => `<h5>${GL[g] || g}</h5>` + Object.entries(S.exercises).filter(([id, e]) => e.group === g && (!e.archived || chosen.has(id))).sort(byName).map(lab).join('')).join('') : '<p class="small muted" style="margin:6px 0">Choisis un groupe ou cherche un exercice.</p>';
 }
 function tplFormHtml() {
   const t = SHEET.ctx;
-  const rows = t.ex.map((id, k) => `<div class="tf-row"><span class="tf-n">${k + 1}</span><span class="tf-t"><b>${esc(exOf(id).name)}</b><small>${esc(GL[exOf(id).group] || '')}</small></span><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Monter ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="1" ${k < t.ex.length - 1 ? '' : 'disabled'} aria-label="Descendre ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="tf-b" data-a="tf-rm" data-id="${id}" aria-label="Retirer ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
+  const rows = t.ex.map((id, k) => `<div class="tf-row"><span class="tf-n">${k + 1}</span><span class="tf-t"><b>${esc(exOf(id).name)}</b><small>${esc(exMusShort(id))}</small></span><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Monter ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button><button class="tf-b" data-a="tf-mv" data-id="${id}" data-d="1" ${k < t.ex.length - 1 ? '' : 'disabled'} aria-label="Descendre ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><button class="tf-b" data-a="tf-rm" data-id="${id}" aria-label="Retirer ${esc(exOf(id).name)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join('');
   return `<h2>${t.id ? 'Modifier la séance type' : 'Nouvelle séance type'}</h2>
     <div class="grid2"><label class="field">Nom<input class="inp" id="tf-name" value="${esc(t.name)}" placeholder="ex. Pecs / Dos A"></label>
     <label class="field">Jour habituel<select class="inp" id="tf-day"><option value="">Aucun</option>${JOURS.map((j, k) => `<option value="${k + 1}" ${+t.day === k + 1 ? 'selected' : ''}>${cap(j)}</option>`).join('')}</select></label></div>
@@ -6251,7 +6254,7 @@ function ordHtml() {
   const d = UI.date, es = S.sessions[d]?.entries || [], ro = realOrder(d);
   const diff = es.filter(x => (x.sets || []).some(z => z.ok && z.t)).length > 1 && ro.some((x, k) => x !== es[k]);
   const up = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>', dn = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
-  const rows = es.map((e, k) => { const nm = esc(exOf(e.ex).name); return `<div class="tf-row ${FOCUS.open && k === FOCUS.i ? 'cur' : ''}"><span class="tf-n">${k + 1}</span><span class="tf-t"><b>${nm}</b><small>${esc(GL[exOf(e.ex).group] || '')}${GL[exOf(e.ex).group] ? ' · ' : ''}${ordStatus(e, k)}</small></span><button class="tf-b" data-a="ord-mv" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Monter ${nm}">${up}</button><button class="tf-b" data-a="ord-mv" data-i="${k}" data-d="1" ${k < es.length - 1 ? '' : 'disabled'} aria-label="Descendre ${nm}">${dn}</button></div>`; }).join('');
+  const rows = es.map((e, k) => { const nm = esc(exOf(e.ex).name); return `<div class="tf-row ${FOCUS.open && k === FOCUS.i ? 'cur' : ''}"><span class="tf-n">${k + 1}</span><span class="tf-t"><b>${nm}</b><small>${esc(exMusShort(e.ex))}${exMusShort(e.ex) ? ' · ' : ''}${ordStatus(e, k)}</small></span><button class="tf-b" data-a="ord-mv" data-i="${k}" data-d="-1" ${k ? '' : 'disabled'} aria-label="Monter ${nm}">${up}</button><button class="tf-b" data-a="ord-mv" data-i="${k}" data-d="1" ${k < es.length - 1 ? '' : 'disabled'} aria-label="Descendre ${nm}">${dn}</button></div>`; }).join('');
   return `<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Séance · ${fmtDay(d)}</div><h2 style="margin:2px 0 0">Ordre des exercices</h2></div><button class="icon-btn" data-a="ord-done" aria-label="Fermer">${ICON.x}</button></div>
     <p class="small muted" style="margin:0">Mets les exercices dans l’ordre où tu les fais. Leur place reste dans l’historique (1er, 2e…) pour comparer tes charges à fatigue égale.</p>
     ${diff ? `<button class="btn sm ghost" data-a="ord-real" style="align-self:flex-start">Ranger dans l’ordre où tu les as faits</button>` : ''}
@@ -6585,6 +6588,32 @@ Object.assign(A, {
   'ec-save': () => ecSave($('#sn-c')?.value),
   'ec-clear': () => ecSave('')
 });
+
+/* ================= v8.19 : muscle précis par exercice ================= */
+const MUS_NAT = {
+  pecs: 'Pectoraux', 'pecs.h': 'Haut des pectoraux', 'pecs.m': 'Pectoraux (milieu)', 'pecs.b': 'Bas des pectoraux',
+  dos: 'Dos', 'dos.larg': 'Grand dorsal (largeur)', 'dos.ep': 'Milieu du dos (épaisseur)',
+  epaules: 'Épaules', 'epaules.a': 'Épaule avant', 'epaules.l': 'Épaule latérale', 'epaules.p': 'Épaule arrière',
+  biceps: 'Biceps', 'biceps.long': 'Biceps longue portion', 'biceps.court': 'Biceps courte portion', 'biceps.brach': 'Brachial',
+  triceps: 'Triceps', 'triceps.lg': 'Triceps longue portion', 'triceps.lat': 'Triceps vaste latéral',
+  quadriceps: 'Quadriceps', 'quadriceps.vastes': 'Quadriceps', 'quadriceps.droit': 'Quadriceps (droit fémoral)', ischios: 'Ischio-jambiers',
+  fessiers: 'Fessiers', 'fessiers.grand': 'Grand fessier', 'fessiers.moyen': 'Moyen fessier',
+  mollets: 'Mollets', 'mollets.gastro': 'Mollets (jumeaux)', 'mollets.sol': 'Mollets (soléaire)',
+  abdos: 'Abdos', 'abdos.droit': 'Abdos (grand droit)', 'abdos.obl': 'Obliques',
+  lombaires: 'Lombaires', trapezes: 'Trapèzes', avantbras: 'Avant-bras', adducteurs: 'Adducteurs' };
+// Libellé d'un muscle avec sa portion dominante (part ≥ seuil), sinon le muscle
+function musNat(m, parts, thr = .5) { const top = Object.entries(parts || {}).sort((a, b) => b[1] - a[1])[0]; return (top && top[1] >= thr && MUS_NAT[m + '.' + top[0]]) || MUS_NAT[m] || MUSL[m]?.l || m; }
+function exMusShort(id) { const prim = uniq(exMap(id).filter(x => x[1] >= 1).map(([k, , p]) => musNat(k, p))); return prim.length ? prim.slice(0, 2).join(' + ') : (GL[exOf(id).group] || ''); }
+function exMusTag(id) {
+  const t = exMusShort(id); if (!t) return '';
+  const help = uniq(exMap(id).filter(x => x[1] > 0 && x[1] < 1).map(([k, , p]) => musNat(k, p)));
+  return `<span class="tag tag-mus" ${help.length ? `title="${esc('Aide : ' + help.join(', '))}"` : ''}>${esc(t)}</span>`;
+}
+function exMuscleTxt(id) {
+  const m = exMap(id); if (!m.length) return '';
+  return m.filter(x => x[1] >= .5).map(([k, w, p]) => w >= 1 ? `<b>${esc(musNat(k, p))}</b>` : `${esc(musNat(k, p))} (aide)`).join(', ');
+}
+function pkMusTxt(id) { return exMap(id).slice().sort((a, b) => b[1] - a[1]).map(([m, w, parts]) => musNat(m, parts, .6) + (w < 1 ? ' (aide)' : '')).join(' · '); }
 </script>
 </body>
 </html>
