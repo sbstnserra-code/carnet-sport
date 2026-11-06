@@ -976,13 +976,24 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .bdy-leg{display:flex;flex-direction:column;gap:4px}
 .bdy-bar,.bdy-lab{display:flex;gap:8px;align-items:center}
 .bdy-bar i{display:block;height:9px;border-radius:5px}
-.bdy-0{width:22px;flex:none;background:#8C9BB5}.bdy-g{flex:1;background:linear-gradient(90deg,#FCE3B0 0%,#F9A65A 25%,#E5332A 50%,#8E1027 80%,#5A0A1C 100%)}
+.bdy-0{width:22px;flex:none;background:#8C9BB5}.bdy-g{flex:1;background:linear-gradient(90deg,#FDE2A7 0%,#FBA548 25%,#F5602A 50%,#EE2C24 80%,#FF1F1F 100%)}
 .bdy-lab{font-size:12px;color:#B3B8B9;line-height:1.2}
 .bdy-0t{width:22px;flex:none;text-align:center}
 .bdy-lt{flex:1;position:relative;height:15px}.bdy-lt span{position:absolute;left:0;white-space:nowrap}.bdy-lt span[style]{transform:translateX(-50%)}.bdy-lt span.r{left:auto;right:0}
 .wkm-b{position:relative}
 .wkm-b .wkm-t{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--ink);opacity:.55}
 .wkm .btn{white-space:normal;height:auto;min-height:48px;padding-top:9px;padding-bottom:9px;line-height:1.25;text-align:center}
+
+/* v8.22 : boutons de la silhouette */
+.bdy-era{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;background:#1F2327;border-radius:12px;padding:4px}
+.bdy-era button{min-height:36px;border-radius:9px;background:transparent;color:#B3B8B9;font-weight:700;font-size:13px;padding:0 4px}
+.bdy-era button.on{background:#EDEFEB;color:#14171A}
+.bdy-cap{margin:0;font-size:12.5px;line-height:1.35;color:#B3B8B9}.bdy-cap b{color:#EDEFEB}
+.bdy-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.bdy-days button{min-height:44px;border-radius:10px;background:#1F2327;color:#EDEFEB;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;min-width:0}
+.bdy-days button b{font-size:14px}.bdy-days button small{font-size:10px;font-weight:600;color:#9AA0A4;max-width:100%;overflow:hidden;white-space:nowrap}
+.bdy-days button.on{background:var(--accent);color:#14171A}.bdy-days button.on small{color:#14171A}
+.bdy-days button:disabled{opacity:.35}
 </style>
 </head>
 <body>
@@ -6409,7 +6420,7 @@ function wkMusHtml(w) {
     : `<div class="wkm-miss">${zero.length ? `<p><b>Pas encore travaillé :</b> ${wkMissTxt(zero)}</p>` : ''}${part.length ? `<p><b>À compléter :</b> ${wkMissTxt(part, true)}</p>` : ''}</div>`;
   const today0 = !(S.sessions[t]?.entries || []).some(e => kindOf(e.ex) !== 'cardio');
   const act = cur ? wkRecoHtml(t, today0) : '';
-  return `<section class="card stack wkm">${head}${dch}${n ? bodyHtml(days) : ''}${bars}${msg}${n ? wkOverHtml(rows) : ''}${act}
+  return `<section class="card stack wkm">${head}${dch}${n ? wkBodyHtml(w) : ''}${bars}${msg}${n ? wkOverHtml(rows) : ''}${act}
     ${n ? `<div class="row between wrap"><span class="tiny muted">Séries de la semaine / minimum conseillé. Un muscle qui aide compte pour ½.</span><button class="lnk" data-a="wkm-det" data-w="${w}">Détail par muscle</button></div>` : ''}</section>`;
 }
 Object.assign(A, {
@@ -7022,14 +7033,14 @@ b: { vb: "764 110 650 1260", out: [
 };
 const BD_MAP = { chest: 'pecs', deltoids: 'epaules', biceps: 'biceps', triceps: 'triceps', forearm: 'avantbras', abs: 'abdos', obliques: 'abdos', trapezius: 'trapezes', 'upper-back': 'dos', 'lower-back': 'lombaires', gluteal: 'fessiers', quadriceps: 'quadriceps', hamstring: 'ischios', adductors: 'adducteurs', calves: 'mollets', tibialis: 'mollets' };
 const BD_SKIN = new Set(['head', 'neck', 'hands', 'feet', 'knees', 'ankles']);
-const BD_REST = '#8C9BB5', BD_STOPS = [[0, '#FCE3B0'], [.25, '#F9A65A'], [.5, '#E5332A'], [.8, '#8E1027'], [1, '#5A0A1C']];
+const BD_REST = '#8C9BB5', BD_STOPS = [[0, '#FDE2A7'], [.25, '#FBA548'], [.5, '#F5602A'], [.8, '#EE2C24'], [1, '#FF1F1F']];
 // Position sur le dégradé : 0 → objectif = 0 → 0,5 ; objectif → maximum = 0,5 → 0,8 ; au-delà du maximum = 1
 const bdPos = (v, mn, mx) => !(v > 0) ? -1 : v < mn ? .5 * v / mn : v <= mx ? .5 + .3 * (v - mn) / Math.max(1e-9, mx - mn) : 1;
 function bdMix(a, b, t) { const h = x => [1, 3, 5].map(i => parseInt(x.slice(i, i + 2), 16)), A_ = h(a), B_ = h(b); return '#' + A_.map((v, i) => Math.round(v + (B_[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
 function bdRamp(q) { if (q < 0) return BD_REST; for (let i = 1; i < BD_STOPS.length; i++) if (q <= BD_STOPS[i][0]) return bdMix(BD_STOPS[i - 1][1], BD_STOPS[i][1], (q - BD_STOPS[i - 1][0]) / (BD_STOPS[i][0] - BD_STOPS[i - 1][0])); return BD_STOPS[BD_STOPS.length - 1][1]; }
 const bdCol = (k, v) => { const M = MUSL[k]; return bdRamp(M ? bdPos(v, M.min, M.max) : -1); };
 let BD_N = 0;
-function bodySvg(v, col, uid, grads) {
+function bodySvgOld(v, col, uid, grads) {
   const B = BODY[v], P = ds => ds.map(d => `<path d="${d}"/>`).join('');
   let skin = '', mus = '';
   for (const [slug, , ds] of B.parts) {
@@ -7044,7 +7055,7 @@ function bodyHtml(days) {
   const W = mwWork(days), val = k => { const r = W.rows.find(x => x.k === k); return r ? r.v : 0; };
   const col = Object.fromEntries(MUS.map(M => [M.k, bdCol(M.k, val(M.k))])), uid = 'bd' + (++BD_N);
   const grads = MUS.map(M => { const c = col[M.k]; return `<linearGradient id="${uid}-${M.k}" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="${bdMix(c, '#FFFFFF', .38)}"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="${bdMix(c, '#000000', .22)}"/></linearGradient>`; }).join('');
-  return `<div class="bdy" data-bd="${uid}"><div class="bdy-figs"><figure>${bodySvg('f', col, uid, grads)}<figcaption>Face</figcaption></figure><figure>${bodySvg('b', col, uid, '')}<figcaption>Dos</figcaption></figure></div>
+  return `<div class="bdy" data-bd="${uid}"><div class="bdy-figs"><figure>${bodySvgOld('f', col, uid, grads)}<figcaption>Face</figcaption></figure><figure>${bodySvgOld('b', col, uid, '')}<figcaption>Dos</figcaption></figure></div>
     <div class="bdy-leg" aria-hidden="true"><div class="bdy-bar"><i class="bdy-0"></i><i class="bdy-g"></i></div><div class="bdy-lab"><span class="bdy-0t">0</span><span class="bdy-lt"><span>Peu</span><span style="left:50%">Objectif</span><span style="left:80%">Max</span><span class="r">Trop</span></span></div></div></div>`;
 }
 // Barre d'un muscle : couleur du muscle, échelle jusqu'au maximum, repère sur l'objectif
@@ -7052,6 +7063,61 @@ function bdBar(r) {
   const M = MUSL[r.k] || { min: r.min, max: r.max || r.min * 2 }, mx = Math.max(M.max || 0, M.min || 1);
   return `<i style="width:${Math.min(100, Math.round(r.v / mx * 100))}%;background:${bdCol(r.k, r.v)}"></i><b class="wkm-t" style="left:${Math.round(M.min / mx * 100)}%"></b>`;
 }
+
+/* ================= v8.22 : rouge vif, muscles qui grossissent avec l'historique ================= */
+const BD_C = {"f:chest:l":[306,376],"f:chest:r":[421,376],"f:obliques:l":[283,537],"f:obliques:r":[445,538],"f:abs:l":[334,572],"f:abs:r":[395,572],"f:biceps:l":[202,450],"f:biceps:r":[526,450],"f:triceps:l":[226,450],"f:triceps:r":[502,450],"f:neck:l":[343,278],"f:neck:r":[386,278],"f:trapezius:l":[304,296],"f:trapezius:r":[424,296],"f:deltoids:l":[237,350],"f:deltoids:r":[492,350],"f:adductors:l":[313,772],"f:adductors:r":[415,772],"f:quadriceps:l":[284,808],"f:quadriceps:r":[444,808],"f:knees:l":[296,1006],"f:knees:r":[432,1006],"f:tibialis:l":[278,1088],"f:tibialis:r":[450,1087],"f:calves:l":[288,1120],"f:calves:r":[440,1120],"f:forearm:l":[170,592],"f:forearm:r":[558,592],"f:hands:l":[102,754],"f:hands:r":[626,754],"f:ankles:l":[290,1250],"f:ankles:r":[438,1250],"f:feet:l":[276,1312],"f:feet:r":[452,1312],"b:neck:l":[1050,256],"b:neck:r":[1118,256],"b:trapezius:l":[1042,385],"b:trapezius:r":[1126,385],"b:deltoids:l":[948,354],"b:deltoids:r":[1220,354],"b:upper-back:l":[1010,454],"b:upper-back:r":[1157,454],"b:triceps:l":[930,458],"b:triceps:r":[1238,458],"b:lower-back:l":[1030,563],"b:lower-back:r":[1137,563],"b:forearm:l":[884,604],"b:forearm:r":[1284,603],"b:gluteal:l":[1028,698],"b:gluteal:r":[1138,698],"b:adductors:l":[1056,824],"b:adductors:r":[1112,824],"b:hamstring:l":[1008,874],"b:hamstring:r":[1158,874],"b:calves:l":[1006,1131],"b:calves:r":[1160,1131],"b:ankles:l":[1006,1292],"b:ankles:r":[1161,1292],"b:feet:l":[994,1333],"b:feet:r":[1174,1333],"b:hands:l":[822,754],"b:hands:r":[1346,754]};
+const BD_ERAS = [['3m', 'Il y a 3 mois', 91], ['1m', 'Il y a 1 mois', 30], ['now', 'Aujourd’hui', 0]];
+let BD_SCM = {};
+// Taille de chaque muscle à la date ref : séries passées avec oubli progressif (demi-vie 12 semaines)
+function bdScale(ref) {
+  const key = VER + '|' + ref; if (BD_SCM[key]) return BD_SCM[key];
+  const acc = {}, t0 = parseISO(ref).getTime();
+  for (const d of sessionDaysIn(addDays(ref, -730), ref).filter(isMuscuDay)) {
+    const wt = Math.pow(.5, (t0 - parseISO(d).getTime()) / 864e5 / 84);
+    for (const r of mwWork([d]).rows) acc[r.k] = (acc[r.k] || 0) + r.v * wt;
+  }
+  const v = {}; for (const M of MUS) { const D = (acc[M.k] || 0) / (M.min * 12); v[M.k] = .82 + .32 * Math.min(D / 1.5, 1); }
+  if (Object.keys(BD_SCM).length > 8) BD_SCM = {};
+  return (BD_SCM[key] = v);
+}
+function bodySvg(v, col, uid, defs, sc, hot) {
+  const B = BODY[v], P = ds => ds.map(d => `<path d="${d}"/>`).join('');
+  let skin = '', ids = '', under = '', mus = '';
+  B.parts.forEach(([slug, side, ds], i) => {
+    if (slug === 'hair') { skin += `<g fill="#7F97C0">${P(ds)}</g>`; return; }
+    if (BD_SKIN.has(slug)) { skin += `<g fill="#EEF1F6">${P(ds)}</g>`; return; }
+    const k = BD_MAP[slug], c = BD_C[`${v}:${slug}:${side}`]; if (!k) return;
+    const id = `${uid}${v}${i}`, f = (sc[k] || 1).toFixed(3), tf = c ? ` transform="translate(${c[0]} ${c[1]}) scale(${f}) translate(${-c[0]} ${-c[1]})"` : '';
+    ids += `<g id="${id}">${P(ds)}</g>`;
+    under += `<use href="#${id}"${tf}/>`;
+    mus += `<use href="#${id}"${tf} fill="url(#${uid}-${k})" stroke="${bdMix(col[k], '#000000', .38)}"${hot[k] ? ` filter="url(#${uid}-hot)"` : ''}/>`;
+  });
+  return `<svg viewBox="${B.vb}" aria-hidden="true" focusable="false"><defs>${defs}${ids}</defs><path d="${B.out}" fill="#EEF1F6" stroke="#EEF1F6" stroke-width="6" stroke-linejoin="round"/><g fill="#EEF1F6" stroke="#EEF1F6" stroke-width="12" stroke-linejoin="round">${under}</g>${skin}<g stroke-width="2.4" stroke-linejoin="round">${mus}</g></svg>`;
+}
+function wkBodyHtml(w) {
+  const t = today(), cur = w === weekStart(t), last = cur ? dow(t) : 6, { days } = wkMus(w);
+  const sel = UI.bdW === w && UI.bdDay != null ? Math.min(UI.bdDay, last) : last, upto = addDays(w, sel);
+  const era = BD_ERAS.find(e => e[0] === UI.bdEra) || BD_ERAS[2], sc = bdScale(addDays(t, -era[2]));
+  const W_ = mwWork(days.filter(d => d <= upto)), val = k => { const r = W_.rows.find(x => x.k === k); return r ? r.v : 0; };
+  const col = {}, hot = {}; for (const M of MUS) { const v = val(M.k); col[M.k] = bdCol(M.k, v); hot[M.k] = v > M.max; }
+  const uid = 'bd' + (++BD_N);
+  const defs = `<filter id="${uid}-hot" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` + MUS.map(M => { const c = col[M.k]; return `<linearGradient id="${uid}-${M.k}" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="${bdMix(c, '#FFFFFF', .38)}"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="${bdMix(c, '#000000', .22)}"/></linearGradient>`; }).join('');
+  const s3 = bdScale(addDays(t, -91)), s0 = bdScale(t);
+  const grew = MUS.filter(M => !M.opt).map(M => [M.l, s0[M.k] - s3[M.k]]).filter(x => x[1] > .02).sort((a, b) => b[1] - a[1]).slice(0, 2).map(x => x[0]);
+  const eras = BD_ERAS.map(([k, l]) => `<button class="${k === era[0] ? 'on' : ''}" data-a="bd-era" data-e="${k}" data-w="${w}" aria-pressed="${k === era[0]}">${l}</button>`).join('');
+  const dbtn = Array.from({ length: 7 }, (_, i) => { const d = addDays(w, i), g = (dayGroups(d).filter(musG)[0]), lab = !isMuscuDay(d) ? (i > last ? '' : cur && i === last ? 'auj.' : 'repos') : (GL[g] || 'muscu');
+    return `<button class="${i === sel ? 'on' : ''}" data-a="bd-day" data-i="${i}" data-w="${w}" ${i > last ? 'disabled' : ''} aria-pressed="${i === sel}" aria-label="${esc(cap(JOURS[i]) + (lab ? ' : ' + lab : ''))}"><b>${esc(cap(JOURS[i]).slice(0, 1))}</b><small>${esc(lab.length > 7 ? lab.slice(0, 6) + '.' : lab)}</small></button>`; }).join('');
+  return `<div class="bdy" data-bd="${uid}" data-w="${w}"><div class="bdy-era" role="group" aria-label="Taille des muscles">${eras}</div>
+    <div class="bdy-figs"><figure>${bodySvg('f', col, uid, defs, sc, hot)}<figcaption>Face</figcaption></figure><figure>${bodySvg('b', col, uid, '', sc, hot)}<figcaption>Dos</figcaption></figure></div>
+    <div class="bdy-leg" aria-hidden="true"><div class="bdy-bar"><i class="bdy-0"></i><i class="bdy-g"></i></div><div class="bdy-lab"><span class="bdy-0t">0</span><span class="bdy-lt"><span>Peu</span><span style="left:50%">Objectif</span><span style="left:80%">Max</span><span class="r">Trop</span></span></div></div>
+    <p class="bdy-cap">Couleur : séries ${sel < last ? `jusqu’à ${esc(JOURS[sel])}` : 'de la semaine'} · taille : tes séances des derniers mois${grew.length ? `. Ce qui a le plus grossi en 3 mois : <b>${esc(grew.join(', '))}</b>` : ''}</p>
+    <div class="bdy-days" role="group" aria-label="Revoir la semaine jour par jour">${dbtn}</div></div>`;
+}
+function bdRefresh(el) { const box = el.closest('.bdy'); if (box) box.outerHTML = wkBodyHtml(box.dataset.w); }
+Object.assign(A, {
+  'bd-era': el => { UI.bdEra = el.dataset.e; bdRefresh(el); },
+  'bd-day': el => { UI.bdDay = +el.dataset.i; UI.bdW = el.dataset.w; bdRefresh(el); }
+});
 </script>
 </body>
 </html>
