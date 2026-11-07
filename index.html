@@ -997,6 +997,14 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 
 /* v8.23 : objectif et maximum sous chaque barre */
 .wkm-o{grid-column:1 / -1;font-size:11.5px;line-height:1.2;color:var(--ink-2)}
+
+/* v8.24 : notes par muscle */
+.bdy-notes{display:grid;grid-template-columns:1.3fr repeat(6,minmax(0,1fr));gap:4px;align-items:stretch}
+.bdy-notes>div{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#1F2327;border-radius:9px;padding:4px 0;min-width:0}
+.bdy-notes b{font:800 18px/1 var(--f-d);color:#EDEFEB}.bdy-notes span{font:700 10.5px var(--f-d);letter-spacing:.08em;color:#9AA0A4;text-transform:uppercase}
+.bdy-notes .bdy-ovr{background:var(--accent)}.bdy-notes .bdy-ovr b{font-size:22px;color:#14171A}.bdy-notes .bdy-ovr span{color:#14171A}
+.bdy-why{color:#EDEFEB;font-size:12.5px;text-decoration-color:#6B7176;padding:0}
+.bdy-tbl th,.bdy-tbl td{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -7072,7 +7080,7 @@ const BD_C = {"f:chest:l":[306,376],"f:chest:r":[421,376],"f:obliques:l":[283,53
 const BD_ERAS = [['3m', 'Il y a 3 mois', 91], ['1m', 'Il y a 1 mois', 30], ['now', 'Aujourd’hui', 0]];
 let BD_SCM = {};
 // Taille de chaque muscle à la date ref : séries passées avec oubli progressif (demi-vie 12 semaines)
-function bdScale(ref) {
+function bdScaleOld(ref) {
   const key = VER + '|' + ref; if (BD_SCM[key]) return BD_SCM[key];
   const acc = {}, t0 = parseISO(ref).getTime();
   for (const d of sessionDaysIn(addDays(ref, -730), ref).filter(isMuscuDay)) {
@@ -7097,7 +7105,7 @@ function bodySvg(v, col, uid, defs, sc, hot) {
   });
   return `<svg viewBox="${B.vb}" aria-hidden="true" focusable="false"><defs>${defs}${ids}</defs><path d="${B.out}" fill="#EEF1F6" stroke="#EEF1F6" stroke-width="6" stroke-linejoin="round"/><g fill="#EEF1F6" stroke="#EEF1F6" stroke-width="12" stroke-linejoin="round">${under}</g>${skin}<g stroke-width="2.4" stroke-linejoin="round">${mus}</g></svg>`;
 }
-function wkBodyHtml(w) {
+function wkBodyHtmlOld(w) {
   const t = today(), cur = w === weekStart(t), last = cur ? dow(t) : 6, { days } = wkMus(w);
   const sel = UI.bdW === w && UI.bdDay != null ? Math.min(UI.bdDay, last) : last, upto = addDays(w, sel);
   const era = BD_ERAS.find(e => e[0] === UI.bdEra) || BD_ERAS[2], sc = bdScale(addDays(t, -era[2]));
@@ -7121,6 +7129,72 @@ Object.assign(A, {
   'bd-era': el => { UI.bdEra = el.dataset.e; bdRefresh(el); },
   'bd-day': el => { UI.bdDay = +el.dataset.i; UI.bdW = el.dataset.w; bdRefresh(el); }
 });
+
+/* ================= v8.24 : note par muscle (carte) et taille bornée ================= */
+const BD_NOTE_G = [['PEC', 'Pectoraux', ['pecs']], ['DOS', 'Dos', ['dos']], ['ÉPA', 'Épaules', ['epaules']], ['BRA', 'Bras', ['biceps', 'triceps']], ['JAM', 'Jambes', ['quadriceps', 'ischios', 'fessiers', 'mollets']], ['ABD', 'Abdos', ['abdos']]];
+let BD_NM = {};
+// Note sur 99 de chaque muscle à la date ref : volume 30 %, régularité 15 %, ancienneté 25 %, progression des charges 30 %
+function bdNotes(ref) {
+  const key = VER + '|' + ref; if (BD_NM[key]) return BD_NM[key];
+  const wk = Array.from({ length: 52 }, (_, k) => { const b = addDays(ref, -7 * k), W = mwWork(sessionDaysIn(addDays(b, -6), b).filter(isMuscuDay)); return Object.fromEntries(W.rows.map(r => [r.k, r.v])); });
+  const y0 = addDays(ref, -364), rec0 = addDays(ref, -41), lim = addDays(ref, -84), best = {};
+  for (const d of sessionDaysIn(y0, ref)) for (const e of S.sessions[d]?.entries || []) {
+    const kd = kindOf(e.ex); if (kd === 'cardio') continue;
+    const ds = doneSets(e); if (!ds.length) continue;
+    const v = kd === 'bw' ? bwScore(ds, d) : best1rm(ds); if (!(v > 0)) continue;
+    const b = best[e.ex] ||= { f: d, o: 0, r: 0, n: 0 };
+    if (d <= addDays(b.f, 41)) b.o = Math.max(b.o, v); if (d >= rec0) b.r = Math.max(b.r, v);
+    b.n++;
+  }
+  const prog = {};
+  for (const [ex, b] of Object.entries(best)) { if (!b.o || !b.r || b.f > lim) continue; for (const [m, w] of exMap(ex)) if (w >= 1) { const q = prog[m] ||= [0, 0]; q[0] += (b.r / b.o - 1) * b.n; q[1] += b.n; } }
+  const out = {};
+  for (const M of MUS) {
+    const ser = wk.map(x => x[M.k] || 0), s12 = ser.slice(0, 12), avg = s12.reduce((a, b) => a + b, 0) / 12, x = avg / M.min, hi = M.max / M.min;
+    const V = x <= 1 ? .7 * x : Math.min(1, .7 + .3 * (x - 1) / Math.max(.01, hi - 1));
+    const ok = v => v >= .5 * M.min, reg = s12.filter(ok).length, yr = ser.filter(ok).length;
+    const g = prog[M.k] ? prog[M.k][0] / prog[M.k][1] : null, gg = g == null ? 0 : g;
+    const P = gg <= -.1 ? 0 : gg <= 0 ? .3 * (gg + .1) / .1 : Math.min(1, .3 + .7 * gg / .3);
+    out[M.k] = { n: Math.round(34 + 65 * (.30 * V + .15 * reg / 12 + .25 * yr / 52 + .30 * P)), avg, reg, yr, g };
+  }
+  out._any = sessionDaysIn(addDays(ref, -83), ref).some(isMuscuDay);
+  if (Object.keys(BD_NM).length > 8) BD_NM = {};
+  return (BD_NM[key] = out);
+}
+// Taille : 0,95 (note 40, rien) à 1,05 (note 99)
+function bdScale(ref) { const N = bdNotes(ref), v = {}; for (const M of MUS) v[M.k] = .95 + .10 * Math.max(0, Math.min(1, (N[M.k].n - 40) / 59)); return v; }
+function bdGroupNotes(ref) { const N = bdNotes(ref); const g = BD_NOTE_G.map(([s, l, ks]) => ({ s, l, v: Math.round(ks.reduce((a, k) => a + N[k].n, 0) / ks.length) })); return { g, ovr: Math.round(g.reduce((a, x) => a + x.v, 0) / g.length) }; }
+function wkBodyHtml(w) {
+  const t = today(), cur = w === weekStart(t), last = cur ? dow(t) : 6, { days } = wkMus(w);
+  const sel = UI.bdW === w && UI.bdDay != null ? Math.min(UI.bdDay, last) : last, upto = addDays(w, sel);
+  const era = BD_ERAS.find(e => e[0] === UI.bdEra) || BD_ERAS[2], ref = addDays(t, -era[2]), sc = bdScale(ref), G = bdGroupNotes(ref);
+  const W_ = mwWork(days.filter(d => d <= upto)), val = k => { const r = W_.rows.find(x => x.k === k); return r ? r.v : 0; };
+  const col = {}, hot = {}; for (const M of MUS) { const v = val(M.k); col[M.k] = bdCol(M.k, v); hot[M.k] = v > M.max; }
+  const uid = 'bd' + (++BD_N);
+  const defs = `<filter id="${uid}-hot" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>` + MUS.map(M => { const c = col[M.k]; return `<linearGradient id="${uid}-${M.k}" x1=".15" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="${bdMix(c, '#FFFFFF', .38)}"/><stop offset=".45" stop-color="${c}"/><stop offset="1" stop-color="${bdMix(c, '#000000', .22)}"/></linearGradient>`; }).join('');
+  const g3 = bdGroupNotes(addDays(t, -91)).g, g0 = bdGroupNotes(t).g;
+  const up = g0.map((x, i) => [x.l, x.v - g3[i].v]).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([l, d]) => `${l} +${d}`);
+  const eras = BD_ERAS.map(([k, l]) => `<button class="${k === era[0] ? 'on' : ''}" data-a="bd-era" data-e="${k}" data-w="${w}" aria-pressed="${k === era[0]}">${l}</button>`).join('');
+  const notes = `<div class="bdy-notes" role="list" aria-label="Notes sur 99"><div class="bdy-ovr" role="listitem"><b class="num-t">${G.ovr}</b><span>Note</span></div>${G.g.map(x => `<div role="listitem" title="${esc(x.l)}"><b class="num-t">${x.v}</b><span>${x.s}</span></div>`).join('')}</div>`;
+  const dbtn = Array.from({ length: 7 }, (_, i) => { const d = addDays(w, i), g = (dayGroups(d).filter(musG)[0]), lab = !isMuscuDay(d) ? (i > last ? '' : cur && i === last ? 'auj.' : 'repos') : (GL[g] || 'muscu');
+    return `<button class="${i === sel ? 'on' : ''}" data-a="bd-day" data-i="${i}" data-w="${w}" ${i > last ? 'disabled' : ''} aria-pressed="${i === sel}" aria-label="${esc(cap(JOURS[i]) + (lab ? ' : ' + lab : ''))}"><b>${esc(cap(JOURS[i]).slice(0, 1))}</b><small>${esc(lab.length > 7 ? lab.slice(0, 6) + '.' : lab)}</small></button>`; }).join('');
+  return `<div class="bdy" data-bd="${uid}" data-w="${w}"><div class="bdy-era" role="group" aria-label="Date des notes et de la taille">${eras}</div>${notes}
+    <div class="bdy-figs"><figure>${bodySvg('f', col, uid, defs, sc, hot)}<figcaption>Face</figcaption></figure><figure>${bodySvg('b', col, uid, '', sc, hot)}<figcaption>Dos</figcaption></figure></div>
+    <div class="bdy-leg" aria-hidden="true"><div class="bdy-bar"><i class="bdy-0"></i><i class="bdy-g"></i></div><div class="bdy-lab"><span class="bdy-0t">0</span><span class="bdy-lt"><span>Peu</span><span style="left:50%">Objectif</span><span style="left:80%">Max</span><span class="r">Trop</span></span></div></div>
+    <p class="bdy-cap">Couleur : séries ${sel < last ? `jusqu’à ${esc(JOURS[sel])}` : 'de la semaine'} · taille : ta note par muscle.${!bdNotes(ref)._any ? ' Aucune séance enregistrée à cette date : silhouette de départ.' : ''}${up.length ? ` Plus gros progrès en 3 mois : <b>${esc(up.join(', '))}</b>.` : ''} <button class="lnk bdy-why" data-a="bd-help" data-w="${w}">Comment est calculée la note</button></p>
+    <div class="bdy-days" role="group" aria-label="Revoir la semaine jour par jour">${dbtn}</div></div>`;
+}
+function bdHelpHtml() {
+  const t = today(), era = BD_ERAS.find(e => e[0] === UI.bdEra) || BD_ERAS[2], ref = addDays(t, -era[2]), N = bdNotes(ref);
+  const rows = MUS.filter(M => !M.opt).map(M => { const x = N[M.k], pg = x.g == null ? 'pas assez de recul' : `${x.g >= 0 ? '+' : '−'}${nf(Math.abs(x.g * 100), 0)} %`;
+    return `<tr><th scope="row">${esc(M.l)}</th><td class="num-t"><b>${x.n}</b></td><td class="num-t">${n1(x.avg)} / ${M.min}</td><td>${pg}</td><td class="num-t">${x.reg}/12 · ${x.yr}/52</td></tr>`; }).join('');
+  return `<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">${esc(era[1])}</div><h2 style="margin:2px 0 0">Note par muscle</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
+    <p class="small" style="margin:0">Note sur 99 : <b>volume</b> 30 % (séries moyennes par semaine sur 12 semaines, face à l’objectif), <b>régularité</b> 15 % (semaines sur 12 avec au moins la moitié de l’objectif), <b>ancienneté</b> 25 % (les mêmes semaines sur un an), <b>progression des charges</b> 30 % (meilleure 1RM estimée des 6 dernières semaines face à tes débuts sur l’exercice dans l’année, après 12 semaines de suivi). Sans aucune donnée, la note est de 40.</p>
+    <p class="small muted" style="margin:0">La taille du muscle sur la silhouette suit la note, entre −5 % (note 40) et +5 % (note 99) : elle ne peut pas dépasser ce plafond, progresse sur des mois et baisse doucement si tu arrêtes.</p>
+    <div class="tbl-wrap"><table class="tbl bdy-tbl"><thead><tr><th scope="col">Muscle</th><th scope="col">Note</th><th scope="col">Séries / sem.</th><th scope="col">Charges</th><th scope="col">Régularité 12 sem. · an</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+Object.assign(A, { 'bd-help': () => openSheet(bdHelpHtml()) });
 </script>
 </body>
 </html>
