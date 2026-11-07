@@ -1005,6 +1005,21 @@ body.sheet-on #rest:not([hidden]){display:flex!important;z-index:60;top:calc(env
 .bdy-notes .bdy-ovr{background:var(--accent)}.bdy-notes .bdy-ovr b{font-size:22px;color:#14171A}.bdy-notes .bdy-ovr span{color:#14171A}
 .bdy-why{color:#EDEFEB;font-size:12.5px;text-decoration-color:#6B7176;padding:0}
 .bdy-tbl th,.bdy-tbl td{white-space:nowrap}
+
+/* v8.25 : carte joueur façon FC */
+.fc-card{--fc1:#f1d488;--fc2:#c9a227;--fci:#1b1400;align-self:center;width:min(240px,100%);margin:0 auto;padding:14px 14px 22px;box-sizing:border-box;color:var(--fci);background:linear-gradient(160deg,var(--fc1) 0%,var(--fc1) 45%,var(--fc2) 100%);clip-path:polygon(14% 0,86% 0,100% 7%,100% 86%,50% 100%,0 86%,0 7%);display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;filter:drop-shadow(0 8px 14px rgba(0,0,0,.25))}
+.fc-top{align-self:stretch;display:flex;justify-content:space-between;align-items:flex-start}
+.fc-ovr{display:flex;flex-direction:column;align-items:center;line-height:1}
+.fc-ovr b{font:800 46px/0.9 var(--f-d)}.fc-ovr span{font:800 15px var(--f-d);letter-spacing:.1em;margin-top:2px}
+.fc-ph{width:78px;height:78px;border-radius:50%;background:rgba(20,23,26,.88);color:var(--fc1);display:grid;place-items:center;font:800 40px var(--f-d);margin-top:-18px}
+.fc-nm{font:800 22px/1 var(--f-d);letter-spacing:.06em;margin-top:2px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fc-st{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;row-gap:3px;border-top:1px solid color-mix(in srgb,var(--fci) 25%,transparent);padding-top:6px;margin-top:2px}
+.fc-st div{display:flex;align-items:baseline;gap:6px}.fc-st b{font:800 21px/1 var(--f-d);min-width:24px;text-align:right}.fc-st span{font:700 13px var(--f-d);letter-spacing:.1em}
+.fc-ft{font:700 11.5px var(--f-d);letter-spacing:.12em;text-transform:uppercase;opacity:.85;margin-top:2px}
+.fc-mini{--fc1:#f1d488;--fc2:#c9a227;--fci:#1b1400;width:38px;height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--fci);background:linear-gradient(160deg,var(--fc1),var(--fc2));clip-path:polygon(14% 0,86% 0,100% 8%,100% 84%,50% 100%,0 84%,0 8%);padding-bottom:4px;box-sizing:border-box}
+.fc-mini b{font:800 19px/1 var(--f-d)}.fc-mini small{font:800 8.5px var(--f-d);letter-spacing:.06em}
+.bdy-notes>button{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:9px;padding:4px 0;min-width:0;border:0}
+.lg-card .lg-top b{font-size:21px}.lg-card .lg-pl{white-space:nowrap;flex:none}
 </style>
 </head>
 <body>
@@ -1900,24 +1915,20 @@ function trainGuideHtml() {
 }
 
 /* ================= Ligue (v6.5, façon classement compétitif) ================= */
-const LG_TIERS = [
-  { k: 'fer', n: 'Fer', c: '#8d939c', c2: '#5c6169' }, { k: 'bronze', n: 'Bronze', c: '#c98a4b', c2: '#8a5a2b' },
-  { k: 'argent', n: 'Argent', c: '#b6c1cc', c2: '#7f8b97' }, { k: 'or', n: 'Or', c: '#e9b93a', c2: '#b4861a' },
-  { k: 'platine', n: 'Platine', c: '#3cb8ad', c2: '#1e857c' }, { k: 'emeraude', n: 'Émeraude', c: '#33b26a', c2: '#1c7f47' },
-  { k: 'diamant', n: 'Diamant', c: '#6a95f7', c2: '#3d63c9' }, { k: 'maitre', n: 'Maître', c: '#a95ff0', c2: '#7237bb', apex: true },
-  { k: 'gm', n: 'Grand Maître', c: '#e64f4f', c2: '#b02c2c', apex: true, at: 250 }, { k: 'chall', n: 'Challenger', c: '#f6c744', c2: '#2fb9d6', apex: true, at: 500 }];
+const LG_TIERS_LOL = null; // v8.25 : ancienne échelle Fer → Challenger retirée
+const LG_TIERS = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map(n => { const c = n >= 8 ? ['#c98a4b', '#8a5a2b'] : n >= 5 ? ['#aab4bf', '#6f7b87'] : n >= 2 ? ['#e3ae2a', '#a77a12'] : ['#a95ff0', '#7237bb']; return { k: 'd' + n, n: 'Division ' + n, d: n, c: c[0], c2: c[1] }; }).concat([{ k: 'elite', n: 'Élite', d: 0, c: '#f6c744', c2: '#2b2410', apex: true }]);
 const LG_ROMAN = ['', 'I', 'II', 'III', 'IV'];
-const LG = { win: 60, draw: 25, loss: 12, maxEmpty: 3, div: 100 };
+const LG = { win: 60, draw: 25, loss: 12, maxEmpty: 3, div: 250 };
 const lgGain = xp => Math.max(12, Math.min(30, 12 + Math.round((xp - LG.win) / 8)));
 const lgResult = xp => xp >= LG.win ? 'V' : xp >= LG.draw ? 'N' : 'D';
 const LG_RES = { V: ['good', 'Victoire'], N: ['', 'Nul'], D: ['crit', 'Défaite'], O: ['', 'Semaine off'], A: ['', 'Absent'] };
-function lgRankOf(st) {
+function lgRankOfOld(st) {
   let ti = st.tier; if (ti >= 7) ti = st.lp >= 500 ? 9 : st.lp >= 250 ? 8 : 7;
   const T = LG_TIERS[ti], apex = !!T.apex;
   return { ti, T, apex, label: apex ? T.n : `${T.n} ${LG_ROMAN[st.div]}`, score: st.tier >= 7 ? 2800 + st.lp : st.tier * 400 + (4 - st.div) * 100 + st.lp,
     pct: ti === 9 ? 100 : ti === 8 ? (st.lp - 250) / 250 * 100 : ti === 7 ? st.lp / 250 * 100 : st.lp };
 }
-function computeLeague(byDay, start, t) {
+function computeLeagueOld(byDay, start, t) {
   const st = { tier: 0, div: 4, lp: 0, shield: 0 }, hist = []; let wins = 0, losses = 0, draws = 0, streak = 0, bestStreak = 0, empty = 0, peak = null;
   const hasData = d => (byDay[d] || 0) > 0 || !!S.sessions[d] || !!S.nutrition[d] || !!S.health[d];
   const settle = (d, r, xp) => {
@@ -1946,13 +1957,13 @@ function computeLeague(byDay, start, t) {
     : { need: LG.div - st.lp, label: st.div > 1 ? `${rk.T.n} ${LG_ROMAN[st.div - 1]}` : rk.ti + 1 >= 7 ? LG_TIERS[7].n : `${LG_TIERS[rk.ti + 1].n} IV` };
   return { ...st, ...rk, wins, losses, draws, games, streak, bestStreak, peak, hist, next, start, today: { xp: txp, r: tr, done: tdone, gain: tr === 'V' ? lgGain(txp) + (streak >= 2 ? 3 : 0) : tr === 'N' ? 0 : -LG.loss } };
 }
-function lgEmblem(lg, size = 44, id = 'e') {
+function lgEmblemOld(lg, size = 44, id = 'e') {
   const T = lg.T, gid = `lg-${T.k}-${id}`, ti = lg.ti;
   const inner = T.apex ? (ti === 9 ? '<path d="M13 36l3.5-13 7.5 7 7.5-7 3.5 13z" fill="#fff" opacity=".95"/>' : ti === 8 ? '<path d="M24 16l2.7 6.2 6.7.6-5 4.4 1.5 6.6-5.9-3.5-5.9 3.5 1.5-6.6-5-4.4 6.7-.6z" fill="#fff"/>' : '<circle cx="24" cy="29" r="7.5" fill="none" stroke="#fff" stroke-width="3.2"/>')
     : lg.div ? `<text x="24" y="36" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="21" fill="#fff">${LG_ROMAN[lg.div]}</text>` : '';
   return `<svg class="lg-emb" width="${size}" height="${Math.round(size * 56 / 48)}" viewBox="0 0 48 56" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${T.c}"/><stop offset="1" stop-color="${T.c2}"/></linearGradient></defs><path d="M24 2 44 10v20c0 12-10 20-20 24C14 50 4 42 4 30V10z" fill="url(#${gid})" stroke="${T.c2}" stroke-width="2" stroke-linejoin="round"/><path d="M24 8 39 14v15c0 9-7.5 15.5-15 18.5C16.5 44.5 9 38 9 29V14z" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="1.5"/>${inner}</svg>`;
 }
-function lgPromo(lg) {
+function lgPromoOld(lg) {
   if (!canUse('ligue')) return;
   $('.lg-promo')?.remove();
   const el = document.createElement('div'); el.className = 'lg-promo'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Promotion');
@@ -1963,16 +1974,16 @@ function lgSheetHtml() {
   const g = game(), lg = g.lg, played = lg.hist.filter(h => h.r === 'V' || h.r === 'N' || h.r === 'D'), last = played.slice(-14);
   const rate = lg.games ? Math.round(lg.wins / lg.games * 100) : 0, w = Math.min(100, Math.max(0, lg.pct));
   const rules = [['Séance de muscu terminée', '50 XP + 2 / série'], ['Journée clôturée', '30 XP'], ['Cardio ou marche de 30 min', '25 XP'], ['Record battu', '20 XP'], ['Repas notés (2 au moins)', '15 XP'], ['Journée dans la cible (kcal et protéines)', '15 XP'], ['Protéines atteintes', '10 XP'], ['Nuit de 7 h ou plus', '10 XP'], ['Objectif de pas', '10 XP'], ['Pesée', '5 XP']];
-  const td = lg.today, tdTxt = td.done ? `partie jouée : ${LG_RES[td.r][1].toLowerCase()}` : td.r === 'V' ? `victoire acquise · +${nf(td.gain)} PL` : `encore ${nf(LG.win - td.xp)} XP pour gagner`;
-  return `<div class="lg-head">${lgEmblem(lg, 84, 'sheet')}<div><div class="eyebrow">Saison 1${lg.start ? ` · depuis le ${fmtDM(lg.start)}` : ''}</div><h2>${esc(lg.label)}</h2><div class="small muted">${nf(lg.lp)} PL${lg.peak && lg.peak.score > lg.score ? ` · meilleur rang : ${esc(lg.peak.label)}` : ''}${lg.streak >= 3 ? ` · en feu, ${lg.streak} victoires d’affilée` : ''}</div></div></div>
+  const td = lg.today, tdTxt = td.done ? `match joué : ${LG_RES[td.r][1].toLowerCase()}` : td.r === 'V' ? `victoire acquise · +${nf(td.gain)} pts` : `encore ${nf(LG.win - td.xp)} XP pour gagner`;
+  return `${fcCardHtml(lg)}<div class="lg-head">${lgEmblem(lg, 84, 'sheet')}<div><div class="eyebrow">Division Rivals · saison 1${lg.start ? ` · depuis le ${fmtDM(lg.start)}` : ''}</div><h2>${esc(lg.label)}</h2><div class="small muted">${nf(lg.lp)} pts${lg.peak && lg.peak.score > lg.score ? ` · meilleur rang : ${esc(lg.peak.label)}` : ''}${lg.streak >= 3 ? ` · en feu, ${lg.streak} victoires d’affilée` : ''}</div></div></div>
     <div class="xpbar lg-bar" role="progressbar" aria-valuenow="${Math.round(w)}" aria-valuemin="0" aria-valuemax="100" style="--lgc:${lg.T.c};--lgc2:${lg.T.c2}"><span style="width:${w}%"></span></div>
-    <p class="small muted" style="margin:0">${lg.next ? `Encore ${nf(lg.next.need)} PL pour passer ${esc(lg.next.label)}.` : 'Tu es au sommet de la ligue.'}${lg.shield ? ` Bouclier de rétrogradation actif pour ${lg.shield} partie${lg.shield > 1 ? 's' : ''}.` : ''}</p>
-    <div class="recap">${tile('Victoires', nf(lg.wins), '', `<span class="delta">${rate} % de ${nf(lg.games)} partie${lg.games > 1 ? 's' : ''}</span>`)}${tile('Défaites', nf(lg.losses), '', `<span class="delta">${nf(lg.draws)} nul${lg.draws > 1 ? 's' : ''}</span>`)}${tile('Série', nf(lg.streak), 'V', `<span class="delta">record ${nf(lg.bestStreak)}</span>`)}${tile('Aujourd’hui', nf(td.xp), 'XP', `<span class="delta ${td.r === 'V' ? 'up' : ''}">${tdTxt}</span>`)}</div>
-    <section class="card"><div class="sec-t">Dernières parties</div><div class="lg-hist">${last.map(h => `<span class="lg-g ${h.r}" title="${fmtDay(h.d)} · ${LG_RES[h.r][1]} · ${nf(h.xp)} XP">${h.r}</span>`).join('') || '<span class="tiny muted">Ta première partie se joue aujourd’hui.</span>'}</div>
-      ${played.length ? `<div class="list">${played.slice(-5).reverse().map(h => `<div class="li"><div class="main"><div class="t">${fmtDayLong(h.d)}</div><div class="s">${nf(h.xp)} XP · ${esc(h.rank)}</div></div><span class="pill ${LG_RES[h.r][0]}">${LG_RES[h.r][1]}${h.pl ? ` ${h.pl > 0 ? '+' : '−'}${nf(Math.abs(h.pl))} PL` : ''}</span></div>`).join('')}</div>` : ''}</section>
+    <p class="small muted" style="margin:0">${lg.next ? `Encore ${nf(lg.next.need)} pts pour monter en ${esc(lg.next.label)}.` : 'Tu es en Élite, le sommet.'}${lg.shield ? ` Protection anti-relégation active pour ${lg.shield} match${lg.shield > 1 ? 's' : ''}.` : ''}</p>
+    <div class="recap">${tile('Victoires', nf(lg.wins), '', `<span class="delta">${rate} % de ${nf(lg.games)} match${lg.games > 1 ? 's' : ''}</span>`)}${tile('Défaites', nf(lg.losses), '', `<span class="delta">${nf(lg.draws)} nul${lg.draws > 1 ? 's' : ''}</span>`)}${tile('Série', nf(lg.streak), 'V', `<span class="delta">record ${nf(lg.bestStreak)}</span>`)}${tile('Aujourd’hui', nf(td.xp), 'XP', `<span class="delta ${td.r === 'V' ? 'up' : ''}">${tdTxt}</span>`)}</div>
+    <section class="card"><div class="sec-t">Derniers matchs</div><div class="lg-hist">${last.map(h => `<span class="lg-g ${h.r}" title="${fmtDay(h.d)} · ${LG_RES[h.r][1]} · ${nf(h.xp)} XP">${h.r}</span>`).join('') || '<span class="tiny muted">Ton premier match se joue aujourd’hui.</span>'}</div>
+      ${played.length ? `<div class="list">${played.slice(-5).reverse().map(h => `<div class="li"><div class="main"><div class="t">${fmtDayLong(h.d)}</div><div class="s">${nf(h.xp)} XP · ${esc(h.rank)}</div></div><span class="pill ${LG_RES[h.r][0]}">${LG_RES[h.r][1]}${h.pl ? ` ${h.pl > 0 ? '+' : '−'}${nf(Math.abs(h.pl))} pts` : ''}</span></div>`).join('')}</div>` : ''}</section>
     <div id="lg-board"></div>
-    <section class="card"><div class="sec-t">Les ligues</div><div class="lg-ladder">${LG_TIERS.map((T, i) => `<div class="lg-row ${i === lg.ti ? 'on' : ''}">${lgEmblem({ T, ti: i, div: i === lg.ti ? lg.div : 0 }, 24, 'l' + i)}<b>${T.n}</b><span class="tiny muted">${T.apex ? (T.at ? `à partir de ${T.at} PL` : 'après Diamant I') : 'divisions IV à I · 100 PL chacune'}</span></div>`).join('')}</div></section>
-    <section class="card lg-rules"><div class="sec-t">Comment ça marche</div><p class="small" style="margin:0 0 8px">Chaque journée est une partie. ${LG.win} XP ou plus : victoire, +12 à +30 PL selon le score (+3 à partir de 3 victoires d’affilée). De ${LG.draw} à ${LG.win - 1} XP : nul, 0 PL. En dessous : défaite, −${LG.loss} PL. Journée vide : défaite, 3 au maximum d’affilée. Semaine off : pas de partie. À 100 PL tu montes d’une division ; sous 0 tu descends, avec un bouclier de 3 parties après chaque promotion.</p>
+    <section class="card"><div class="sec-t">Les divisions</div><div class="lg-ladder">${LG_TIERS.slice().reverse().map(T => { const i = LG_TIERS.indexOf(T); return `<div class="lg-row ${i === lg.ti ? 'on' : ''}">${lgEmblem({ T, ti: i }, 24, 'l' + i)}<b>${T.n}</b><span class="tiny muted">${T.apex ? 'après la Division 1, points sans limite' : `${LG.div} pts pour monter`}</span></div>`; }).join('')}</div></section>
+    <section class="card lg-rules"><div class="sec-t">Comment ça marche</div><p class="small" style="margin:0 0 8px">Comme Division Rivals dans EA FC : chaque journée est un match. ${LG.win} XP ou plus : victoire, +12 à +30 pts selon le score (+3 à partir de 3 victoires d’affilée). De ${LG.draw} à ${LG.win - 1} XP : nul, 0 pt. En dessous : défaite, −${LG.loss} pts. Journée vide : défaite, 3 au maximum d’affilée. Semaine off : pas de match. À ${LG.div} pts tu montes d’une division, de la Division 10 jusqu’à l’Élite ; sous 0 tu es relégué, sauf pendant les 3 matchs de protection qui suivent une promotion.</p>
       <div class="list">${rules.map(([l, x]) => `<div class="li"><div class="main"><div class="t">${l}</div></div><span class="xp-h">${x}</span></div>`).join('')}</div></section>
     <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
 }
@@ -2002,9 +2013,9 @@ const BADGES = [
   { id: 'st', l: '10 000 pas', d: 'en une journée', t: 10000, v: g => g.maxSteps },
   { id: 'c10', l: 'Cardio', d: '10 activités cardio', t: 10, v: g => g.cardio },
   { id: 'cl7', l: 'Rituel', d: '7 journées clôturées d’affilée', t: 7, v: g => g.bestC },
-  { id: 'lg1', l: 'Bronze', d: 'ligue Bronze atteinte', t: 1, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
-  { id: 'lg3', l: 'Or', d: 'ligue Or atteinte', t: 3, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
-  { id: 'lg6', l: 'Diamant', d: 'ligue Diamant atteinte', t: 6, v: g => g.lg.peak ? g.lg.peak.ti : 0 }];
+  { id: 'lg1', l: 'Division 8', d: 'Division 8 atteinte', t: 2, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
+  { id: 'lg3', l: 'Division 5', d: 'Division 5 atteinte', t: 5, v: g => g.lg.peak ? g.lg.peak.ti : 0 },
+  { id: 'lg6', l: 'Division 1', d: 'Division 1 atteinte', t: 9, v: g => g.lg.peak ? g.lg.peak.ti : 0 }];
 function mealsNoted(d) { const nd = S.nutrition[d]; if (!nd) return 0; return SLOTS.filter(s => s.main && ((nd.meals?.[s.k] || []).length || nd.skip?.[s.k])).length; }
 let GM = null, GM_V = -1, GM_T = '', LAST_LVL = null;
 function game() {
@@ -2056,8 +2067,8 @@ function checkLevel() {
   const g = game(); let promo = false;
   if (LAST_LG && g.lg) {
     const cur = g.lg;
-    if (cur.score > LAST_LG.score) { if (cur.label !== LAST_LG.label) { promo = true; setTimeout(() => lgPromo(cur), 500); } else toast(`Victoire : +${nf(cur.score - LAST_LG.score)} PL`); }
-    else if (cur.score < LAST_LG.score) toast(cur.label !== LAST_LG.label ? `Rétrogradé en ${cur.label} · ${nf(cur.lp)} PL` : `Défaite : −${nf(LAST_LG.score - cur.score)} PL`);
+    if (cur.score > LAST_LG.score) { if (cur.label !== LAST_LG.label) { promo = true; setTimeout(() => lgPromo(cur), 500); } else toast(`Victoire : +${nf(cur.score - LAST_LG.score)} pts`); }
+    else if (cur.score < LAST_LG.score) toast(cur.label !== LAST_LG.label ? `Relégué en ${cur.label} · ${nf(cur.lp)} pts` : `Défaite : −${nf(LAST_LG.score - cur.score)} pts`);
   }
   if (!promo && LAST_LVL != null && g.level > LAST_LVL) setTimeout(() => { toast(`Niveau ${g.level} atteint`); confetti(); }, 600);
   if (LAST_XP != null && g.xp > LAST_XP) xpPop(g.xp - LAST_XP);
@@ -2084,7 +2095,7 @@ function challengesHtml(w) {
 }
 function trophiesHtml() {
   const g = game(), got = g.badges.filter(b => b.earned).length;
-  const prog = b => b.id.startsWith('lg') ? `${g.lg.peak ? g.lg.peak.T.n : 'Fer'} pour l’instant` : b.id === 'st' ? `${nf(Math.min(b.val, b.t))} / ${nf(b.t)}` : `${nf(Math.min(b.val, b.t), b.id.startsWith('t') ? 1 : 0)} / ${nf(b.t)}`;
+  const prog = b => b.id.startsWith('lg') ? `${g.lg.peak ? g.lg.peak.T.n : 'Division 10'} pour l’instant` : b.id === 'st' ? `${nf(Math.min(b.val, b.t))} / ${nf(b.t)}` : `${nf(Math.min(b.val, b.t), b.id.startsWith('t') ? 1 : 0)} / ${nf(b.t)}`;
   return `<section class="card"><h2 class="sec-t">Trophées <span class="tiny muted">${got}/${g.badges.length}</span></h2>
     <div class="badges">${g.badges.slice().sort((a, b) => b.earned - a.earned).map(b => `<div class="bdg ${b.earned ? '' : 'off'}" title="${esc(b.l + ' : ' + b.d)}">${plateHtml(b.earned ? b.c : 'var(--surface-2)')}<b>${esc(b.l)}</b><span>${b.earned ? esc(b.d) : prog(b)}</span></div>`).join('')}</div></section>`;
 }
@@ -2422,7 +2433,7 @@ function xpPop(n) {
 }
 
 /* Accueil « Aujourd'hui » */
-function gameBar() {
+function gameBarOld() {
   if (!canUse('ligue')) return '';
   const g = game(), lg = g.lg, w = Math.min(100, Math.max(0, lg.pct)), td = lg.today;
   const tdTxt = td.done ? `Partie du jour jouée : <b>${LG_RES[td.r][1].toLowerCase()}${td.gain ? ` ${td.gain > 0 ? '+' : '−'}${nf(Math.abs(td.gain))} PL` : ''}</b>` : td.r === 'V' ? `Victoire du jour acquise : <b>+${nf(td.gain)} PL</b> à la clôture` : `Partie du jour : <b>${nf(td.xp)} / ${LG.win} XP</b> pour la victoire`;
@@ -3390,7 +3401,7 @@ function scBody(by, groups, W, H, f = 1) {
 function scVal(x, v, u, Xr, Y, big = 42, small = 22) { let uw = 0; if (u) { x.font = rcF(600, small); uw = x.measureText(u).width + 3; rcT(x, u, Xr, Y, rcF(600, small), '#8A9095', 'right'); } rcT(x, v, Xr - uw, Y, rcF(700, big), '#FFFFFF', 'right'); }
 const scMix = (a, b, t) => { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), A = p(a), B = p(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
 const scSpW = (x, s, font, sp) => { x.font = font; const ch = [...s]; return ch.reduce((a, c) => a + x.measureText(c).width, 0) + sp * Math.max(0, ch.length - 1); };
-function scShield(x, lg, X, Y, w) { // écusson de ligue (même dessin que lgEmblem)
+function scShieldOld(x, lg, X, Y, w) { // écusson de ligue (même dessin que lgEmblem)
   const T = lg.T; x.save(); x.translate(X, Y); x.scale(w / 48, w / 48);
   const g = x.createLinearGradient(0, 0, 48, 56); g.addColorStop(0, T.c); g.addColorStop(1, T.c2);
   const p = new Path2D('M24 2 44 10v20c0 12-10 20-20 24C14 50 4 42 4 30V10z'); x.fillStyle = g; x.fill(p); x.lineJoin = 'round'; x.lineWidth = 2; x.strokeStyle = T.c2; x.stroke(p);
@@ -4847,7 +4858,7 @@ const BRICKS = [
   ['ia_sommeil', 'Corps et santé', 'Lecture IA du sommeil', 'Lecture automatique des captures de l’écran Sommeil', 1],
   ['import_sante', 'Corps et santé', 'Import Santé iPhone', 'Import automatique (Raccourci ou Health Auto Export) et import par copier-coller', 1],
   ['withings', 'Corps et santé', 'Withings', 'Connexion de la balance et de la montre Withings'],
-  ['ligue', 'Motivation', 'Ligue et défis', 'Ligue, classement entre utilisateurs, défis de la semaine', 1],
+  ['ligue', 'Motivation', 'Divisions et défis', 'Divisions façon EA FC, carte joueur, classement entre utilisateurs, défis de la semaine', 1],
   ['rituel', 'Motivation', 'Clôture de la journée', 'Bilan du soir : repas manquants, activité, synchro'],
   ['recap', 'Motivation', 'Récap de la semaine', 'Bilan de la semaine, le dimanche soir et le lundi'],
   ['partage', 'Motivation', 'Images à partager', 'Cartes Séance et Semaine à publier'],
@@ -5431,7 +5442,7 @@ async function lgBoardLoad() {
     const row = lgRow(); if (row) { const key = JSON.stringify(row); if (key !== LG_PUSHED) { LG_PUSHED = key; const { error } = await sb.from('league_board').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }); if (error) { LG_PUSHED = ''; throw error; } } }
     const { data, error } = await sb.from('league_board').select('user_id,name,label,tier,division,lp,score,streak,updated_at').order('score', { ascending: false }); if (error) throw error;
     const box = $('#lg-board'); if (!box) return;
-    box.innerHTML = `<section class="card lg-board"><div class="sec-t">Classement <span class="tiny muted">${data.length} joueur${data.length > 1 ? 's' : ''}</span></div><div class="list">${data.map((r, i) => { const rk = lgRankOf({ tier: r.tier, div: r.division, lp: r.lp }); const me = r.user_id === AUTH.user.id; return `<div class="li ${me ? 'me' : ''}"><span class="lg-pos">${i + 1}</span>${lgEmblem({ T: rk.T, ti: rk.ti, div: r.division }, 26, 'b' + i)}<div class="main"><div class="t">${esc(r.name || 'Joueur')}${me ? ' <span class="tiny muted">(toi)</span>' : ''}</div><div class="s">${esc(rk.label)} · ${nf(r.lp)} PL${r.streak >= 3 ? ` · ${nf(r.streak)} victoires d’affilée` : ''}</div></div></div>`; }).join('')}</div><p class="tiny muted" style="margin:6px 0 0">Chacun met son rang à jour en ouvrant l’app.</p></section>`;
+    box.innerHTML = `<section class="card lg-board"><div class="sec-t">Classement Division Rivals <span class="tiny muted">${data.length} joueur${data.length > 1 ? 's' : ''}</span></div><div class="list">${data.map((r, i) => { const rk = lgRankOf({ tier: r.tier, div: r.division, lp: r.lp }); const me = r.user_id === AUTH.user.id; return `<div class="li ${me ? 'me' : ''}"><span class="lg-pos">${i + 1}</span>${lgEmblem({ T: rk.T, ti: rk.ti, div: r.division }, 26, 'b' + i)}<div class="main"><div class="t">${esc(r.name || 'Joueur')}${me ? ' <span class="tiny muted">(toi)</span>' : ''}</div><div class="s">${esc(rk.label)} · ${nf(r.lp)} pts${r.streak >= 3 ? ` · ${nf(r.streak)} victoires d’affilée` : ''}</div></div></div>`; }).join('')}</div><p class="tiny muted" style="margin:6px 0 0">Chacun met son rang à jour en ouvrant l’app.</p></section>`;
   } catch (e) { const box = $('#lg-board'); if (box) box.innerHTML = `<p class="tiny muted" style="margin:0">Classement indisponible : ${esc(e.message || String(e))}</p>`; }
 }
 
@@ -7175,7 +7186,7 @@ function wkBodyHtml(w) {
   const g3 = bdGroupNotes(addDays(t, -91)).g, g0 = bdGroupNotes(t).g;
   const up = g0.map((x, i) => [x.l, x.v - g3[i].v]).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([l, d]) => `${l} +${d}`);
   const eras = BD_ERAS.map(([k, l]) => `<button class="${k === era[0] ? 'on' : ''}" data-a="bd-era" data-e="${k}" data-w="${w}" aria-pressed="${k === era[0]}">${l}</button>`).join('');
-  const notes = `<div class="bdy-notes" role="list" aria-label="Notes sur 99"><div class="bdy-ovr" role="listitem"><b class="num-t">${G.ovr}</b><span>Note</span></div>${G.g.map(x => `<div role="listitem" title="${esc(x.l)}"><b class="num-t">${x.v}</b><span>${x.s}</span></div>`).join('')}</div>`;
+  const notes = `<div class="bdy-notes" aria-label="Notes sur 99"><button class="bdy-ovr" data-a="fc-open" aria-label="Ma carte joueur : note ${G.ovr}"><b class="num-t">${G.ovr}</b><span>Note</span></button>${G.g.map(x => `<div title="${esc(x.l)}"><b class="num-t">${x.v}</b><span>${x.s}</span></div>`).join('')}</div>`;
   const dbtn = Array.from({ length: 7 }, (_, i) => { const d = addDays(w, i), g = (dayGroups(d).filter(musG)[0]), lab = !isMuscuDay(d) ? (i > last ? '' : cur && i === last ? 'auj.' : 'repos') : (GL[g] || 'muscu');
     return `<button class="${i === sel ? 'on' : ''}" data-a="bd-day" data-i="${i}" data-w="${w}" ${i > last ? 'disabled' : ''} aria-pressed="${i === sel}" aria-label="${esc(cap(JOURS[i]) + (lab ? ' : ' + lab : ''))}"><b>${esc(cap(JOURS[i]).slice(0, 1))}</b><small>${esc(lab.length > 7 ? lab.slice(0, 6) + '.' : lab)}</small></button>`; }).join('');
   return `<div class="bdy" data-bd="${uid}" data-w="${w}"><div class="bdy-era" role="group" aria-label="Date des notes et de la taille">${eras}</div>${notes}
@@ -7195,6 +7206,102 @@ function bdHelpHtml() {
     <div class="row end"><button class="btn" data-a="sheet-close">Fermer</button></div>`;
 }
 Object.assign(A, { 'bd-help': () => openSheet(bdHelpHtml()) });
+
+/* ================= v8.25 : divisions façon EA FC et carte joueur ================= */
+function lgRankOf(st) {
+  const ti = Math.max(0, Math.min(LG_TIERS.length - 1, st.tier | 0)), T = LG_TIERS[ti], apex = !!T.apex;
+  return { ti, T, apex, label: T.n, score: ti * LG.div + st.lp, pct: apex ? 100 : st.lp / LG.div * 100 };
+}
+function computeLeague(byDay, start, t) {
+  const TOP = LG_TIERS.length - 1, st = { tier: 0, div: 10, lp: 0, shield: 0 }, hist = []; let wins = 0, losses = 0, draws = 0, streak = 0, bestStreak = 0, empty = 0, peak = null;
+  const hasData = d => (byDay[d] || 0) > 0 || !!S.sessions[d] || !!S.nutrition[d] || !!S.health[d];
+  const settle = (d, r, xp) => {
+    let pl = 0;
+    if (r === 'V') {
+      pl = lgGain(xp) + (streak >= 2 ? 3 : 0); streak++; wins++; bestStreak = Math.max(bestStreak, streak); st.lp += pl;
+      while (st.lp >= LG.div && st.tier < TOP) { st.lp -= LG.div; st.tier++; st.shield = 3; }
+    } else if (r === 'D') {
+      pl = -LG.loss; streak = 0; losses++; st.lp -= LG.loss;
+      if (st.lp < 0) { if (st.shield > 0 || st.tier === 0) st.lp = 0; else { st.tier--; st.lp = LG.div - 50; } }
+    } else { streak = 0; draws++; }
+    if (st.shield > 0) st.shield--;
+    st.div = LG_TIERS[st.tier].d;
+    const rk = lgRankOf(st); if (!peak || rk.score > peak.score) peak = rk;
+    hist.push({ d, r, pl, xp, rank: rk.label });
+  };
+  if (start) {
+    const last = S.nutrition[t]?.closed ? t : addDays(t, -1);
+    for (let d = start; d <= last; d = addDays(d, 1)) {
+      if (isOffWeek(weekStart(d))) { hist.push({ d, r: 'O', pl: 0, xp: byDay[d] || 0 }); continue; }
+      if (!hasData(d)) { empty++; if (empty > LG.maxEmpty) { hist.push({ d, r: 'A', pl: 0, xp: 0 }); continue; } settle(d, 'D', 0); continue; }
+      empty = 0; settle(d, lgResult(byDay[d] || 0), byDay[d] || 0);
+    }
+  }
+  st.div = LG_TIERS[st.tier].d;
+  const rk = lgRankOf(st), games = wins + losses + draws, txp = byDay[t] || 0, tr = lgResult(txp), tdone = !!S.nutrition[t]?.closed;
+  const next = rk.apex ? null : { need: LG.div - st.lp, label: LG_TIERS[rk.ti + 1].n };
+  return { ...st, ...rk, wins, losses, draws, games, streak, bestStreak, peak, hist, next, start, today: { xp: txp, r: tr, done: tdone, gain: tr === 'V' ? lgGain(txp) + (streak >= 2 ? 3 : 0) : tr === 'N' ? 0 : -LG.loss } };
+}
+const LG_STAR = 'M24 15l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8-6.1-3.6-6.1 3.6 1.5-6.8-5.2-4.6 6.9-.7z', LG_HEX = 'M24 3 43 13.5v29L24 53 5 42.5v-29z', LG_HEX_IN = 'M24 9 38 16.8v22.4L24 47 10 39.2V16.8z';
+// Écusson de division : hexagone numéroté (étoile pour l'Élite)
+function lgEmblem(lg, size = 44, id = 'e') {
+  const T = lg.T, gid = `lg-${T.k}-${id}`;
+  const inner = T.apex ? `<path d="${LG_STAR}" fill="#fff"/>` : `<text x="24" y="${T.d === 10 ? 34.5 : 36}" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="800" font-size="${T.d === 10 ? 19 : 23}" fill="#fff" stroke="rgba(0,0,0,.35)" stroke-width="2.4" paint-order="stroke">${T.d}</text>`;
+  return `<svg class="lg-emb" width="${size}" height="${Math.round(size * 56 / 48)}" viewBox="0 0 48 56" aria-hidden="true"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${T.c}"/><stop offset="1" stop-color="${T.c2}"/></linearGradient></defs><path d="${LG_HEX}" fill="url(#${gid})" stroke="${T.c2}" stroke-width="2" stroke-linejoin="round"/><path d="${LG_HEX_IN}" fill="none" stroke="rgba(255,255,255,.38)" stroke-width="1.5"/>${inner}</svg>`;
+}
+function scShield(x, lg, X, Y, w) { // écusson de division pour les images partagées (même dessin que lgEmblem)
+  const T = lg.T; x.save(); x.translate(X, Y); x.scale(w / 48, w / 48);
+  const g = x.createLinearGradient(0, 0, 48, 56); g.addColorStop(0, T.c); g.addColorStop(1, T.c2);
+  const p = new Path2D(LG_HEX); x.fillStyle = g; x.fill(p); x.lineJoin = 'round'; x.lineWidth = 2; x.strokeStyle = T.c2; x.stroke(p);
+  x.lineWidth = 1.5; x.strokeStyle = 'rgba(255,255,255,.38)'; x.stroke(new Path2D(LG_HEX_IN));
+  x.fillStyle = '#fff';
+  if (T.apex) x.fill(new Path2D(LG_STAR)); else rcT(x, String(T.d), 24, 36, rcF(800, T.d === 10 ? 19 : 23), '#fff', 'center');
+  x.restore();
+}
+function lgPromo(lg) {
+  if (!canUse('ligue')) return;
+  $('.lg-promo')?.remove();
+  const el = document.createElement('div'); el.className = 'lg-promo'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Promotion');
+  el.innerHTML = `<div class="lg-promo-in"><div class="eyebrow">Promotion</div>${lgEmblem(lg, 128, 'promo')}<h2>${esc(lg.label)}</h2><p>${lg.next ? `${nf(lg.lp)} pts. Prochaine étape : ${esc(lg.next.label)} dans ${nf(lg.next.need)} pts.` : 'Bienvenue en Élite.'}</p><button class="btn accent" data-a="lg-promo-close">Continuer</button></div>`;
+  document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('go')); confetti();
+}
+// Carte joueur
+const FC_TIERS = [[85, 'Or rare', '#f9dc7a', '#b7861a', '#1b1400'], [75, 'Or', '#f1d488', '#c9a227', '#1b1400'], [65, 'Argent', '#eef1f4', '#a3adb8', '#14171A'], [0, 'Bronze', '#e8b088', '#a8693a', '#1f1208']];
+const fcTier = n => FC_TIERS.find(x => n >= x[0]);
+function fcName() { let n = ''; try { n = AUTH.profile?.name || scPseudo() || ''; } catch { } return (String(n).trim().split(/\s+/)[0] || 'Joueur'); }
+function fcCardHtml(lg, big = true) {
+  const G = bdGroupNotes(today()), T = fcTier(G.ovr), best = G.g.slice().sort((a, b) => b.v - a.v)[0], nm = fcName();
+  return `<div class="fc-card ${big ? '' : 'fc-sm'}" style="--fc1:${T[2]};--fc2:${T[3]};--fci:${T[4]}" role="img" aria-label="Carte joueur ${esc(T[1])} : note ${G.ovr}, poste ${esc(best.l)}. ${esc(G.g.map(x => x.l + ' ' + x.v).join(', '))}">
+    <div class="fc-top"><div class="fc-ovr"><b>${G.ovr}</b><span>${esc(best.s)}</span></div>${lg ? lgEmblem(lg, 30, 'fc' + (big ? 'b' : 's')) : ''}</div>
+    <div class="fc-ph" aria-hidden="true">${esc(nm.slice(0, 1).toUpperCase())}</div>
+    <div class="fc-nm">${esc(nm.toUpperCase())}</div>
+    <div class="fc-st">${G.g.map(x => `<div><b>${x.v}</b><span>${x.s}</span></div>`).join('')}</div>
+    <div class="fc-ft">${esc(T[1])}${lg ? ` · ${esc(lg.label)}` : ''}</div></div>`;
+}
+function fcMini(lg) { const G = bdGroupNotes(today()), T = fcTier(G.ovr); return `<span class="lg-emb fc-mini" style="--fc1:${T[2]};--fc2:${T[3]};--fci:${T[4]}" aria-hidden="true"><b>${G.ovr}</b><small>${lg.T.apex ? 'ÉLITE' : 'DIV ' + lg.T.d}</small></span>`; }
+function fcSheetHtml() {
+  const g = game(), lg = canUse('ligue') ? g.lg : null, G = bdGroupNotes(today()), T = fcTier(G.ovr), nx = FC_TIERS.slice().reverse().find(x => x[0] > G.ovr), low = G.g.slice().sort((a, b) => a.v - b.v)[0];
+  return `<div class="row between" style="align-items:flex-start"><div><div class="eyebrow">Note sur 99</div><h2 style="margin:2px 0 0">Ma carte joueur</h2></div><button class="icon-btn" data-a="sheet-close" aria-label="Fermer">${ICON.x}</button></div>
+    ${fcCardHtml(lg)}
+    <div class="list">
+      <div class="li"><div class="main"><div class="t">Carte ${esc(T[1].toLowerCase())}</div><div class="s">${nx ? `Carte ${esc(nx[1].toLowerCase())} à ${nx[0]} : encore ${nx[0] - G.ovr} point${nx[0] - G.ovr > 1 ? 's' : ''} de note` : 'La meilleure carte'}</div></div></div>
+      <div class="li"><div class="main"><div class="t">Le plus rentable : ${esc(low.l)} (${low.v})</div><div class="s">Ta stat la plus basse : chaque point gagné ici fait monter la note générale</div></div></div>
+      ${lg ? `<div class="li"><div class="main"><div class="t">${esc(lg.label)} · ${nf(lg.lp)} pts</div><div class="s">${lg.next ? `${nf(lg.next.need)} pts avant ${esc(lg.next.label)}` : 'Tu es en Élite'}</div></div></div>` : ''}
+    </div>
+    <div class="row between wrap"><button class="lnk" data-a="bd-help">Comment est calculée la note</button><button class="btn" data-a="sheet-close">Fermer</button></div>`;
+}
+function gameBar() {
+  if (!canUse('ligue')) return '';
+  const g = game(), lg = g.lg, w = Math.min(100, Math.max(0, lg.pct)), td = lg.today;
+  const tdTxt = td.done ? `Match du jour joué : <b>${LG_RES[td.r][1].toLowerCase()}${td.gain ? ` ${td.gain > 0 ? '+' : '−'}${nf(Math.abs(td.gain))} pts` : ''}</b>` : td.r === 'V' ? `Victoire du jour acquise : <b>+${nf(td.gain)} pts</b> à la clôture` : `Match du jour : <b>${nf(td.xp)} / ${LG.win} XP</b> pour la victoire`;
+  return `<button class="card gbar lg-card" data-a="lg-open" aria-label="Division Rivals : ${esc(lg.label)}, ${nf(lg.lp)} points. Ouvrir le détail et la carte joueur">${fcMini(lg)}
+    <div class="lg-top"><b>${esc(lg.label)}</b><span class="lg-pl" style="--lgc:${lg.T.c2}">${nf(lg.lp)} pts</span></div>
+    <div class="lg-sts"><div class="gb-st" title="Victoires d'affilée">${ICON.flame}<span>${lg.streak}<small>V</small></span></div><div class="gb-st cl" title="Journées clôturées d'affilée">${ICON.check}<span>${g.streakC}<small>j</small></span></div></div>
+    <div class="lg-bot"><div class="xpbar lg-bar" role="progressbar" aria-label="Progression dans la division" aria-valuenow="${Math.round(w)}" aria-valuemin="0" aria-valuemax="100" style="--lgc:${lg.T.c};--lgc2:${lg.T.c2}"><span style="width:${w}%"></span></div>
+      <div class="lg-sub">${lg.next ? `${nf(lg.next.need)} pts avant ${esc(lg.next.label)} · ` : ''}${tdTxt}</div></div>
+  </button>`;
+}
+Object.assign(A, { 'fc-open': () => openSheet(fcSheetHtml()) });
 </script>
 </body>
 </html>
